@@ -69,10 +69,10 @@ if (NOT DEFINED ENV{SKIP_EXAMPLES})
 endif()
 
 
-# # Tests
-# if (NOT DEFINED ENV{SKIP_TESTS})
-#     enable_testing()
-#     # list(APPEND CMAKE_CTEST_ARGUMENTS "--verbose")
-#     add_subdirectory(tests)
-#     list(APPEND CMAKE_CTEST_ARGUMENTS "--output-on-failure")
-# endif()
+# Tests
+if (NOT DEFINED ENV{SKIP_TESTS})
+    enable_testing()
+    # list(APPEND CMAKE_CTEST_ARGUMENTS "--verbose")
+    add_subdirectory(tests)
+    list(APPEND CMAKE_CTEST_ARGUMENTS "--output-on-failure")
+endif()

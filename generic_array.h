@@ -16,9 +16,41 @@
  *
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
-#ifndef GENERIC_ARRAY_H_
-#define GENERIC_ARRAY_H_
+#include <stddef.h>
+#include <stdbool.h>
 
 
-#endif  // GENERIC_ARRAY_H_
+/* Common stuff */
+#define GARR_ISFULL(self) (self->count == self->size)
+#define GARR_ISEMPTY(self) (self->count == 0)
 
+
+/* Generic stuff */
+#define GARRNAME_PASTER(x, y) x ## _ ## y
+#define GARRNAME_EVALUATOR(x, y)  GARRNAME_PASTER(x, y)
+#define GARRNAME(n) GARRNAME_EVALUATOR(GARR_TYPE, n)
+
+
+struct
+GARRNAME(array) {
+    GARR_TYPE *array;
+    size_t size;
+    size_t count;
+};
+
+
+int
+GARRNAME(array_init)(struct GARRNAME(array) *self, size_t size);
+
+
+int
+GARRNAME(array_append)(struct GARRNAME(array) *self, GARR_TYPE item);
+
+
+int
+GARRNAME(array_set)(struct GARRNAME(array) *self, GARR_TYPE item,
+        unsigned int index);
+
+
+GARR_TYPE
+GARRNAME(array_get)(struct GARRNAME(array) *self, unsigned int index);
