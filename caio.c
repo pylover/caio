@@ -16,9 +16,15 @@
  *
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
-
-
 #include <stddef.h>
+
+typedef struct task *taskptr;
+#undef GARR_ITEMISEMPTY
+#define GARR_ITEMISEMPTY(c) (c == NULL)
+#undef GARR_TYPE
+#define GARR_TYPE taskptr
+#include "generic_array.h"
+#include "generic_array.c"
 
 
 static struct caio_task **_tasks = NULL;

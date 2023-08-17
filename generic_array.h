@@ -33,7 +33,7 @@
 
 struct
 GARRNAME(array) {
-    GARR_TYPE *array;
+    GARR_TYPE **array;
     size_t size;
     size_t count;
 };
@@ -44,13 +44,13 @@ GARRNAME(array_init)(struct GARRNAME(array) *self, size_t size);
 
 
 int
-GARRNAME(array_append)(struct GARRNAME(array) *self, GARR_TYPE item);
+GARRNAME(array_append)(struct GARRNAME(array) *self, GARR_TYPE *item);
 
 
 int
-GARRNAME(array_set)(struct GARRNAME(array) *self, GARR_TYPE item,
+GARRNAME(array_set)(struct GARRNAME(array) *self, GARR_TYPE *item,
         unsigned int index);
 
 
-GARR_TYPE
+GARR_TYPE*
 GARRNAME(array_get)(struct GARRNAME(array) *self, unsigned int index);
