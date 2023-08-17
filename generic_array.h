@@ -16,45 +16,9 @@
  *
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
+#ifndef GENERIC_ARRAY_H_
+#define GENERIC_ARRAY_H_
 
 
-#include <stddef.h>
+#endif  // GENERIC_ARRAY_H_
 
-
-static struct caio_task **_tasks = NULL;
-static size_t _taskscount = 0;
-
-
-#include "caio.h"
-
-
-int
-caio_init() {
-}
-
-
-int
-caio_task_append(struct caio_task *task, void *state) {
-    // TODO: Implement
-}
-
-
-int
-caio_task_step(struct caio_task *task) {
-    // TODO: Implement
-}
-
-
-int
-caio_forever() {
-    int taskindex;
-    struct caio_task *task = NULL;
-
-
-    for (taskindex = 0; taskindex < _taskscount; taskindex++) {
-        task = _tasks[taskindex];
-        caio_task_step(task);
-    }
-
-    return 0;
-}

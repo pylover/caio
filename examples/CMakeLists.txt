@@ -1,9 +1,9 @@
-# add_library(addr OBJECT addr.c addr.h)
-# add_library(tty OBJECT tty.c tty.h)
+add_library(addr OBJECT addr.c addr.h)
 
 
 list(APPEND examples
-    timer
+    # pingpong
+    # timer
 )
 set(profilerules ${examples})
 list(TRANSFORM profilerules PREPEND profile_)
@@ -15,7 +15,6 @@ foreach (t IN LISTS examples)
         ${t}.c
         $<TARGET_OBJECTS:caio>
         $<TARGET_OBJECTS:addr>
-        $<TARGET_OBJECTS:tty>
     )
     target_include_directories(${t} PUBLIC "${PROJECT_BINARY_DIR}")
     target_link_libraries(${t} PUBLIC clog mrb)

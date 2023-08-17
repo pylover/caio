@@ -52,12 +52,6 @@ set(CPACK_GENERATOR DEB)
 include(CPack)
 
 
-# Testing
-if (NOT DEFINED ENV{SKIP_TESTS})
-include(CTest)
-list(APPEND CMAKE_CTEST_ARGUMENTS "--output-on-failure")
-
-
 # Valgrind, Profiling
 set(VALGRIND_FLAGS
     -s
@@ -71,5 +65,14 @@ set(VALGRIND_FLAGS
 
 # Examples
 if (NOT DEFINED ENV{SKIP_EXAMPLES})
-add_subdirectory(examples)
+  add_subdirectory(examples)
 endif()
+
+
+# # Tests
+# if (NOT DEFINED ENV{SKIP_TESTS})
+#     enable_testing()
+#     # list(APPEND CMAKE_CTEST_ARGUMENTS "--verbose")
+#     add_subdirectory(tests)
+#     list(APPEND CMAKE_CTEST_ARGUMENTS "--output-on-failure")
+# endif()

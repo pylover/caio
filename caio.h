@@ -20,4 +20,8 @@
 #define CAIO_H_
 
 
+struct caio_task {
+};
+
+
 #endif  // CAIO_H_
