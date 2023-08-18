@@ -20,9 +20,9 @@
 #include <stdbool.h>
 
 
-/* Common stuff */
-#define GARR_ISFULL(self) (self->count == self->size)
-#define GARR_ISEMPTY(self) (self->count == 0)
+// /* Common stuff */
+// #define GARR_ISFULL(self) (self->count == self->size)
+// #define GARR_ISEMPTY(self) (self->count == 0)
 
 
 /* Generic stuff */

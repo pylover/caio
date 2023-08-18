@@ -20,8 +20,24 @@
 #define CAIO_H_
 
 
-struct caio_task {
-};
+typedef struct caiocall {
+} caiocall;
+
+
+#undef GARR_TYPE
+#define GARR_TYPE caiocall
+#include "generic_array.h"
+
+
+typedef struct caiotask {
+    int index;
+    int running_coros;
+    struct caiocall_array callstack;
+} caiotask;
+
+
+int
+caio_init(size_t maxtasks);
 
 
 #endif  // CAIO_H_

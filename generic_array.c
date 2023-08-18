@@ -17,7 +17,7 @@ GARRNAME(array_append)(struct GARRNAME(array) *self, GARR_TYPE *item) {
     int i;
 
     for (i = 0; i < self->size; i++) {
-        if (GARR_ITEMISEMPTY(self->array[i])) {
+        if (self->array[i] == NULL) {
             goto found;
         }
     }
@@ -39,13 +39,13 @@ GARRNAME(array_set)(struct GARRNAME(array) *self, GARR_TYPE *item,
         return -1;
     }
 
-    if (GARR_ITEMISEMPTY(item)) {
-        if (!GARR_ITEMISEMPTY(self->array[index])) {
+    if (item == NULL) {
+        if (self->array[index] != NULL) {
             self->count--;
         }
     }
     else {
-        if (GARR_ITEMISEMPTY(self->array[index])) {
+        if (self->array[index] == NULL) {
             self->count++;
         }
     }

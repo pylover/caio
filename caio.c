@@ -18,49 +18,50 @@
  */
 #include <stddef.h>
 
-typedef struct task *taskptr;
-#undef GARR_ITEMISEMPTY
-#define GARR_ITEMISEMPTY(c) (c == NULL)
+#include "caio.h"
+
+
 #undef GARR_TYPE
-#define GARR_TYPE taskptr
+#define GARR_TYPE caiotask
 #include "generic_array.h"
 #include "generic_array.c"
 
 
-static struct caio_task **_tasks = NULL;
-static size_t _taskscount = 0;
+static struct caiotask_array _tasks;
 
 
 #include "caio.h"
 
 
 int
-caio_init() {
+caio_init(size_t maxtasks) {
+    // if (caiotask_array_init(&_tasks, maxtasks)) {
+    //     return -1;
+    // }
 }
 
 
 int
-caio_task_append(struct caio_task *task, void *state) {
+caio_task_append(struct caiotask *task, void *state) {
     // TODO: Implement
 }
 
 
 int
-caio_task_step(struct caio_task *task) {
+caio_task_step(struct caiotask *task) {
     // TODO: Implement
 }
 
 
 int
 caio_forever() {
-    int taskindex;
-    struct caio_task *task = NULL;
+    // int taskindex;
+    // struct caiotask *task = NULL;
 
-
-    for (taskindex = 0; taskindex < _taskscount; taskindex++) {
-        task = _tasks[taskindex];
-        caio_task_step(task);
-    }
+    // for (taskindex = 0; taskindex < _taskscount; taskindex++) {
+    //     task = _tasks[taskindex];
+    //     caio_task_step(task);
+    // }
 
     return 0;
 }
