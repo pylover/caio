@@ -35,9 +35,17 @@ static struct caiotask_array _tasks;
 
 int
 caio_init(size_t maxtasks) {
-    // if (caiotask_array_init(&_tasks, maxtasks)) {
-    //     return -1;
-    // }
+    if (caiotask_array_init(&_tasks, maxtasks)) {
+        return -1;
+    }
+
+    return 0;
+}
+
+
+void
+caio_deinit() {
+    caiotask_array_deinit(&_tasks);
 }
 
 

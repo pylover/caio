@@ -43,6 +43,10 @@ int
 GARRNAME(array_init)(struct GARRNAME(array) *self, size_t size);
 
 
+void
+GARRNAME(array_deinit)(struct GARRNAME(array) *self);
+
+
 int
 GARRNAME(array_append)(struct GARRNAME(array) *self, GARR_TYPE *item);
 
