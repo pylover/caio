@@ -5,6 +5,9 @@
 int
 GARRNAME(init)(struct GARRSELF() *self, size_t size) {
     self->array = calloc(size, sizeof(GARR_TYPE*));
+    if (self->array == NULL) {
+        return -1;
+    }
     memset(self->array, 0, size * sizeof(GARR_TYPE*));
     self->count = 0;
     self->size = size;

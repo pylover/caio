@@ -34,8 +34,8 @@ int
 main() {
     struct ping pingstate = {"foo", 0};
     struct pong pongstate = {"bar", 0};
-    caio_task_append(ping, pingstate);
-    caio_task_append(ping, pongstate);
+    caio_task_new(ping, pingstate);
+    caio_task_new(ping, pongstate);
 
     return caio_forever();
 }

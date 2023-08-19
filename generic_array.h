@@ -28,13 +28,10 @@
 
 
 /* Generic stuff */
-#define GARRNAME_PASTER(x, y) x ## _array_ ## y
-#define GARRNAME_EVALUATOR(x, y)  GARRNAME_PASTER(x, y)
-#define GARRNAME(n) GARRNAME_EVALUATOR(GARR_TYPE, n)
-
-#define GARRSELF_PASTER(x, y) x ## _ ## y
-#define GARRSELF_EVALUATOR(x, y)  GARRSELF_PASTER(x, y)
-#define GARRSELF(n) GARRSELF_EVALUATOR(GARR_TYPE, array)
+#define GARRNAME_PASTER(x, y, z) x ## y ## z
+#define GARRNAME_EVALUATOR(x, y, z)  GARRNAME_PASTER(x, y, z)
+#define GARRNAME(n) GARRNAME_EVALUATOR(GARR_TYPE, _array_, n)
+#define GARRSELF() GARRNAME_EVALUATOR(GARR_TYPE, _, array)
 
 
 struct

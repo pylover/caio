@@ -20,7 +20,13 @@
 #define CAIO_H_
 
 
+struct caiotask;
+typedef void (*caiocoro) (struct caiotask *self, void *state);
+
+
 typedef struct caiocall {
+    caiocoro coro;
+    void *state;
 } caiocall;
 
 
@@ -37,7 +43,11 @@ typedef struct caiotask {
 
 
 int
-caio_init(size_t maxtasks);
+caio_init(size_t maxtasks, size_t callstacksize);
+
+
+int
+caio_call_new(struct caiotask *task, caiocoro coro, void *state);
 
 
 #endif  // CAIO_H_
