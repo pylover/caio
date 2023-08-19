@@ -52,6 +52,9 @@ test_generic_array() {
     eqptr(NULL, int_array_get(&arr, 2));
     eqptr(&qux, int_array_get(&arr, 3));
 
+    eqint(0, int_array_del(&arr, 0));
+    eqptr(NULL, int_array_get(&arr, 0));
+
     int_array_deinit(&arr);
 }
 

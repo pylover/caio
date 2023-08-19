@@ -20,19 +20,25 @@
 #include <stdbool.h>
 
 
-// /* Common stuff */
-// #define GARR_ISFULL(self) (self->count == self->size)
-// #define GARR_ISEMPTY(self) (self->count == 0)
+#ifndef GENERIC_ARRAY_COMMON_H_
+#define GENERIC_ARRAY_COMMON_H_
+#define GARR_ISFULL(self) (self->count == self->size)
+#define GARR_ISEMPTY(self) (self->count == 0)
+#endif  // GENERIC_ARRAY_COMMON_H_
 
 
 /* Generic stuff */
-#define GARRNAME_PASTER(x, y) x ## _ ## y
+#define GARRNAME_PASTER(x, y) x ## _array_ ## y
 #define GARRNAME_EVALUATOR(x, y)  GARRNAME_PASTER(x, y)
 #define GARRNAME(n) GARRNAME_EVALUATOR(GARR_TYPE, n)
 
+#define GARRSELF_PASTER(x, y) x ## _ ## y
+#define GARRSELF_EVALUATOR(x, y)  GARRSELF_PASTER(x, y)
+#define GARRSELF(n) GARRSELF_EVALUATOR(GARR_TYPE, array)
+
 
 struct
-GARRNAME(array) {
+GARRSELF() {
     GARR_TYPE **array;
     size_t size;
     size_t count;
@@ -40,21 +46,25 @@ GARRNAME(array) {
 
 
 int
-GARRNAME(array_init)(struct GARRNAME(array) *self, size_t size);
+GARRNAME(init)(struct GARRSELF() *self, size_t size);
 
 
 void
-GARRNAME(array_deinit)(struct GARRNAME(array) *self);
+GARRNAME(deinit)(struct GARRSELF() *self);
 
 
 int
-GARRNAME(array_append)(struct GARRNAME(array) *self, GARR_TYPE *item);
+GARRNAME(append)(struct GARRSELF() *self, GARR_TYPE *item);
 
 
 int
-GARRNAME(array_set)(struct GARRNAME(array) *self, GARR_TYPE *item,
+GARRNAME(set)(struct GARRSELF() *self, GARR_TYPE *item,
         unsigned int index);
 
 
 GARR_TYPE*
-GARRNAME(array_get)(struct GARRNAME(array) *self, unsigned int index);
+GARRNAME(get)(struct GARRSELF() *self, unsigned int index);
+
+
+int
+GARRNAME(del)(struct GARRSELF() *self, unsigned int index);

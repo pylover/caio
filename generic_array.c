@@ -3,7 +3,7 @@
 
 
 int
-GARRNAME(array_init)(struct GARRNAME(array) *self, size_t size) {
+GARRNAME(init)(struct GARRSELF() *self, size_t size) {
     self->array = calloc(size, sizeof(GARR_TYPE*));
     memset(self->array, 0, size * sizeof(GARR_TYPE*));
     self->count = 0;
@@ -13,7 +13,7 @@ GARRNAME(array_init)(struct GARRNAME(array) *self, size_t size) {
 
 
 void
-GARRNAME(array_deinit)(struct GARRNAME(array) *self) {
+GARRNAME(deinit)(struct GARRSELF() *self) {
     if (self->array == NULL) {
         return;
     }
@@ -22,8 +22,16 @@ GARRNAME(array_deinit)(struct GARRNAME(array) *self) {
 
 
 int
-GARRNAME(array_append)(struct GARRNAME(array) *self, GARR_TYPE *item) {
+GARRNAME(append)(struct GARRSELF() *self, GARR_TYPE *item) {
     int i;
+
+    if (item == NULL) {
+        return -1;
+    }
+
+    if (GARR_ISFULL(self)) {
+        return -1;
+    }
 
     for (i = 0; i < self->size; i++) {
         if (self->array[i] == NULL) {
@@ -42,7 +50,7 @@ found:
 
 
 int
-GARRNAME(array_set)(struct GARRNAME(array) *self, GARR_TYPE *item,
+GARRNAME(set)(struct GARRSELF() *self, GARR_TYPE *item,
         unsigned int index) {
     if (self->size <= index) {
         return -1;
@@ -65,6 +73,26 @@ GARRNAME(array_set)(struct GARRNAME(array) *self, GARR_TYPE *item,
 
 
 GARR_TYPE*
-GARRNAME(array_get)(struct GARRNAME(array) *self, unsigned int index) {
+GARRNAME(get)(struct GARRSELF() *self, unsigned int index) {
+    if (self->size <= index) {
+        return NULL;
+    }
+
     return self->array[index];
+}
+
+
+int
+GARRNAME(del)(struct GARRSELF() *self, unsigned int index) {
+    if (self->size <= index) {
+        return -1;
+    }
+
+    if (self->array[index] == NULL) {
+        return -1;
+    }
+
+    self->count--;
+    self->array[index] = NULL;
+    return 0;
 }
