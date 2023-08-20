@@ -20,11 +20,11 @@
 #include <stdbool.h>
 
 
-#ifndef GENERIC_STACK_COMMON_H_
-#define GENERIC_STACK_COMMON_H_
+#ifndef GENERIC_STACK_H_
+#define GENERIC_STACK_H_
 #define GSTACK_ISFULL(self) (self->count == self->size)
 #define GSTACK_ISEMPTY(self) (self->count == 0)
-#endif  // GENERIC_STACK_COMMON_H_
+#endif  // GENERIC_STACK_H_
 
 
 /* Generic stuff */
