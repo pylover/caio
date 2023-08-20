@@ -5,37 +5,27 @@
 #include "caio.h"
 
 
-struct ping {
-    const char *title;
-    int ping;
-};
-
-
-struct pong {
-    const char *title;
-    int pong;
+struct pingpong {
+    const char *table;
+    int shoots;
 };
 
 
 enum caiocoro_status
-ping(struct caiotask *self, struct ping *state) {
-    while (true) {
-        INFO("Ping: %s, %d", state->title, state->ping++);
-        if (state->ping > 9) {
-            return ccs_done;
-        }
-        return ccs_again;
-    }
+pong(struct caiotask *self, struct pingpong *state) {
+    INFO("Table: %s: pong #%d", state->table, state->shoots++);
+    return ccs_done;
 }
 
 
 enum caiocoro_status
-pong(struct caiotask *self, struct pong *state) {
+ping(struct caiotask *self, struct pingpong *state) {
     while (true) {
-        INFO("Pong: %s, %d", state->title, state->pong++);
-        if (state->pong > 9) {
+        INFO("Table: %s: ping #%d", state->table, state->shoots++);
+        if (state->shoots > 9) {
             return ccs_done;
         }
+        caio_call_new(self, (caiocoro)pong, (void *)state);
         return ccs_again;
     }
 }
@@ -43,14 +33,14 @@ pong(struct caiotask *self, struct pong *state) {
 
 int
 main() {
-    struct ping pingstate = {"foo", 0};
-    struct pong pongstate = {"bar", 0};
+    struct pingpong foo = {"foo", 0};
+    struct pingpong bar = {"bar", 0};
 
-    if (caio_init(2, 1)) {
+    if (caio_init(2, 2)) {
         return EXIT_FAILURE;
     }
-    caio_task_new((caiocoro)ping, (void *)&pingstate);
-    caio_task_new((caiocoro)pong, (void *)&pongstate);
+    caio_task_new((caiocoro)ping, (void *)&foo);
+    caio_task_new((caiocoro)ping, (void *)&bar);
 
     return caio_forever();
 }
