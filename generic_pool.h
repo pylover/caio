@@ -22,8 +22,8 @@
 
 #ifndef GENERIC_POOL_H_
 #define GENERIC_POOL_H_
-#define GPOOL_ISFULL(self) (self->count == self->size)
-#define GPOOL_ISEMPTY(self) (self->count == 0)
+#define GPOOL_ISFULL(self) ((self)->count == (self)->size)
+#define GPOOL_ISEMPTY(self) ((self)->count == 0)
 #endif  // GENERIC_POOL_H_
 
 

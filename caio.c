@@ -72,7 +72,13 @@ _caio_task_dispose(struct caiotask *task) {
 int
 caio_task_new(caiocoro coro, void *state) {
     int index;
-    struct caiotask *task = malloc(sizeof(struct caiotask));
+    struct caiotask *task;
+
+    if (GPOOL_ISFULL(&_tasks)) {
+        return -1;
+    }
+
+    task = malloc(sizeof(struct caiotask));
     if (task == NULL) {
         return -1;
     }
