@@ -18,6 +18,8 @@
  */
 #include <stddef.h>
 
+#include <clog.h>
+
 #include "caio.h"
 
 
@@ -25,6 +27,11 @@
 #define GARR_TYPE caiotask
 #include "generic_array.h"
 #include "generic_array.c"
+
+
+#undef GSTACK_TYPE
+#define GSTACK_TYPE caiocall
+#include "generic_stack.c"
 
 
 static size_t _callstack_size = 0;
@@ -53,16 +60,13 @@ caio_deinit() {
 
 static void
 _caio_task_dispose(struct caiotask *task) {
-    int i;
     struct caiocall *call;
 
-    for (i = 0; i < _callstack_size; i++) {
-        call = caiocall_array_get(&task->callstack, i);
-        if (call != NULL) {
-            free(call);
-        }
+    while (task->callstack.count) {
+        call = caiocall_stack_pop(&task->callstack);
+        free(call);
     }
-    caiocall_array_deinit(&task->callstack);
+    caiocall_stack_deinit(&task->callstack);
     caiotask_array_del(&_tasks, task->index);
     free(task);
 }
@@ -78,7 +82,7 @@ caio_task_new(caiocoro coro, void *state) {
     task->running_coros = 0;
 
     /* Initialize callstack */
-    if (caiocall_array_init(&task->callstack, _callstack_size)) {
+    if (caiocall_stack_init(&task->callstack, _callstack_size)) {
         free(task);
         return -1;
     }
@@ -110,22 +114,24 @@ caio_call_new(struct caiotask *task, caiocoro coro, void *state) {
 
     call->coro = coro;
     call->state = state;
-    if (caiocall_array_append(&task->callstack, call)) {
+    if (caiocall_stack_push(&task->callstack, call) == -1) {
         _caio_task_dispose(task);
         return -1;
     }
 
+    task->running_coros++;
     return 0;
 }
 
 
 int
 caio_task_step(struct caiotask *task) {
-    struct caiocall *call = caiocall_array_last(&task->callstack);
+    struct caiocall *call = caiocall_stack_last(&task->callstack);
 
     /* Get a shot of whiskey to coro */
     enum caiocoro_status status = call->coro(task, call->state);
     if (status == ccs_done) {
+        caiocall_stack_pop(&task->callstack);
         free(call);
         task->running_coros--;
     }
@@ -140,13 +146,18 @@ caio_task_step(struct caiotask *task) {
 
 int
 caio_forever() {
-    // int taskindex;
-    // struct caiotask *task = NULL;
+    int taskindex;
+    struct caiotask *task = NULL;
 
-    // for (taskindex = 0; taskindex < _taskscount; taskindex++) {
-    //     task = _tasks[taskindex];
-    //     caio_task_step(task);
-    // }
+    while (_tasks.count) {
+        for (taskindex = 0; taskindex < _tasks.size; taskindex++) {
+            task = caiotask_array_get(&_tasks, taskindex);
+            if (task == NULL) {
+                continue;
+            }
+            caio_task_step(task);
+        }
+    }
 
-    return 0;
+    return EXIT_SUCCESS;
 }

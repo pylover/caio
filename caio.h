@@ -36,15 +36,15 @@ typedef struct caiocall {
 } caiocall;
 
 
-#undef GARR_TYPE
-#define GARR_TYPE caiocall
-#include "generic_array.h"
+#undef GSTACK_TYPE
+#define GSTACK_TYPE caiocall
+#include "generic_stack.h"
 
 
 typedef struct caiotask {
     int index;
     int running_coros;
-    struct caiocall_array callstack;
+    struct caiocall_stack callstack;
 } caiotask;
 
 
@@ -54,6 +54,14 @@ caio_init(size_t maxtasks, size_t callstacksize);
 
 int
 caio_call_new(struct caiotask *task, caiocoro coro, void *state);
+
+
+int
+caio_task_new(caiocoro coro, void *state);
+
+
+int
+caio_forever();
 
 
 #endif  // CAIO_H_

@@ -2,7 +2,7 @@ add_library(addr OBJECT addr.c addr.h)
 
 
 list(APPEND examples
-    # pingpong
+    pingpong
     # timer
 )
 set(profilerules ${examples})
