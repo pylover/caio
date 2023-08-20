@@ -159,5 +159,6 @@ caio_forever() {
         }
     }
 
+    caio_deinit();
     return EXIT_SUCCESS;
 }

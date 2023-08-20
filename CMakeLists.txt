@@ -5,6 +5,7 @@ project(caio
 )
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -fms-extensions -D_GNU_SOURCE=1")
+# set(CMAKE_VERBOSE_MAKEFILE ON)
 
 
 configure_file(manifest.h.in manifest.h)

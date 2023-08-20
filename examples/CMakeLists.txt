@@ -5,8 +5,8 @@ list(APPEND examples
     pingpong
     # timer
 )
-set(profilerules ${examples})
-list(TRANSFORM profilerules PREPEND profile_)
+# set(profilerules ${examples})
+# list(TRANSFORM profilerules PREPEND profile_)
 
 
 foreach (t IN LISTS examples) 
@@ -20,6 +20,6 @@ foreach (t IN LISTS examples)
     target_link_libraries(${t} PUBLIC clog mrb)
     add_custom_target(${t}_exec COMMAND ${t})
     add_custom_target(${t}_profile
-        COMMAND "valgrind" ${VALGRIND_FLAGS} ${t}
+        COMMAND "valgrind" ${VALGRIND_FLAGS} ./${t}
     )
 endforeach()
