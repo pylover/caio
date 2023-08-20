@@ -20,8 +20,14 @@
 #define CAIO_H_
 
 
+enum caiocoro_status {
+    ccs_again,
+    ccs_done,
+};
+
+
 struct caiotask;
-typedef void (*caiocoro) (struct caiotask *self, void *state);
+typedef enum caiocoro_status (*caiocoro) (struct caiotask *self, void *state);
 
 
 typedef struct caiocall {

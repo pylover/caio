@@ -85,6 +85,16 @@ GARRNAME(get)(struct GARRSELF() *self, unsigned int index) {
 }
 
 
+GARR_TYPE*
+GARRNAME(last)(struct GARRSELF() *self) {
+    if (self->count <= 0) {
+        return NULL;
+    }
+
+    return self->array[self->count - 1];
+}
+
+
 int
 GARRNAME(del)(struct GARRSELF() *self, unsigned int index) {
     if (self->size <= index) {

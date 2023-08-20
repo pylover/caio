@@ -27,7 +27,7 @@
 #include "generic_array.c"
 
 
-static size_t callstack_size = 0;
+static size_t _callstack_size = 0;
 static struct caiotask_array _tasks;
 
 
@@ -35,12 +35,12 @@ static struct caiotask_array _tasks;
 
 
 int
-caio_init(size_t maxtasks, size_t callstacksize) {
+caio_init(size_t maxtasks, size_t callstack_size) {
     if (caiotask_array_init(&_tasks, maxtasks)) {
         return -1;
     }
 
-    callstack_size = callstacksize;
+    _callstack_size = callstack_size;
     return 0;
 }
 
@@ -48,6 +48,23 @@ caio_init(size_t maxtasks, size_t callstacksize) {
 void
 caio_deinit() {
     caiotask_array_deinit(&_tasks);
+}
+
+
+static void
+_caio_task_dispose(struct caiotask *task) {
+    int i;
+    struct caiocall *call;
+
+    for (i = 0; i < _callstack_size; i++) {
+        call = caiocall_array_get(&task->callstack, i);
+        if (call != NULL) {
+            free(call);
+        }
+    }
+    caiocall_array_deinit(&task->callstack);
+    caiotask_array_del(&_tasks, task->index);
+    free(task);
 }
 
 
@@ -61,7 +78,7 @@ caio_task_new(caiocoro coro, void *state) {
     task->running_coros = 0;
 
     /* Initialize callstack */
-    if (caiocall_array_init(&task->callstack, callstack_size)) {
+    if (caiocall_array_init(&task->callstack, _callstack_size)) {
         free(task);
         return -1;
     }
@@ -69,15 +86,13 @@ caio_task_new(caiocoro coro, void *state) {
     /* Register task */
     index = caiotask_array_append(&_tasks, task);
     if (index == -1) {
-        caiocall_array_deinit(&task->callstack);
-        free(task);
+        _caio_task_dispose(task);
         return -1;
     }
     task->index = index;
 
     if (caio_call_new(task, coro, state)) {
-        caiocall_array_deinit(&task->callstack);
-        free(task);
+        _caio_task_dispose(task);
         return -1;
     }
 
@@ -89,20 +104,37 @@ int
 caio_call_new(struct caiotask *task, caiocoro coro, void *state) {
     struct caiocall *call = malloc(sizeof(struct caiocall));
     if (call == NULL) {
-        caiocall_array_deinit(&task->callstack);
-        free(task);
+        _caio_task_dispose(task);
         return -1;
     }
 
     call->coro = coro;
     call->state = state;
-    return caiocall_array_append(&task->callstack, call);
+    if (caiocall_array_append(&task->callstack, call)) {
+        _caio_task_dispose(task);
+        return -1;
+    }
+
+    return 0;
 }
 
 
 int
 caio_task_step(struct caiotask *task) {
-    // TODO: Implement
+    struct caiocall *call = caiocall_array_last(&task->callstack);
+
+    /* Get a shot of whiskey to coro */
+    enum caiocoro_status status = call->coro(task, call->state);
+    if (status == ccs_done) {
+        free(call);
+        task->running_coros--;
+    }
+
+    if (task->running_coros == 0) {
+        _caio_task_dispose(task);
+    }
+
+    return 0;
 }
 
 
