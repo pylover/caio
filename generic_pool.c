@@ -22,11 +22,11 @@
 
 int
 GPOOLNAME(init)(struct GPOOLSELF() *self, size_t size) {
-    self->pool = calloc(size, sizeof(GPOOL_TYPE*));
+    self->pool = calloc(size, sizeof(GPOOLTYPE*));
     if (self->pool == NULL) {
         return -1;
     }
-    memset(self->pool, 0, size * sizeof(GPOOL_TYPE*));
+    memset(self->pool, 0, size * sizeof(GPOOLTYPE*));
     self->count = 0;
     self->size = size;
     return 0;
@@ -43,7 +43,7 @@ GPOOLNAME(deinit)(struct GPOOLSELF() *self) {
 
 
 int
-GPOOLNAME(append)(struct GPOOLSELF() *self, GPOOL_TYPE *item) {
+GPOOLNAME(append)(struct GPOOLSELF() *self, GPOOLTYPE *item) {
     int i;
 
     if (item == NULL) {
@@ -81,7 +81,7 @@ GPOOLNAME(vacuumflag)(struct GPOOLSELF() *self, unsigned int index) {
 }
 
 
-GPOOL_TYPE*
+GPOOLTYPE*
 GPOOLNAME(get)(struct GPOOLSELF() *self, unsigned int index) {
     if (self->size <= index) {
         return NULL;

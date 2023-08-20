@@ -23,14 +23,14 @@
 #include "caio.h"
 
 
-#undef GPOOL_TYPE
-#define GPOOL_TYPE caiotask
+#undef GPOOLTYPE
+#define GPOOLTYPE caiotask
 #include "generic_pool.h"
 #include "generic_pool.c"
 
 
-#undef GSTACK_TYPE
-#define GSTACK_TYPE caiocall
+#undef GSTACKTYPE
+#define GSTACKTYPE caiocall
 #include "generic_stack.c"
 
 

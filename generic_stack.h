@@ -30,13 +30,13 @@
 /* Generic stuff */
 #define GSTACKNAME_PASTER(x, y, z) x ## y ## z
 #define GSTACKNAME_EVALUATOR(x, y, z)  GSTACKNAME_PASTER(x, y, z)
-#define GSTACKNAME(n) GSTACKNAME_EVALUATOR(GSTACK_TYPE, _stack_, n)
-#define GSTACKSELF() GSTACKNAME_EVALUATOR(GSTACK_TYPE, _, stack)
+#define GSTACKNAME(n) GSTACKNAME_EVALUATOR(GSTACKTYPE, _stack_, n)
+#define GSTACKSELF() GSTACKNAME_EVALUATOR(GSTACKTYPE, _, stack)
 
 
 struct
 GSTACKSELF() {
-    GSTACK_TYPE **stack;
+    GSTACKTYPE **stack;
     size_t size;
     size_t count;
 };
@@ -51,12 +51,12 @@ GSTACKNAME(deinit)(struct GSTACKSELF() *self);
 
 
 int
-GSTACKNAME(push)(struct GSTACKSELF() *self, GSTACK_TYPE *item);
+GSTACKNAME(push)(struct GSTACKSELF() *self, GSTACKTYPE *item);
 
 
-GSTACK_TYPE*
+GSTACKTYPE*
 GSTACKNAME(pop)(struct GSTACKSELF() *self);
 
 
-GSTACK_TYPE*
+GSTACKTYPE*
 GSTACKNAME(last)(struct GSTACKSELF() *self);

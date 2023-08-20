@@ -22,11 +22,11 @@
 
 int
 GSTACKNAME(init)(struct GSTACKSELF() *self, size_t size) {
-    self->stack = calloc(size, sizeof(GSTACK_TYPE*));
+    self->stack = calloc(size, sizeof(GSTACKTYPE*));
     if (self->stack == NULL) {
         return -1;
     }
-    memset(self->stack, 0, size * sizeof(GSTACK_TYPE*));
+    memset(self->stack, 0, size * sizeof(GSTACKTYPE*));
     self->count = 0;
     self->size = size;
     return 0;
@@ -43,7 +43,7 @@ GSTACKNAME(deinit)(struct GSTACKSELF() *self) {
 
 
 int
-GSTACKNAME(push)(struct GSTACKSELF() *self, GSTACK_TYPE *item) {
+GSTACKNAME(push)(struct GSTACKSELF() *self, GSTACKTYPE *item) {
     int index;
 
     if (item == NULL) {
@@ -60,7 +60,7 @@ GSTACKNAME(push)(struct GSTACKSELF() *self, GSTACK_TYPE *item) {
 }
 
 
-GSTACK_TYPE*
+GSTACKTYPE*
 GSTACKNAME(pop)(struct GSTACKSELF() *self) {
     if (self->count <= 0) {
         return NULL;
@@ -70,7 +70,7 @@ GSTACKNAME(pop)(struct GSTACKSELF() *self) {
 }
 
 
-GSTACK_TYPE*
+GSTACKTYPE*
 GSTACKNAME(last)(struct GSTACKSELF() *self) {
     if (self->count <= 0) {
         return NULL;

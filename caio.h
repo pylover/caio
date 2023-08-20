@@ -36,8 +36,8 @@ typedef struct caiocall {
 } caiocall;
 
 
-#undef GSTACK_TYPE
-#define GSTACK_TYPE caiocall
+#undef GSTACKTYPE
+#define GSTACKTYPE caiocall
 #include "generic_stack.h"
 
 

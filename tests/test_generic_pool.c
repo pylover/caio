@@ -19,10 +19,8 @@
 #include <cutest.h>
 
 
-#undef GPOOL_ITEMISEMPTY
-#define GPOOL_ITEMISEMPTY(c) (c == NULL)
-#undef GPOOL_TYPE
-#define GPOOL_TYPE int
+#undef GPOOLTYPE
+#define GPOOLTYPE int
 #include "generic_pool.h"
 #include "generic_pool.c"
 

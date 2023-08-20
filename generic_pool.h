@@ -30,19 +30,19 @@
 /* Generic stuff */
 #define GPOOLNAME_PASTER(x, y, z) x ## y ## z
 #define GPOOLNAME_EVALUATOR(x, y, z)  GPOOLNAME_PASTER(x, y, z)
-#define GPOOLNAME(n) GPOOLNAME_EVALUATOR(GPOOL_TYPE, _pool_, n)
-#define GPOOLSELF() GPOOLNAME_EVALUATOR(GPOOL_TYPE, _, pool)
+#define GPOOLNAME(n) GPOOLNAME_EVALUATOR(GPOOLTYPE, _pool_, n)
+#define GPOOLSELF() GPOOLNAME_EVALUATOR(GPOOLTYPE, _, pool)
 
 
 struct
 GPOOLSELF() {
-    GPOOL_TYPE **pool;
+    GPOOLTYPE **pool;
     size_t size;
     size_t count;
 };
 
 
-typedef void (*GPOOLNAME(vacuumcb)) (GPOOL_TYPE *item, unsigned int index);
+typedef void (*GPOOLNAME(vacuumcb)) (GPOOLTYPE *item, unsigned int index);
 
 
 int
@@ -54,14 +54,14 @@ GPOOLNAME(deinit)(struct GPOOLSELF() *self);
 
 
 int
-GPOOLNAME(append)(struct GPOOLSELF() *self, GPOOL_TYPE *item);
+GPOOLNAME(append)(struct GPOOLSELF() *self, GPOOLTYPE *item);
 
 
 int
 GPOOLNAME(vacuumflag)(struct GPOOLSELF() *self, unsigned int index);
 
 
-GPOOL_TYPE*
+GPOOLTYPE*
 GPOOLNAME(get)(struct GPOOLSELF() *self, unsigned int index);
 
 
