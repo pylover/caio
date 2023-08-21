@@ -16,62 +16,38 @@
  *
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
-#ifndef CAIO_H_
-#define CAIO_H_
+#ifndef CALLSTACK_H_
+#define CALLSTACK_H_
 
 
-enum caio_corostatus {
-    ccs_again,
-    ccs_done,
-};
+#include <stddef.h>
+#include <stdbool.h>
+
+#include "caio.h"
 
 
-struct caio_task;
-typedef enum caio_corostatus (*caio_coro) (struct caio_task *self,
-        void *state);
-
-
-struct caio_call {
-    caio_coro coro;
-    void *state;
-};
-
-
-struct caio_callstack {
-    struct caio_call **stack;
-    size_t size;
-    size_t count;
-};
-
-
-struct caio_task {
-    int index;
-    int running_coros;
-    struct caio_callstack callstack;
-};
-
-
-struct caio_taskpool {
-    struct caio_task **pool;
-    size_t size;
-    size_t count;
-};
+#define CALLSTACK_ISFULL(self) (self->count == self->size)
+#define CALLSTACK_ISEMPTY(self) (self->count == 0)
 
 
 int
-caio_init(size_t maxtasks, size_t callstacksize);
+caio_callstack_init(struct caio_callstack *self, size_t size);
+
+
+void
+caio_callstack_deinit(struct caio_callstack *self);
 
 
 int
-caio_call_new(struct caio_task *task, caio_coro coro, void *state);
+caio_callstack_push(struct caio_callstack *self, struct caio_call *item);
 
 
-int
-caio_task_new(caio_coro coro, void *state);
+struct caio_call*
+caio_callstack_pop(struct caio_callstack *self);
 
 
-int
-caio_forever();
+struct caio_call*
+caio_callstack_last(struct caio_callstack *self);
 
 
-#endif  // CAIO_H_
+#endif  // CALLSTACK_H_

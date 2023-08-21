@@ -16,17 +16,19 @@
  *
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
-#include <stdlib.h>  // NOLINT
+#include <stdlib.h>
 #include <string.h>
+
+#include "taskpool.h"
 
 
 int
-GPOOLNAME(init)(struct GPOOLSELF() *self, size_t size) {
-    self->pool = calloc(size, sizeof(GPOOLTYPE*));
+taskpool_init(struct caio_taskpool *self, size_t size) {
+    self->pool = calloc(size, sizeof(struct caio_task*));
     if (self->pool == NULL) {
         return -1;
     }
-    memset(self->pool, 0, size * sizeof(GPOOLTYPE*));
+    memset(self->pool, 0, size * sizeof(struct caio_task*));
     self->count = 0;
     self->size = size;
     return 0;
@@ -34,7 +36,7 @@ GPOOLNAME(init)(struct GPOOLSELF() *self, size_t size) {
 
 
 void
-GPOOLNAME(deinit)(struct GPOOLSELF() *self) {
+taskpool_deinit(struct caio_taskpool *self) {
     if (self->pool == NULL) {
         return;
     }
@@ -43,14 +45,14 @@ GPOOLNAME(deinit)(struct GPOOLSELF() *self) {
 
 
 int
-GPOOLNAME(append)(struct GPOOLSELF() *self, GPOOLTYPE *item) {
+taskpool_append(struct caio_taskpool *self, struct caio_task *item) {
     int i;
 
     if (item == NULL) {
         return -1;
     }
 
-    if (GPOOL_ISFULL(self)) {
+    if (TASKPOOL_ISFULL(self)) {
         return -1;
     }
 
@@ -71,7 +73,7 @@ found:
 
 
 int
-GPOOLNAME(vacuumflag)(struct GPOOLSELF() *self, unsigned int index) {
+taskpool_vacuumflag(struct caio_taskpool *self, unsigned int index) {
     if (self->size <= index) {
         return -1;
     }
@@ -81,8 +83,8 @@ GPOOLNAME(vacuumflag)(struct GPOOLSELF() *self, unsigned int index) {
 }
 
 
-GPOOLTYPE*
-GPOOLNAME(get)(struct GPOOLSELF() *self, unsigned int index) {
+struct caio_task*
+taskpool_get(struct caio_taskpool *self, unsigned int index) {
     if (self->size <= index) {
         return NULL;
     }
@@ -92,7 +94,7 @@ GPOOLNAME(get)(struct GPOOLSELF() *self, unsigned int index) {
 
 
 void
-GPOOLNAME(vacuum)(struct GPOOLSELF() *self, GPOOLNAME(vacuumcb) cb) {
+taskpool_vacuum(struct caio_taskpool *self) {
     int i;
     int shift = 0;
 
@@ -107,10 +109,8 @@ GPOOLNAME(vacuum)(struct GPOOLSELF() *self, GPOOLNAME(vacuumcb) cb) {
         }
 
         self->pool[i - shift] = self->pool[i];
+        self->pool[i - shift]->index = i - shift;
         self->pool[i] = NULL;
-        if (cb) {
-            cb(self->pool[i - shift], i - shift);
-        }
     }
 
     self->count -= shift;

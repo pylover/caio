@@ -16,17 +16,19 @@
  *
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
-#include <stdlib.h>  // NOLINT
+#include <stdlib.h>
 #include <string.h>
+
+#include "callstack.h"
 
 
 int
-GSTACKNAME(init)(struct GSTACKSELF() *self, size_t size) {
-    self->stack = calloc(size, sizeof(GSTACKTYPE*));
+caio_callstack_init(struct caio_callstack *self, size_t size) {
+    self->stack = calloc(size, sizeof(struct caio_call*));
     if (self->stack == NULL) {
         return -1;
     }
-    memset(self->stack, 0, size * sizeof(GSTACKTYPE*));
+    memset(self->stack, 0, size * sizeof(struct caio_call*));
     self->count = 0;
     self->size = size;
     return 0;
@@ -34,7 +36,7 @@ GSTACKNAME(init)(struct GSTACKSELF() *self, size_t size) {
 
 
 void
-GSTACKNAME(deinit)(struct GSTACKSELF() *self) {
+caio_callstack_deinit(struct caio_callstack *self) {
     if (self->stack == NULL) {
         return;
     }
@@ -43,14 +45,14 @@ GSTACKNAME(deinit)(struct GSTACKSELF() *self) {
 
 
 int
-GSTACKNAME(push)(struct GSTACKSELF() *self, GSTACKTYPE *item) {
+caio_callstack_push(struct caio_callstack *self, struct caio_call *item) {
     int index;
 
     if (item == NULL) {
         return -1;
     }
 
-    if (GSTACK_ISFULL(self)) {
+    if (CALLSTACK_ISFULL(self)) {
         return -1;
     }
 
@@ -60,8 +62,8 @@ GSTACKNAME(push)(struct GSTACKSELF() *self, GSTACKTYPE *item) {
 }
 
 
-GSTACKTYPE*
-GSTACKNAME(pop)(struct GSTACKSELF() *self) {
+struct caio_call*
+caio_callstack_pop(struct caio_callstack *self) {
     if (self->count <= 0) {
         return NULL;
     }
@@ -70,8 +72,8 @@ GSTACKNAME(pop)(struct GSTACKSELF() *self) {
 }
 
 
-GSTACKTYPE*
-GSTACKNAME(last)(struct GSTACKSELF() *self) {
+struct caio_call*
+caio_callstack_last(struct caio_callstack *self) {
     if (self->count <= 0) {
         return NULL;
     }

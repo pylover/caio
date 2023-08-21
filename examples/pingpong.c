@@ -29,21 +29,21 @@ struct pingpong {
 };
 
 
-enum caiocoro_status
-pong(struct caiotask *self, struct pingpong *state) {
+enum caio_corostatus
+pong(struct caio_task *self, struct pingpong *state) {
     INFO("Table: %s: pong #%d", state->table, state->shoots++);
     return ccs_done;
 }
 
 
-enum caiocoro_status
-ping(struct caiotask *self, struct pingpong *state) {
+enum caio_corostatus
+ping(struct caio_task *self, struct pingpong *state) {
     while (true) {
         INFO("Table: %s: ping #%d", state->table, state->shoots++);
         if (state->shoots > 9) {
             break;
         }
-        caio_call_new(self, (caiocoro)pong, (void *)state);
+        caio_call_new(self, (caio_coro)pong, (void *)state);
         return ccs_again;
     }
     return ccs_done;
@@ -58,8 +58,8 @@ main() {
     if (caio_init(2, 2)) {
         return EXIT_FAILURE;
     }
-    caio_task_new((caiocoro)ping, (void *)&foo);
-    caio_task_new((caiocoro)ping, (void *)&bar);
+    caio_task_new((caio_coro)ping, (void *)&foo);
+    caio_task_new((caio_coro)ping, (void *)&bar);
 
     return caio_forever();
 }

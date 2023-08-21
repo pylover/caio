@@ -1,7 +1,7 @@
 # Testing
 include(CTest)
 list(APPEND testrules
-    generic_pool
+    # taskpool
     # router
     # request parser
 

@@ -16,31 +16,22 @@
  *
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
-#include <stddef.h>
+#include <stdlib.h>
 
 #include <clog.h>
 
 #include "caio.h"
-
-
-#undef GPOOLTYPE
-#define GPOOLTYPE caiotask
-#include "generic_pool.h"
-#include "generic_pool.c"
-
-
-#undef GSTACKTYPE
-#define GSTACKTYPE caiocall
-#include "generic_stack.c"
+#include "taskpool.h"
+#include "callstack.h"
 
 
 static size_t _callstack_size = 0;
-static struct caiotask_pool _tasks;
+static struct caio_taskpool _tasks;
 
 
 int
 caio_init(size_t maxtasks, size_t callstack_size) {
-    if (caiotask_pool_init(&_tasks, maxtasks)) {
+    if (taskpool_init(&_tasks, maxtasks)) {
         return -1;
     }
 
@@ -51,47 +42,47 @@ caio_init(size_t maxtasks, size_t callstack_size) {
 
 void
 caio_deinit() {
-    caiotask_pool_deinit(&_tasks);
+    taskpool_deinit(&_tasks);
 }
 
 
 static void
-_caio_task_dispose(struct caiotask *task) {
-    struct caiocall *call;
+_caio_task_dispose(struct caio_task *task) {
+    struct caio_call *call;
 
     while (task->callstack.count) {
-        call = caiocall_stack_pop(&task->callstack);
+        call = caio_callstack_pop(&task->callstack);
         free(call);
     }
-    caiocall_stack_deinit(&task->callstack);
-    caiotask_pool_vacuumflag(&_tasks, task->index);
+    caio_callstack_deinit(&task->callstack);
+    taskpool_vacuumflag(&_tasks, task->index);
     free(task);
 }
 
 
 int
-caio_task_new(caiocoro coro, void *state) {
+caio_task_new(caio_coro coro, void *state) {
     int index;
-    struct caiotask *task;
+    struct caio_task *task;
 
-    if (GPOOL_ISFULL(&_tasks)) {
+    if (TASKPOOL_ISFULL(&_tasks)) {
         return -1;
     }
 
-    task = malloc(sizeof(struct caiotask));
+    task = malloc(sizeof(struct caio_task));
     if (task == NULL) {
         return -1;
     }
     task->running_coros = 0;
 
     /* Initialize callstack */
-    if (caiocall_stack_init(&task->callstack, _callstack_size)) {
+    if (caio_callstack_init(&task->callstack, _callstack_size)) {
         free(task);
         return -1;
     }
 
     /* Register task */
-    index = caiotask_pool_append(&_tasks, task);
+    index = taskpool_append(&_tasks, task);
     if (index == -1) {
         _caio_task_dispose(task);
         return -1;
@@ -108,8 +99,8 @@ caio_task_new(caiocoro coro, void *state) {
 
 
 int
-caio_call_new(struct caiotask *task, caiocoro coro, void *state) {
-    struct caiocall *call = malloc(sizeof(struct caiocall));
+caio_call_new(struct caio_task *task, caio_coro coro, void *state) {
+    struct caio_call *call = malloc(sizeof(struct caio_call));
     if (call == NULL) {
         _caio_task_dispose(task);
         return -1;
@@ -117,7 +108,7 @@ caio_call_new(struct caiotask *task, caiocoro coro, void *state) {
 
     call->coro = coro;
     call->state = state;
-    if (caiocall_stack_push(&task->callstack, call) == -1) {
+    if (caio_callstack_push(&task->callstack, call) == -1) {
         _caio_task_dispose(task);
         return -1;
     }
@@ -128,13 +119,13 @@ caio_call_new(struct caiotask *task, caiocoro coro, void *state) {
 
 
 bool
-caio_task_step(struct caiotask *task) {
-    struct caiocall *call = caiocall_stack_last(&task->callstack);
+caio_task_step(struct caio_task *task) {
+    struct caio_call *call = caio_callstack_last(&task->callstack);
 
     /* Get a shot of whiskey to coro */
-    enum caiocoro_status status = call->coro(task, call->state);
+    enum caio_corostatus status = call->coro(task, call->state);
     if (status == ccs_done) {
-        caiocall_stack_pop(&task->callstack);
+        caio_callstack_pop(&task->callstack);
         free(call);
         task->running_coros--;
     }
@@ -148,23 +139,17 @@ caio_task_step(struct caiotask *task) {
 }
 
 
-static void
-_caiotask_vacuum_callback(struct caiotask *task, unsigned int newindex) {
-    task->index = newindex;
-}
-
-
 int
 caio_forever() {
     int taskindex;
-    struct caiotask *task = NULL;
+    struct caio_task *task = NULL;
     bool vacuum_needed;
 
     while (_tasks.count) {
         vacuum_needed = false;
 
         for (taskindex = 0; taskindex < _tasks.count; taskindex++) {
-            task = caiotask_pool_get(&_tasks, taskindex);
+            task = taskpool_get(&_tasks, taskindex);
             if (task == NULL) {
                 continue;
             }
@@ -172,7 +157,7 @@ caio_forever() {
         }
 
         if (vacuum_needed) {
-            caiotask_pool_vacuum(&_tasks, _caiotask_vacuum_callback);
+            taskpool_vacuum(&_tasks);
         }
     }
 

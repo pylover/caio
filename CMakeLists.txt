@@ -15,7 +15,11 @@ include_directories(
 )
 
 
-add_library(caio STATIC caio.c caio.h)
+add_library(caio STATIC 
+    caio.c caio.h
+    taskpool.c taskpool.h
+    callstack.c callstack.h
+)
 
 
 # Install
