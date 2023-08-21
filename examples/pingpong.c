@@ -40,6 +40,7 @@ pong(struct caio_task *self, struct pingpong *state) {
 ASYNC
 ping(struct caio_task *self, struct pingpong *state) {
     CORO_START;
+
     while (true) {
         INFO("Table: %s: ping #%d", state->table, state->shoots++);
         if (state->shoots > 9) {
@@ -47,7 +48,6 @@ ping(struct caio_task *self, struct pingpong *state) {
         }
         CORO_WAIT(pong, state);
     }
-    return CAIO_DONE;
 
     CORO_FINALLY;
 }
@@ -61,8 +61,8 @@ main() {
     if (caio_init(2, 2)) {
         return EXIT_FAILURE;
     }
-    caio_task_new((caio_coro)ping, (void *)&foo);
-    caio_task_new((caio_coro)ping, (void *)&bar);
+    CORO_RUN(ping, &foo);
+    CORO_RUN(ping, &bar);
 
     return caio_forever();
 }

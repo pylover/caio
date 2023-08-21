@@ -45,6 +45,9 @@
     } while (0)
 
 
+#define CORO_RUN(coro, state) \
+    caio_task_new((caio_coro)coro, (void *)(state));
+
 
 enum caio_corostatus {
     CAIO_AGAIN,
