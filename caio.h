@@ -37,7 +37,7 @@
     return CAIO_DONE;
 
 
-#define CAIO_AWAIT(coro, state) \
+#define CORO_WAIT(coro, state) \
     do { \
         THIS(self->callstack)->line = __LINE__; \
         return CAIO_AGAIN; \
