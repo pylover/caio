@@ -29,24 +29,27 @@ struct pingpong {
 };
 
 
-enum caio_corostatus
+ASYNC
 pong(struct caio_task *self, struct pingpong *state) {
+    CORO_START;
     INFO("Table: %s: pong #%d", state->table, state->shoots++);
-    return ccs_done;
+    CORO_FINALLY;
 }
 
 
-enum caio_corostatus
+ASYNC
 ping(struct caio_task *self, struct pingpong *state) {
+    CORO_START;
     while (true) {
         INFO("Table: %s: ping #%d", state->table, state->shoots++);
         if (state->shoots > 9) {
             break;
         }
-        caio_call_new(self, (caio_coro)pong, (void *)state);
-        return ccs_again;
+        CAIO_AWAIT(pong, state);
     }
-    return ccs_done;
+    return CAIO_DONE;
+
+    CORO_FINALLY;
 }
 
 

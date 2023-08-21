@@ -20,9 +20,36 @@
 #define CAIO_H_
 
 
+#define THIS(cs) (cs).stack[(cs).count - 1]
+
+
+#define ASYNC enum caio_corostatus
+
+
+#define CORO_START \
+    switch (THIS(self->callstack)->line) { \
+        case 0:
+
+
+#define CORO_FINALLY \
+    } \
+    caiocoro_finally: \
+    return CAIO_DONE;
+
+
+#define CAIO_AWAIT(coro, state) \
+    do { \
+        THIS(self->callstack)->line = __LINE__; \
+        return CAIO_AGAIN; \
+        case __LINE__:; \
+    } while (0)
+
+
+
 enum caio_corostatus {
-    ccs_again,
-    ccs_done,
+    CAIO_AGAIN,
+    CAIO_ERROR,
+    CAIO_DONE,
 };
 
 
@@ -33,6 +60,7 @@ typedef enum caio_corostatus (*caio_coro) (struct caio_task *self,
 
 struct caio_call {
     caio_coro coro;
+    int line;
     void *state;
 };
 

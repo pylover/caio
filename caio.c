@@ -108,6 +108,7 @@ caio_call_new(struct caio_task *task, caio_coro coro, void *state) {
 
     call->coro = coro;
     call->state = state;
+    call->line = 0;
     if (caio_callstack_push(&task->callstack, call) == -1) {
         _caio_task_dispose(task);
         return -1;
@@ -124,10 +125,16 @@ caio_task_step(struct caio_task *task) {
 
     /* Get a shot of whiskey to coro */
     enum caio_corostatus status = call->coro(task, call->state);
-    if (status == ccs_done) {
-        caio_callstack_pop(&task->callstack);
-        free(call);
-        task->running_coros--;
+    switch (status) {
+        case CAIO_ERROR:
+            // TODO: Error handling
+        case CAIO_DONE:
+            caio_callstack_pop(&task->callstack);
+            free(call);
+            task->running_coros--;
+            break;
+        case CAIO_AGAIN:
+            break;
     }
 
     if (task->running_coros == 0) {
