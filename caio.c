@@ -115,13 +115,15 @@ caio_call_new(struct caio_task *task, caio_coro coro, void *state) {
     }
 
     task->running_coros++;
+    task->current = task->callstack.count - 1;
     return 0;
 }
 
 
 bool
 caio_task_step(struct caio_task *task) {
-    struct caio_call *call = caio_callstack_last(&task->callstack);
+    struct caio_call *call = caio_callstack_get(&task->callstack,
+            task->current);
 
     /* Get a shot of whiskey to coro */
     enum caio_corostatus status = call->coro(task, call->state);
@@ -132,8 +134,15 @@ caio_task_step(struct caio_task *task) {
             caio_callstack_pop(&task->callstack);
             free(call);
             task->running_coros--;
+            task->current = task->callstack.count - 1;
             break;
         case CAIO_AGAIN:
+            break;
+        case CAIO_PREV:
+            task->current = task->callstack.count - 2;
+            break;
+        case CAIO_NEXT:
+            task->current++;
             break;
     }
 

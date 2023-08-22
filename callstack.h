@@ -47,7 +47,7 @@ caio_callstack_pop(struct caio_callstack *self);
 
 
 struct caio_call*
-caio_callstack_last(struct caio_callstack *self);
+caio_callstack_get(struct caio_callstack *self, unsigned int index);
 
 
 #endif  // CALLSTACK_H_

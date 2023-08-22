@@ -73,10 +73,14 @@ caio_callstack_pop(struct caio_callstack *self) {
 
 
 struct caio_call*
-caio_callstack_last(struct caio_callstack *self) {
+caio_callstack_get(struct caio_callstack *self, unsigned int index) {
     if (self->count <= 0) {
         return NULL;
     }
 
-    return self->stack[self->count - 1];
+    if (self->count <= index) {
+        return NULL;
+    }
+
+    return self->stack[index];
 }

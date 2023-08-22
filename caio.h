@@ -20,14 +20,14 @@
 #define CAIO_H_
 
 
-#define THIS(cs) (cs).stack[(cs).count - 1]
+#define THIS(task) (task)->callstack.stack[task->current]
 
 
 #define ASYNC enum caio_corostatus
 
 
 #define CORO_START \
-    switch (THIS(self->callstack)->line) { \
+    switch (THIS(self)->line) { \
         case 0:
 
 
@@ -37,9 +37,38 @@
     return CAIO_DONE;
 
 
+#define CORO_YIELD(v) \
+    do { \
+        THIS(self)->line = __LINE__; \
+        self->value = v; \
+        return CAIO_PREV; \
+        case __LINE__:; \
+    } while (0)
+
+
+#define CORO_YIELDFROM(coro, state, v) \
+    do { \
+        THIS(self)->line = __LINE__; \
+        if (self->current == (self->callstack.count - 1)) { \
+            if (caio_call_new(self, (caio_coro)coro, (void *)state)) { \
+                return CAIO_ERROR; \
+            } \
+            return CAIO_AGAIN; \
+        } \
+        else { \
+            return CAIO_NEXT; \
+        } \
+        case __LINE__:; \
+        *v = self->value; \
+    } while (0)
+
+
 #define CORO_WAIT(coro, state) \
     do { \
-        THIS(self->callstack)->line = __LINE__; \
+        THIS(self)->line = __LINE__; \
+        if (caio_call_new(self, (caio_coro)coro, (void *)state)) { \
+            return CAIO_ERROR; \
+        } \
         return CAIO_AGAIN; \
         case __LINE__:; \
     } while (0)
@@ -53,6 +82,8 @@ enum caio_corostatus {
     CAIO_AGAIN,
     CAIO_ERROR,
     CAIO_DONE,
+    CAIO_PREV,
+    CAIO_NEXT,
 };
 
 
@@ -79,6 +110,8 @@ struct caio_task {
     int index;
     int running_coros;
     struct caio_callstack callstack;
+    int value;
+    int current;
 };
 
 

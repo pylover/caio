@@ -25,9 +25,11 @@
 
 ASYNC
 bar(struct caio_task *self) {
+    static int value = 0;
     CORO_START;
     INFO("Bar generator");
     while (true) {
+        CORO_YIELD(value++);
     }
     CORO_FINALLY;
 }
@@ -35,9 +37,17 @@ bar(struct caio_task *self) {
 
 ASYNC
 foo(struct caio_task *self) {
+    int value;
     CORO_START;
     INFO("Foo consumer");
     while (true) {
+        CORO_YIELDFROM(bar, NULL, &value);
+        // CORO_WAIT(bar, NULL);
+        // value = self->value;
+        INFO("value: %d", value);
+        if (value > 5) {
+            return CAIO_DONE;
+        }
     }
     CORO_FINALLY;
 }
