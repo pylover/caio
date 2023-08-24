@@ -1,3 +1,3 @@
-- caio_sleep function
 - Add `A` prefix to all coroutines
 - Genric coroutines
+- Readme
