@@ -22,20 +22,17 @@
 
 #include "caio.h"
 #include "taskpool.h"
-#include "callstack.h"
 
 
-static size_t _callstack_size = 0;
 static struct caio_taskpool _tasks;
 
 
 int
-caio_init(size_t maxtasks, size_t callstack_size) {
+caio_init(size_t maxtasks) {
     if (taskpool_init(&_tasks, maxtasks)) {
         return -1;
     }
 
-    _callstack_size = callstack_size;
     return 0;
 }
 
@@ -48,13 +45,6 @@ caio_deinit() {
 
 static void
 _caio_task_dispose(struct caio_task *task) {
-    struct caio_call *call;
-
-    while (task->callstack.count) {
-        call = caio_callstack_pop(&task->callstack);
-        free(call);
-    }
-    caio_callstack_deinit(&task->callstack);
     taskpool_vacuumflag(&_tasks, task->index);
     free(task);
 }
@@ -73,13 +63,6 @@ caio_task_new(caio_coro coro, void *state) {
     if (task == NULL) {
         return -1;
     }
-    task->running_coros = 0;
-
-    /* Initialize callstack */
-    if (caio_callstack_init(&task->callstack, _callstack_size)) {
-        free(task);
-        return -1;
-    }
 
     /* Register task */
     index = taskpool_append(&_tasks, task);
@@ -88,7 +71,9 @@ caio_task_new(caio_coro coro, void *state) {
         return -1;
     }
     task->index = index;
+    task->current = NULL;
 
+    /* Update the task->current */
     if (caio_call_new(task, coro, state)) {
         _caio_task_dispose(task);
         return -1;
@@ -100,53 +85,50 @@ caio_task_new(caio_coro coro, void *state) {
 
 int
 caio_call_new(struct caio_task *task, caio_coro coro, void *state) {
+    struct caio_call *parent = task->current;
     struct caio_call *call = malloc(sizeof(struct caio_call));
     if (call == NULL) {
-        _caio_task_dispose(task);
         return -1;
+    }
+
+    if (parent == NULL) {
+        call->parent = NULL;
+    }
+    else {
+        call->parent = parent;
     }
 
     call->coro = coro;
     call->state = state;
     call->line = 0;
-    if (caio_callstack_push(&task->callstack, call) == -1) {
-        _caio_task_dispose(task);
-        return -1;
-    }
 
-    task->running_coros++;
-    task->current = task->callstack.count - 1;
+    task->status = CAIO_AGAIN;
+    task->current = call;
     return 0;
 }
 
 
 bool
 caio_task_step(struct caio_task *task) {
-    struct caio_call *call = caio_callstack_get(&task->callstack,
-            task->current);
+    struct caio_call *call = task->current;
 
     /* Get a shot of whiskey to coro */
-    enum caio_corostatus status = call->coro(task, call->state);
-    switch (status) {
-        case CAIO_ERROR:
-            // TODO: Error handling
+    call->coro(task, call->state);
+    switch (task->status) {
         case CAIO_DONE:
-            caio_callstack_pop(&task->callstack);
+        case CAIO_ERROR:
+            task->current = call->parent;
             free(call);
-            task->running_coros--;
-            task->current = task->callstack.count - 1;
+            if (task->current != NULL) {
+                task->status = CAIO_AGAIN;
+            }
             break;
         case CAIO_AGAIN:
             break;
-        case CAIO_PREV:
-            task->current = task->callstack.count - 2;
-            break;
-        case CAIO_NEXT:
-            task->current++;
-            break;
     }
 
-    if (task->running_coros == 0) {
+    if (task->current == NULL) {
+        // TODO: Error handling
         _caio_task_dispose(task);
         return true;
     }

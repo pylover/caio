@@ -3,7 +3,7 @@
 
 list(APPEND examples
     pingpong
-    generator
+    # generator
     # timer
 )
 # set(profilerules ${examples})

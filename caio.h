@@ -20,56 +20,60 @@
 #define CAIO_H_
 
 
-#define THIS(task) (task)->callstack.stack[task->current]
 
-
-#define ASYNC enum caio_corostatus
+#define ASYNC void
 
 
 #define CORO_START \
-    switch (THIS(self)->line) { \
+    switch ((self)->current->line) { \
         case 0:
 
 
 #define CORO_FINALLY \
     } \
     caiocoro_finally: \
-    return CAIO_DONE;
+    (self)->current->line = __LINE__; \
+    (self)->status = CAIO_DONE; \
+    (self)->value = NULL;
 
 
 #define CORO_YIELD(v) \
     do { \
-        THIS(self)->line = __LINE__; \
-        self->value = v; \
-        return CAIO_PREV; \
+        (self)->current->line = __LINE__; \
+        (self)->status = CAIO_DONE; \
+        (self)->value = v; \
+        return; \
         case __LINE__:; \
     } while (0)
 
 
 #define CORO_YIELDFROM(coro, state, v) \
     do { \
-        THIS(self)->line = __LINE__; \
-        if (self->current == (self->callstack.count - 1)) { \
-            if (caio_call_new(self, (caio_coro)coro, (void *)state)) { \
-                return CAIO_ERROR; \
-            } \
-            return CAIO_AGAIN; \
+        (self)->current->line = __LINE__; \
+        if (caio_call_new(self, (caio_coro)coro, (void *)state)) { \
+            (self)->status = CAIO_ERROR; \
         } \
         else { \
-            return CAIO_NEXT; \
+            (self)->status = CAIO_AGAIN; \
         } \
-        case __LINE__:; \
-        *v = self->value; \
+        return; \
+        case __LINE__: \
+        if (v != NULL) { \
+            v = self->value; \
+        } \
     } while (0)
 
 
 #define CORO_WAIT(coro, state) \
     do { \
-        THIS(self)->line = __LINE__; \
+        (self)->current->line = __LINE__; \
         if (caio_call_new(self, (caio_coro)coro, (void *)state)) { \
-            return CAIO_ERROR; \
+            (self)->status = CAIO_ERROR; \
         } \
-        return CAIO_AGAIN; \
+        else { \
+            (self)->status = CAIO_AGAIN; \
+        } \
+        return; \
         case __LINE__:; \
     } while (0)
 
@@ -82,8 +86,6 @@ enum caio_corostatus {
     CAIO_AGAIN,
     CAIO_ERROR,
     CAIO_DONE,
-    CAIO_PREV,
-    CAIO_NEXT,
 };
 
 
@@ -95,23 +97,16 @@ typedef enum caio_corostatus (*caio_coro) (struct caio_task *self,
 struct caio_call {
     caio_coro coro;
     int line;
+    struct caio_call *parent;
     void *state;
-};
-
-
-struct caio_callstack {
-    struct caio_call **stack;
-    size_t size;
-    size_t count;
 };
 
 
 struct caio_task {
     int index;
-    int running_coros;
-    struct caio_callstack callstack;
-    int value;
-    int current;
+    enum caio_corostatus status;
+    struct caio_call *current;
+    void *value;
 };
 
 
@@ -123,7 +118,7 @@ struct caio_taskpool {
 
 
 int
-caio_init(size_t maxtasks, size_t callstacksize);
+caio_init(size_t maxtasks);
 
 
 int
