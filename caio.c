@@ -31,7 +31,7 @@
 
 
 static int _epollfd = -1;
-static int _pending_evloop_tasks = 0;
+static int _evloop_pending_tasks = 0;
 static bool _killing = false;
 static struct caio_taskpool _tasks;
 static struct sigaction old_action;
@@ -180,7 +180,7 @@ caio_evloop_register(struct caio_task *task, void *state, int fd,
         errno = 0;
     }
 
-    _pending_evloop_tasks++;
+    _evloop_pending_tasks++;
     return 0;
 }
 
@@ -216,7 +216,7 @@ caio_evloop_wait(int timeout) {
         if (task->status != CAIO_DONE) {
             task->status = CAIO_AGAIN;
         }
-        _pending_evloop_tasks--;
+        _evloop_pending_tasks--;
     }
 
     return 0;
@@ -235,7 +235,7 @@ caio_task_killall() {
         }
 
         if (task->status = CAIO_EVLOOP) {
-            _pending_evloop_tasks--;
+            _evloop_pending_tasks--;
         }
         task->status = CAIO_DONE;
     }
@@ -298,8 +298,8 @@ caio_forever() {
     while (_tasks.count) {
         vacuum_needed = false;
 
-        if (_pending_evloop_tasks) {
-            if (_pending_evloop_tasks == _tasks.count) {
+        if (_evloop_pending_tasks) {
+            if (_evloop_pending_tasks == _tasks.count) {
                 // Wait forever
                 evloop_timeout = -1;
             }
