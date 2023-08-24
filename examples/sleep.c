@@ -27,11 +27,10 @@
 static ASYNC
 fooA(struct caio_task *self) {
     CORO_START;
+    static struct caio_sleep sleep = {.seconds = 2};
 
-    INFO("Waiting a moment");
-    static struct caio_sleep sleep = {.seconds = 5};
+    INFO("Waiting 2 seconds");
     CORO_WAIT(sleepA, &sleep);
-    INFO("Wait done");
     CORO_FINALLY;
 }
 
