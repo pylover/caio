@@ -75,6 +75,28 @@
     } while (0)
 
 
+#define CORO_WAITFD(state, fd, events) \
+    do { \
+        (self)->current->line = __LINE__; \
+        if (caio_evloop_register(self, state, fd, events)) { \
+            (self)->status = CAIO_ERROR; \
+        } \
+        else { \
+            (self)->status = CAIO_EVLOOP; \
+        } \
+        return; \
+        case __LINE__:; \
+    } while (0)
+
+
+#define CORO_REJECT(fmt, ...) \
+    if (fmt) { \
+        ERROR(fmt, #__VA_ARGS__); \
+    } \
+    (self)->status = CAIO_ERROR; \
+    return;
+
+
 #define CORO_RUN(coro, state) \
     caio_task_new((caio_coro)coro, (void *)(state));
 
@@ -83,6 +105,7 @@ enum caio_corostatus {
     CAIO_AGAIN,
     CAIO_ERROR,
     CAIO_DONE,
+    CAIO_EVLOOP,
 };
 
 
@@ -128,6 +151,11 @@ caio_task_new(caio_coro coro, void *state);
 
 int
 caio_forever();
+
+
+int
+caio_evloop_register(struct caio_task *task, void *state, int fd,
+        int events);
 
 
 #endif  // CAIO_H_

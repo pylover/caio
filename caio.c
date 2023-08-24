@@ -17,6 +17,9 @@
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
 #include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+#include <sys/epoll.h>
 
 #include <clog.h>
 
@@ -24,11 +27,23 @@
 #include "taskpool.h"
 
 
+static int _epollfd = -1;
+static int _pending_evloop_tasks = 0;
 static struct caio_taskpool _tasks;
 
 
 int
 caio_init(size_t maxtasks) {
+    if (_epollfd != -1) {
+        return -1;
+    }
+
+    _epollfd = epoll_create1(0);
+    if (_epollfd < 0) {
+        return -1;
+    }
+
+    /* Initialize task pool */
     if (taskpool_init(&_tasks, maxtasks)) {
         return -1;
     }
@@ -39,7 +54,12 @@ caio_init(size_t maxtasks) {
 
 void
 caio_deinit() {
+    if (_epollfd != -1) {
+        close(_epollfd);
+        _epollfd = -1;
+    }
     taskpool_deinit(&_tasks);
+    errno = 0;
 }
 
 
@@ -108,6 +128,52 @@ caio_call_new(struct caio_task *task, caio_coro coro, void *state) {
 }
 
 
+int
+caio_evloop_register(struct caio_task *task, void *state, int fd,
+        int events) {
+    struct epoll_event ee;
+
+    ee.events = events | EPOLLONESHOT;
+    ee.data.ptr = task;
+    if (epoll_ctl(_epollfd, EPOLL_CTL_MOD, fd, &ee)) {
+        if (epoll_ctl(_epollfd, EPOLL_CTL_ADD, fd, &ee)) {
+            return -1;
+        }
+        errno = 0;
+    }
+
+    _pending_evloop_tasks++;
+    return 0;
+}
+
+
+static int
+caio_evloop_wait(int timeout) {
+    int nfds;
+    int fd;
+    int i;
+    struct epoll_event events[_tasks.count];
+    struct caio_task *task;
+
+    nfds = epoll_wait(_epollfd, events, _tasks.count, -1);
+    if (nfds < 0) {
+        return -1;
+    }
+
+    if (nfds == 0) {
+        return 0;
+    }
+
+    for (i = 0; i < nfds; i++) {
+        task = (struct caio_task*)events[i].data.ptr;
+        task->status = CAIO_AGAIN;
+        _pending_evloop_tasks--;
+    }
+
+    return 0;
+}
+
+
 bool
 caio_task_step(struct caio_task *task) {
     struct caio_call *call = task->current;
@@ -140,17 +206,34 @@ caio_task_step(struct caio_task *task) {
 int
 caio_forever() {
     int taskindex;
+    int evloop_timeout;
     struct caio_task *task = NULL;
     bool vacuum_needed;
 
     while (_tasks.count) {
         vacuum_needed = false;
 
+        if (_pending_evloop_tasks) {
+            if (_pending_evloop_tasks == _tasks.count) {
+                // Wait forevenr
+                evloop_timeout = -1;
+            }
+            else {
+                evloop_timeout = 0;
+            }
+
+            if (caio_evloop_wait(evloop_timeout)) {
+                goto onerror;
+            }
+        }
+
+
         for (taskindex = 0; taskindex < _tasks.count; taskindex++) {
             task = taskpool_get(&_tasks, taskindex);
-            if (task == NULL) {
+            if ((task == NULL) || (task->status == CAIO_EVLOOP)) {
                 continue;
             }
+
             vacuum_needed |= caio_task_step(task);
         }
 
@@ -161,4 +244,9 @@ caio_forever() {
 
     caio_deinit();
     return EXIT_SUCCESS;
+
+onerror:
+
+    caio_deinit();
+    return EXIT_FAILURE;
 }

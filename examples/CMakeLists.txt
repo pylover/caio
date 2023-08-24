@@ -4,7 +4,7 @@
 list(APPEND examples
     pingpong
     generator
-    # timer
+    timer
 )
 # set(profilerules ${examples})
 # list(TRANSFORM profilerules PREPEND profile_)
