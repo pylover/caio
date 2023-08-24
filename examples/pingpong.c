@@ -58,7 +58,7 @@ main() {
     struct pingpong foo = {"foo", 0};
     struct pingpong bar = {"bar", 0};
 
-    if (caio_init(2)) {
+    if (caio_init(2, 0)) {
         return EXIT_FAILURE;
     }
     CORO_RUN(ping, &foo);

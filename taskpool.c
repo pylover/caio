@@ -73,7 +73,7 @@ found:
 
 
 int
-taskpool_vacuumflag(struct caio_taskpool *self, unsigned int index) {
+taskpool_delete(struct caio_taskpool *self, unsigned int index) {
     if (self->size <= index) {
         return -1;
     }

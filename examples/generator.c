@@ -23,7 +23,7 @@
 #include "caio.h"
 
 
-ASYNC
+static ASYNC
 qux(struct caio_task *self) {
     CORO_START;
     static int value = 0;
@@ -34,7 +34,7 @@ qux(struct caio_task *self) {
 }
 
 
-ASYNC
+static ASYNC
 bar(struct caio_task *self) {
     CORO_START;
     static int value = 0;
@@ -45,7 +45,7 @@ bar(struct caio_task *self) {
 }
 
 
-ASYNC
+static ASYNC
 baz(struct caio_task *self) {
     CORO_START;
     int value;
@@ -57,7 +57,7 @@ baz(struct caio_task *self) {
 }
 
 
-ASYNC
+static ASYNC
 foo(struct caio_task *self) {
     int value;
     CORO_START;
@@ -78,7 +78,7 @@ foo(struct caio_task *self) {
 
 int
 main() {
-    if (caio_init(1)) {
+    if (caio_init(1, 0)) {
         return EXIT_FAILURE;
     }
     CORO_RUN(foo, NULL);

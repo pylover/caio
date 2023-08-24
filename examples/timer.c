@@ -60,9 +60,13 @@ timerA(struct caio_task *self, struct timer *state) {
     if (state->fd == -1) {
         CORO_REJECT("maketimer");
     }
+
     while (true) {
         CORO_WAITFD(state, state->fd, EPOLLIN);
         bytes = read(state->fd, &tmp, sizeof(tmp));
+        if (bytes == -1) {
+            CORO_REJECT("read");
+        }
         state->value += tmp;
         if (state->value > 4) {
             break;
@@ -70,31 +74,44 @@ timerA(struct caio_task *self, struct timer *state) {
         INFO("%s, fd: %d, value: %lu", state->title, state->fd, state->value);
     }
 
-    close(state->fd);
     CORO_FINALLY;
 }
 
 
 int
 main() {
-    struct timer state1 = {
+    int status;
+
+    struct timer foo = {
         .fd = -1,
         .title = "Foo",
         .interval = 1,
         .value = 0,
     };
-    struct timer state2 = {
+
+    struct timer bar = {
         .fd = -1,
         .title = "Bar",
         .interval = 3,
         .value = 0,
     };
 
-    if (caio_init(2)) {
+    if (caio_init(2, CAIO_SIG)) {
         return EXIT_FAILURE;
     }
-    CORO_RUN(timerA, &state1);
-    // CORO_RUN(timerA, &state2);
 
-    return caio_forever();
+    CORO_RUN(timerA, &foo);
+    CORO_RUN(timerA, &bar);
+
+    status = caio_forever();
+
+    if (foo.fd != -1) {
+        close(foo.fd);
+    }
+
+    if (bar.fd != -1) {
+        close(bar.fd);
+    }
+
+    return status;
 }

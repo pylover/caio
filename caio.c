@@ -19,6 +19,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
+#include <signal.h>
+#include <stdbool.h>
 #include <sys/epoll.h>
 
 #include <clog.h>
@@ -29,26 +31,38 @@
 
 static int _epollfd = -1;
 static int _pending_evloop_tasks = 0;
+static bool _killing = false;
 static struct caio_taskpool _tasks;
+static struct sigaction old_action;
 
 
 int
-caio_init(size_t maxtasks) {
+caio_init(size_t maxtasks, int flags) {
     if (_epollfd != -1) {
         return -1;
     }
 
+    if (flags & CAIO_SIG) {
+        if (caio_handleinterrupts()) {
+            goto onerror;
+        }
+    }
+
     _epollfd = epoll_create1(0);
     if (_epollfd < 0) {
-        return -1;
+        goto onerror;
     }
 
     /* Initialize task pool */
     if (taskpool_init(&_tasks, maxtasks)) {
-        return -1;
+        goto onerror;
     }
 
     return 0;
+
+onerror:
+    caio_deinit();
+    return -1;
 }
 
 
@@ -65,7 +79,7 @@ caio_deinit() {
 
 static void
 _caio_task_dispose(struct caio_task *task) {
-    taskpool_vacuumflag(&_tasks, task->index);
+    taskpool_delete(&_tasks, task->index);
     free(task);
 }
 
@@ -166,8 +180,48 @@ caio_evloop_wait(int timeout) {
 
     for (i = 0; i < nfds; i++) {
         task = (struct caio_task*)events[i].data.ptr;
-        task->status = CAIO_AGAIN;
+        if (task->status != CAIO_DONE) {
+            task->status = CAIO_AGAIN;
+        }
         _pending_evloop_tasks--;
+    }
+
+    return 0;
+}
+
+
+void
+caio_task_killall() {
+    int taskindex;
+    struct caio_task *task;
+
+    for (taskindex = 0; taskindex < _tasks.count; taskindex++) {
+        task = taskpool_get(&_tasks, taskindex);
+        if (task == NULL) {
+            continue;
+        }
+
+        if (task->status = CAIO_EVLOOP) {
+            _pending_evloop_tasks--;
+        }
+        task->status = CAIO_DONE;
+    }
+}
+
+
+static void
+_sighandler(int s) {
+    _killing = true;
+    caio_task_killall();
+    printf("\n");
+}
+
+
+int
+caio_handleinterrupts() {
+    struct sigaction new_action = {_sighandler, 0, 0, 0, 0};
+    if (sigaction(SIGINT, &new_action, &old_action) != 0) {
+        return -1;
     }
 
     return 0;
@@ -179,18 +233,16 @@ caio_task_step(struct caio_task *task) {
     struct caio_call *call = task->current;
 
     /* Get a shot of whiskey to coro */
-    call->coro(task, call->state);
-    switch (task->status) {
-        case CAIO_DONE:
-        case CAIO_ERROR:
-            task->current = call->parent;
-            free(call);
-            if (task->current != NULL) {
-                task->status = CAIO_AGAIN;
-            }
-            break;
-        case CAIO_AGAIN:
-            break;
+    if (task->status == CAIO_AGAIN) {
+        call->coro(task, call->state);
+    }
+
+    if (task->status == CAIO_DONE) {
+        task->current = call->parent;
+        free(call);
+        if (task->current != NULL) {
+            task->status = CAIO_AGAIN;
+        }
     }
 
     if (task->current == NULL) {
@@ -215,7 +267,7 @@ caio_forever() {
 
         if (_pending_evloop_tasks) {
             if (_pending_evloop_tasks == _tasks.count) {
-                // Wait forevenr
+                // Wait forever
                 evloop_timeout = -1;
             }
             else {
@@ -223,10 +275,14 @@ caio_forever() {
             }
 
             if (caio_evloop_wait(evloop_timeout)) {
-                goto onerror;
+                if (_killing) {
+                    errno = 0;
+                }
+                else {
+                    goto onerror;
+                }
             }
         }
-
 
         for (taskindex = 0; taskindex < _tasks.count; taskindex++) {
             task = taskpool_get(&_tasks, taskindex);
@@ -246,7 +302,6 @@ caio_forever() {
     return EXIT_SUCCESS;
 
 onerror:
-
     caio_deinit();
     return EXIT_FAILURE;
 }

@@ -50,7 +50,7 @@
     do { \
         (self)->current->line = __LINE__; \
         if (caio_call_new(self, (caio_coro)coro, (void *)state)) { \
-            (self)->status = CAIO_ERROR; \
+            (self)->status = CAIO_DONE; \
         } \
         else { \
             (self)->status = CAIO_AGAIN; \
@@ -65,7 +65,7 @@
     do { \
         (self)->current->line = __LINE__; \
         if (caio_call_new(self, (caio_coro)coro, (void *)state)) { \
-            (self)->status = CAIO_ERROR; \
+            (self)->status = CAIO_DONE; \
         } \
         else { \
             (self)->status = CAIO_AGAIN; \
@@ -79,7 +79,7 @@
     do { \
         (self)->current->line = __LINE__; \
         if (caio_evloop_register(self, state, fd, events)) { \
-            (self)->status = CAIO_ERROR; \
+            (self)->status = CAIO_DONE; \
         } \
         else { \
             (self)->status = CAIO_EVLOOP; \
@@ -93,7 +93,7 @@
     if (fmt) { \
         ERROR(fmt, #__VA_ARGS__); \
     } \
-    (self)->status = CAIO_ERROR; \
+    (self)->status = CAIO_DONE; \
     return;
 
 
@@ -101,11 +101,16 @@
     caio_task_new((caio_coro)coro, (void *)(state));
 
 
+enum caio_flags {
+    CAIO_NONE = 0,
+    CAIO_SIG = 1,
+};
+
+
 enum caio_corostatus {
     CAIO_AGAIN,
-    CAIO_ERROR,
-    CAIO_DONE,
     CAIO_EVLOOP,
+    CAIO_DONE,
 };
 
 
@@ -138,7 +143,7 @@ struct caio_taskpool {
 
 
 int
-caio_init(size_t maxtasks);
+caio_init(size_t maxtasks, int flags);
 
 
 int
@@ -156,6 +161,18 @@ caio_forever();
 int
 caio_evloop_register(struct caio_task *task, void *state, int fd,
         int events);
+
+
+void
+caio_task_killall();
+
+
+int
+caio_handleinterrupts();
+
+
+void
+caio_deinit();
 
 
 #endif  // CAIO_H_

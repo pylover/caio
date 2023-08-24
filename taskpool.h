@@ -43,7 +43,7 @@ taskpool_append(struct caio_taskpool *self, struct caio_task *item);
 
 
 int
-taskpool_vacuumflag(struct caio_taskpool *self, unsigned int index);
+taskpool_delete(struct caio_taskpool *self, unsigned int index);
 
 
 struct caio_task*
