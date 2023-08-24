@@ -142,6 +142,12 @@ struct caio_taskpool {
 };
 
 
+struct caio_sleep {
+    int fd;
+    time_t seconds;
+};
+
+
 int
 caio_init(size_t maxtasks, int flags);
 
@@ -163,6 +169,10 @@ caio_evloop_register(struct caio_task *task, void *state, int fd,
         int events);
 
 
+int
+caio_evloop_unregister(int fd);
+
+
 void
 caio_task_killall();
 
@@ -173,6 +183,10 @@ caio_handleinterrupts();
 
 void
 caio_deinit();
+
+
+ASYNC
+sleepA(struct caio_task *self, struct caio_sleep *state);
 
 
 #endif  // CAIO_H_

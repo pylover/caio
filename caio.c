@@ -22,6 +22,7 @@
 #include <signal.h>
 #include <stdbool.h>
 #include <sys/epoll.h>
+#include <sys/timerfd.h>
 
 #include <clog.h>
 
@@ -34,6 +35,29 @@ static int _pending_evloop_tasks = 0;
 static bool _killing = false;
 static struct caio_taskpool _tasks;
 static struct sigaction old_action;
+
+
+ASYNC
+sleepA(struct caio_task *self, struct caio_sleep *state) {
+    CORO_START;
+    state->fd = timerfd_create(CLOCK_REALTIME, TFD_NONBLOCK);
+    if (state->fd == -1) {
+        CORO_REJECT("timerfd_create");
+    }
+
+    struct timespec sec = {state->seconds, 0};
+    struct timespec zero = {0, 0};
+    struct itimerspec spec = {zero, sec};
+    if (timerfd_settime(state->fd, 0, &spec, NULL) == -1) {
+        close(state->fd);
+        CORO_REJECT("timerfd_settime");
+    }
+
+    CORO_WAITFD(state, state->fd, EPOLLIN);
+    caio_evloop_unregister(state->fd);
+    close(state->fd);
+    CORO_FINALLY;
+}
 
 
 int
@@ -157,6 +181,15 @@ caio_evloop_register(struct caio_task *task, void *state, int fd,
     }
 
     _pending_evloop_tasks++;
+    return 0;
+}
+
+
+int
+caio_evloop_unregister(int fd) {
+    if (epoll_ctl(_epollfd, EPOLL_CTL_DEL, fd, NULL)) {
+        return -1;
+    }
     return 0;
 }
 

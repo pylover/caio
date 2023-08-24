@@ -50,7 +50,7 @@ maketimer(unsigned int interval) {
 }
 
 
-static void
+static ASYNC
 timerA(struct caio_task *self, struct timer *state) {
     CORO_START;
     unsigned long tmp;
