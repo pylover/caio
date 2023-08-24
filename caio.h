@@ -33,8 +33,7 @@
     } \
     caiocoro_finally: \
     (self)->current->line = __LINE__; \
-    (self)->status = CAIO_DONE; \
-    (self)->value = NULL;
+    (self)->status = CAIO_DONE;
 
 
 #define CORO_YIELD(v) \
@@ -47,7 +46,7 @@
     } while (0)
 
 
-#define CORO_YIELDFROM(coro, state, v) \
+#define CORO_YIELDFROM(coro, state, v, t) \
     do { \
         (self)->current->line = __LINE__; \
         if (caio_call_new(self, (caio_coro)coro, (void *)state)) { \
@@ -57,10 +56,8 @@
             (self)->status = CAIO_AGAIN; \
         } \
         return; \
-        case __LINE__: \
-        if (v != NULL) { \
-            v = self->value; \
-        } \
+        case __LINE__:; \
+        v = (t)(self)->value; \
     } while (0)
 
 
@@ -106,7 +103,7 @@ struct caio_task {
     int index;
     enum caio_corostatus status;
     struct caio_call *current;
-    void *value;
+    int value;
 };
 
 

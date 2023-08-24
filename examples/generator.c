@@ -24,12 +24,34 @@
 
 
 ASYNC
-bar(struct caio_task *self) {
-    static int value = 0;
+qux(struct caio_task *self) {
     CORO_START;
-    INFO("Bar generator");
+    static int value = 0;
     while (true) {
         CORO_YIELD(value++);
+    }
+    CORO_FINALLY;
+}
+
+
+ASYNC
+bar(struct caio_task *self) {
+    CORO_START;
+    static int value = 0;
+    while (true) {
+        CORO_YIELD(value++);
+    }
+    CORO_FINALLY;
+}
+
+
+ASYNC
+baz(struct caio_task *self) {
+    CORO_START;
+    int value;
+    while (true) {
+        CORO_YIELDFROM(qux, NULL, value, int);
+        CORO_YIELD(value * 2);
     }
     CORO_FINALLY;
 }
@@ -41,12 +63,13 @@ foo(struct caio_task *self) {
     CORO_START;
     INFO("Foo consumer");
     while (true) {
-        CORO_YIELDFROM(bar, NULL, &value);
-        // CORO_WAIT(bar, NULL);
-        // value = self->value;
-        INFO("value: %d", value);
+        CORO_YIELDFROM(bar, NULL, value, int);
+        INFO("Bar: %d", value);
+
+        CORO_YIELDFROM(baz, NULL, value, int);
+        INFO("Baz: %d", value);
         if (value > 5) {
-            return CAIO_DONE;
+            break;
         }
     }
     CORO_FINALLY;
@@ -55,7 +78,7 @@ foo(struct caio_task *self) {
 
 int
 main() {
-    if (caio_init(2, 2)) {
+    if (caio_init(1)) {
         return EXIT_FAILURE;
     }
     CORO_RUN(foo, NULL);
