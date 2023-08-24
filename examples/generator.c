@@ -24,7 +24,7 @@
 
 
 static ASYNC
-qux(struct caio_task *self) {
+quxA(struct caio_task *self) {
     CORO_START;
     static int value = 0;
     while (true) {
@@ -35,7 +35,7 @@ qux(struct caio_task *self) {
 
 
 static ASYNC
-bar(struct caio_task *self) {
+barA(struct caio_task *self) {
     CORO_START;
     static int value = 0;
     while (true) {
@@ -46,11 +46,11 @@ bar(struct caio_task *self) {
 
 
 static ASYNC
-baz(struct caio_task *self) {
+bazA(struct caio_task *self) {
     CORO_START;
     int value;
     while (true) {
-        CORO_YIELDFROM(qux, NULL, value, int);
+        CORO_YIELDFROM(quxA, NULL, value, int);
         CORO_YIELD(value * 2);
     }
     CORO_FINALLY;
@@ -58,15 +58,15 @@ baz(struct caio_task *self) {
 
 
 static ASYNC
-foo(struct caio_task *self) {
+fooA(struct caio_task *self) {
     int value;
     CORO_START;
     INFO("Foo consumer");
     while (true) {
-        CORO_YIELDFROM(bar, NULL, value, int);
+        CORO_YIELDFROM(barA, NULL, value, int);
         INFO("Bar: %d", value);
 
-        CORO_YIELDFROM(baz, NULL, value, int);
+        CORO_YIELDFROM(bazA, NULL, value, int);
         INFO("Baz: %d", value);
         if (value > 5) {
             break;
@@ -81,7 +81,7 @@ main() {
     if (caio_init(1, 0)) {
         return EXIT_FAILURE;
     }
-    CORO_RUN(foo, NULL);
+    CORO_RUN(fooA, NULL);
 
     return caio_forever();
 }
