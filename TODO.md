@@ -1,3 +1,4 @@
 - CORO_REJECT -> line number, function and debug info
 - Use pre allocated callstack instead of multiple malloc/free
 - Readme
+- Create epoll instance if needed (lazy initialization)

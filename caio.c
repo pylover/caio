@@ -37,6 +37,25 @@ static struct caio_taskpool _tasks;
 static struct sigaction old_action;
 
 
+static void
+_sighandler(int s) {
+    _killing = true;
+    caio_task_killall();
+    printf("\n");
+}
+
+
+static int
+caio_handleinterrupts() {
+    struct sigaction new_action = {_sighandler, 0, 0, 0, 0};
+    if (sigaction(SIGINT, &new_action, &old_action) != 0) {
+        return -1;
+    }
+
+    return 0;
+}
+
+
 ASYNC
 sleepA(struct caio_task *self, struct caio_sleep *state) {
     CORO_START;
@@ -66,12 +85,11 @@ caio_init(size_t maxtasks, int flags) {
         return -1;
     }
 
-    if (flags & CAIO_SIG) {
-        if (caio_handleinterrupts()) {
-            goto onerror;
-        }
+    if ((flags & CAIO_SIG) && (caio_handleinterrupts())) {
+        goto onerror;
     }
 
+    /* Create epoll instance */
     _epollfd = epoll_create1(0);
     if (_epollfd < 0) {
         goto onerror;
@@ -213,25 +231,6 @@ caio_task_killall() {
         }
         task->status = CAIO_TERMINATING;
     }
-}
-
-
-static void
-_sighandler(int s) {
-    _killing = true;
-    caio_task_killall();
-    printf("\n");
-}
-
-
-int
-caio_handleinterrupts() {
-    struct sigaction new_action = {_sighandler, 0, 0, 0, 0};
-    if (sigaction(SIGINT, &new_action, &old_action) != 0) {
-        return -1;
-    }
-
-    return 0;
 }
 
 

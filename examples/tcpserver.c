@@ -176,7 +176,10 @@ tcpserverA(struct caio_task *self, struct tcpserver *state) {
     }
 
     CORO_FINALLY;
-    close(fd);
+    if (fd != -1) {
+        caio_evloop_unregister(fd);
+        close(fd);
+    }
 }
 
 

@@ -116,7 +116,7 @@ enum caio_flags {
 };
 
 
-enum caio_corostatus {
+enum caio_taskstatus {
     CAIO_RUNNING,
     CAIO_YIELDING,
     CAIO_WAITINGIO,
@@ -126,8 +126,7 @@ enum caio_corostatus {
 
 
 struct caio_task;
-typedef enum caio_corostatus (*caio_coro) (struct caio_task *self,
-        void *state);
+typedef void (*caio_coro) (struct caio_task *self, void *state);
 
 
 struct caio_call {
@@ -140,7 +139,7 @@ struct caio_call {
 
 struct caio_task {
     int index;
-    enum caio_corostatus status;
+    enum caio_taskstatus status;
     struct caio_call *current;
     int value;
 };
@@ -164,6 +163,10 @@ caio(caio_coro coro, void *state, size_t maxtasks);
 
 
 int
+caio_forever();
+
+
+int
 caio_init(size_t maxtasks, int flags);
 
 
@@ -176,15 +179,11 @@ caio_start();
 
 
 int
-caio_forever();
+caio_task_new(caio_coro coro, void *state);
 
 
 int
 caio_call_new(struct caio_task *task, caio_coro coro, void *state);
-
-
-int
-caio_task_new(caio_coro coro, void *state);
 
 
 void
@@ -197,10 +196,6 @@ caio_evloop_register(struct caio_task *task, int fd, int events);
 
 int
 caio_evloop_unregister(int fd);
-
-
-int
-caio_handleinterrupts();
 
 
 ASYNC
