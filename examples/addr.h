@@ -16,32 +16,22 @@
  *
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
-#include <stdlib.h>
-#include <unistd.h>
-
-#include <clog.h>
-
-#include "caio.h"
+#ifndef EXAMPLES_ADDR_H_
+#define EXAMPLES_ADDR_H_
 
 
-static ASYNC
-fooA(struct caio_task *self) {
-    CORO_START;
-    static struct caio_sleep sleep = {.seconds = 2};
-
-    INFO("Waiting 2 seconds");
-    CORO_WAIT(sleepA, &sleep);
-    CORO_FINALLY;
-}
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
 
 
 int
-main() {
-    if (caio_init(2, CAIO_SIG)) {
-        return EXIT_FAILURE;
-    }
+sockaddr_parse(struct sockaddr *saddr, const char *addr, unsigned short port);
 
-    CORO_RUN(fooA, NULL);
 
-    return caio_forever();
-}
+char *
+sockaddr_dump(struct sockaddr *addr);
+
+
+#endif  // EXAMPLES_ADDR_H_

@@ -53,7 +53,7 @@ sleepA(struct caio_task *self, struct caio_sleep *state) {
         CORO_REJECT("timerfd_settime");
     }
 
-    CORO_WAITFD(state, state->fd, EPOLLIN);
+    CORO_WAITFD(state->fd, EPOLLIN);
     caio_evloop_unregister(state->fd);
     close(state->fd);
     CORO_FINALLY;
@@ -167,8 +167,7 @@ caio_call_new(struct caio_task *task, caio_coro coro, void *state) {
 
 
 int
-caio_evloop_register(struct caio_task *task, void *state, int fd,
-        int events) {
+caio_evloop_register(struct caio_task *task, int fd, int events) {
     struct epoll_event ee;
 
     ee.events = events | EPOLLONESHOT;

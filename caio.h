@@ -20,6 +20,12 @@
 #define CAIO_H_
 
 
+#include <errno.h>
+#include <sys/epoll.h>
+#include <sys/timerfd.h>
+
+#include <clog.h>
+
 
 #define ASYNC void
 
@@ -75,20 +81,6 @@
     } while (0)
 
 
-#define CORO_WAITFD(state, fd, events) \
-    do { \
-        (self)->current->line = __LINE__; \
-        if (caio_evloop_register(self, state, fd, events)) { \
-            (self)->status = CAIO_DONE; \
-        } \
-        else { \
-            (self)->status = CAIO_EVLOOP; \
-        } \
-        return; \
-        case __LINE__:; \
-    } while (0)
-
-
 #define CORO_REJECT(fmt, ...) \
     if (fmt) { \
         ERROR(fmt, #__VA_ARGS__); \
@@ -99,6 +91,24 @@
 
 #define CORO_RUN(coro, state) \
     caio_task_new((caio_coro)coro, (void *)(state));
+
+
+#define CORO_WAITFD(fd, events) \
+    do { \
+        (self)->current->line = __LINE__; \
+        if (caio_evloop_register(self, fd, events)) { \
+            (self)->status = CAIO_DONE; \
+        } \
+        else { \
+            (self)->status = CAIO_EVLOOP; \
+        } \
+        return; \
+        case __LINE__:; \
+    } while (0)
+
+
+#define CORO_MUSTWAIT() \
+    ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINPROGRESS))
 
 
 enum caio_flags {
@@ -165,8 +175,7 @@ caio_forever();
 
 
 int
-caio_evloop_register(struct caio_task *task, void *state, int fd,
-        int events);
+caio_evloop_register(struct caio_task *task, int fd, int events);
 
 
 int

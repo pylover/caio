@@ -1,27 +1,23 @@
 // Copyright 2023 Vahid Mardani
 /*
- * This file is part of Carrow.
- *  Carrow is free software: you can redistribute it and/or modify it under
+ * This file is part of caio.
+ *  caio is free software: you can redistribute it and/or modify it under
  *  the terms of the GNU General Public License as published by the Free
  *  Software Foundation, either version 3 of the License, or (at your option)
  *  any later version.
  *
- *  Carrow is distributed in the hope that it will be useful, but WITHOUT ANY
+ *  caio is distributed in the hope that it will be useful, but WITHOUT ANY
  *  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  *  FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  *  details.
  *
  *  You should have received a copy of the GNU General Public License along
- *  with Carrow. If not, see <https://www.gnu.org/licenses/>.
+ *  with caio. If not, see <https://www.gnu.org/licenses/>.
  *
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
 #include <stdlib.h>
 #include <unistd.h>
-#include <sys/timerfd.h>
-#include <sys/epoll.h>
-
-#include <clog.h>
 
 #include "caio.h"
 
@@ -62,7 +58,7 @@ timerA(struct caio_task *self, struct timer *state) {
     }
 
     while (true) {
-        CORO_WAITFD(state, state->fd, EPOLLIN);
+        CORO_WAITFD(state->fd, EPOLLIN);
         bytes = read(state->fd, &tmp, sizeof(tmp));
         if (bytes == -1) {
             CORO_REJECT("read");
@@ -71,7 +67,8 @@ timerA(struct caio_task *self, struct timer *state) {
         if (state->value > 4) {
             break;
         }
-        INFO("%s, fd: %d, value: %lu", state->title, state->fd, state->value);
+        INFO("%s(%ds), fd: %d, value: %lu", state->title, state->interval,
+                state->fd, state->value);
     }
 
     CORO_FINALLY;
