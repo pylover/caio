@@ -31,7 +31,7 @@
 
 
 static int _epollfd = -1;
-static int _evloop_pending_tasks = 0;
+static int _evloop_pendingtasks = 0;
 static bool _killing = false;
 static struct caio_taskpool _tasks;
 static struct sigaction old_action;
@@ -54,9 +54,9 @@ sleepA(struct caio_task *self, struct caio_sleep *state) {
     }
 
     CORO_WAITFD(state->fd, EPOLLIN);
+    CORO_FINALLY;
     caio_evloop_unregister(state->fd);
     close(state->fd);
-    CORO_FINALLY;
 }
 
 
@@ -142,31 +142,6 @@ caio_task_new(caio_coro coro, void *state) {
 
 
 int
-caio_call_new(struct caio_task *task, caio_coro coro, void *state) {
-    struct caio_call *parent = task->current;
-    struct caio_call *call = malloc(sizeof(struct caio_call));
-    if (call == NULL) {
-        return -1;
-    }
-
-    if (parent == NULL) {
-        call->parent = NULL;
-    }
-    else {
-        call->parent = parent;
-    }
-
-    call->coro = coro;
-    call->state = state;
-    call->line = 0;
-
-    task->status = CAIO_AGAIN;
-    task->current = call;
-    return 0;
-}
-
-
-int
 caio_evloop_register(struct caio_task *task, int fd, int events) {
     struct epoll_event ee;
 
@@ -179,7 +154,7 @@ caio_evloop_register(struct caio_task *task, int fd, int events) {
         errno = 0;
     }
 
-    _evloop_pending_tasks++;
+    _evloop_pendingtasks++;
     return 0;
 }
 
@@ -212,10 +187,10 @@ caio_evloop_wait(int timeout) {
 
     for (i = 0; i < nfds; i++) {
         task = (struct caio_task*)events[i].data.ptr;
-        if (task->status != CAIO_DONE) {
-            task->status = CAIO_AGAIN;
+        if (task->status == CAIO_WAITINGIO) {
+            task->status = CAIO_RUNNING;
         }
-        _evloop_pending_tasks--;
+        _evloop_pendingtasks--;
     }
 
     return 0;
@@ -233,10 +208,10 @@ caio_task_killall() {
             continue;
         }
 
-        if (task->status = CAIO_EVLOOP) {
-            _evloop_pending_tasks--;
+        if (task->status == CAIO_WAITINGIO) {
+            _evloop_pendingtasks--;
         }
-        task->status = CAIO_DONE;
+        task->status = CAIO_TERMINATING;
     }
 }
 
@@ -260,25 +235,65 @@ caio_handleinterrupts() {
 }
 
 
+int
+caio_call_new(struct caio_task *task, caio_coro coro, void *state) {
+    struct caio_call *parent = task->current;
+    struct caio_call *call = malloc(sizeof(struct caio_call));
+    if (call == NULL) {
+        return -1;
+    }
+
+    if (parent == NULL) {
+        call->parent = NULL;
+    }
+    else {
+        call->parent = parent;
+    }
+
+    call->coro = coro;
+    call->state = state;
+    call->line = 0;
+
+    task->status = CAIO_RUNNING;
+    task->current = call;
+    return 0;
+}
+
+
 bool
 caio_task_step(struct caio_task *task) {
     struct caio_call *call = task->current;
 
-    /* Get a shot of whiskey to coro */
-    if (task->status == CAIO_AGAIN) {
-        call->coro(task, call->state);
+    /* Pre execution */
+    switch (task->status) {
+        case CAIO_TERMINATING:
+            /* Tell coroutine to jump to the CORO_FINALLY label */
+            call->line = -1;
+            break;
+        case CAIO_WAITINGIO:
+            /* Ignore if task is waiting for IO events */
+            return false;
     }
 
-    if (task->status == CAIO_DONE) {
-        task->current = call->parent;
-        free(call);
-        if (task->current != NULL) {
-            task->status = CAIO_AGAIN;
-        }
+    call->coro(task, call->state);
+
+    /* Post execution */
+    switch (task->status) {
+        case CAIO_YIELDING:
+            if (call->parent == NULL) {
+                task->status = CAIO_RUNNING;
+                break;
+            }
+        case CAIO_TERMINATED:
+            task->current = call->parent;
+            free(call);
+            if (task->current != NULL) {
+                task->status = CAIO_RUNNING;
+            }
+            break;
     }
 
     if (task->current == NULL) {
-        // TODO: Error handling
         _caio_task_dispose(task);
         return true;
     }
@@ -297,12 +312,13 @@ caio_forever() {
     while (_tasks.count) {
         vacuum_needed = false;
 
-        if (_evloop_pending_tasks) {
-            if (_evloop_pending_tasks == _tasks.count) {
-                // Wait forever
+        if (_evloop_pendingtasks) {
+            if (_evloop_pendingtasks == _tasks.count) {
+                /* Wait forever */
                 evloop_timeout = -1;
             }
             else {
+                /* No Wait */
                 evloop_timeout = 0;
             }
 
@@ -318,7 +334,7 @@ caio_forever() {
 
         for (taskindex = 0; taskindex < _tasks.count; taskindex++) {
             task = taskpool_get(&_tasks, taskindex);
-            if ((task == NULL) || (task->status == CAIO_EVLOOP)) {
+            if (task == NULL) {
                 continue;
             }
 

@@ -36,16 +36,14 @@
 
 
 #define CORO_FINALLY \
-    } \
-    caiocoro_finally: \
-    (self)->current->line = __LINE__; \
-    (self)->status = CAIO_DONE;
+        case -1:; } \
+    (self)->status = CAIO_TERMINATED;
 
 
 #define CORO_YIELD(v) \
     do { \
         (self)->current->line = __LINE__; \
-        (self)->status = CAIO_DONE; \
+        (self)->status = CAIO_YIELDING; \
         (self)->value = v; \
         return; \
         case __LINE__:; \
@@ -56,10 +54,10 @@
     do { \
         (self)->current->line = __LINE__; \
         if (caio_call_new(self, (caio_coro)coro, (void *)state)) { \
-            (self)->status = CAIO_DONE; \
+            (self)->status = CAIO_TERMINATING; \
         } \
         else { \
-            (self)->status = CAIO_AGAIN; \
+            (self)->status = CAIO_RUNNING; \
         } \
         return; \
         case __LINE__:; \
@@ -71,10 +69,7 @@
     do { \
         (self)->current->line = __LINE__; \
         if (caio_call_new(self, (caio_coro)coro, (void *)state)) { \
-            (self)->status = CAIO_DONE; \
-        } \
-        else { \
-            (self)->status = CAIO_AGAIN; \
+            (self)->status = CAIO_TERMINATING; \
         } \
         return; \
         case __LINE__:; \
@@ -83,24 +78,24 @@
 
 #define CORO_REJECT(fmt, ...) \
     if (fmt) { \
-        ERROR(fmt, #__VA_ARGS__); \
+        ERROR(fmt, ## __VA_ARGS__); \
     } \
-    (self)->status = CAIO_DONE; \
+    (self)->status = CAIO_TERMINATING; \
     return;
 
 
 #define CORO_RUN(coro, state) \
-    caio_task_new((caio_coro)coro, (void *)(state));
+    caio_task_new((caio_coro)coro, (void *)(state))
 
 
 #define CORO_WAITFD(fd, events) \
     do { \
         (self)->current->line = __LINE__; \
         if (caio_evloop_register(self, fd, events)) { \
-            (self)->status = CAIO_DONE; \
+            (self)->status = CAIO_TERMINATING; \
         } \
         else { \
-            (self)->status = CAIO_EVLOOP; \
+            (self)->status = CAIO_WAITINGIO; \
         } \
         return; \
         case __LINE__:; \
@@ -118,9 +113,11 @@ enum caio_flags {
 
 
 enum caio_corostatus {
-    CAIO_AGAIN,
-    CAIO_EVLOOP,
-    CAIO_DONE,
+    CAIO_RUNNING,
+    CAIO_YIELDING,
+    CAIO_WAITINGIO,
+    CAIO_TERMINATING,
+    CAIO_TERMINATED,
 };
 
 

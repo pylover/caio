@@ -30,28 +30,89 @@
 
 
 /* TCP server caio state and */
-typedef struct tcpserver {
+struct tcpserver {
     const char *bindaddr;
     unsigned short bindport;
     int backlog;
-} tcpserver;
+};
 
 
 /* TCP connection state types */
-typedef struct tcpconn {
+struct tcpconn {
     int fd;
     struct sockaddr localaddr;
     struct sockaddr remoteaddr;
     mrb_t buff;
-} tcpconn;
-
+};
 
 
 #define PAGESIZE 4096
 #define BUFFSIZE (PAGESIZE * 32768)
 
 
-ASYNC
+static ASYNC
+echoA(struct caio_task *self, struct tcpconn *conn) {
+    ssize_t bytes;
+    struct mrb *buff = conn->buff;
+    CORO_START;
+    static int events = 0;
+
+    while (true) {
+        events = EPOLLET;
+
+        /* tcp write */
+        /* Write as mush as possible until EAGAIN */
+        while (!mrb_isempty(buff)) {
+            bytes = mrb_writeout(buff, conn->fd, mrb_used(buff));
+            if ((bytes == -1) && CORO_MUSTWAIT()) {
+                events |= EPOLLOUT;
+                break;
+            }
+            if (bytes == -1) {
+                CORO_REJECT("write(%d)", conn->fd);
+            }
+            if (bytes == 0) {
+                CORO_REJECT("write(%d) EOF", conn->fd);
+            }
+        }
+
+        /* tcp read */
+        /* Read as mush as possible until EAGAIN */
+        while (!mrb_isfull(buff)) {
+            bytes = mrb_readin(buff, conn->fd, mrb_available(buff));
+            DEBUG("reading: %d bytes: %d", conn->fd, bytes);
+            if ((bytes == -1) && CORO_MUSTWAIT()) {
+                events |= EPOLLIN;
+                break;
+            }
+            if (bytes == -1) {
+                CORO_REJECT("read(%d)", conn->fd);
+            }
+            if (bytes == 0) {
+                CORO_REJECT("read(%d) EOF", conn->fd);
+            }
+        }
+
+        /* reset errno and rewait events if neccessary */
+        errno = 0;
+        if (mrb_isempty(buff) || (events & EPOLLOUT)) {
+            CORO_WAITFD(conn->fd, events);
+        }
+    }
+
+    CORO_FINALLY;
+    if (conn->fd != -1) {
+        caio_evloop_unregister(conn->fd);
+        close(conn->fd);
+    }
+    if (mrb_destroy(conn->buff)) {
+        ERROR("Cannot dispose buffers.");
+    }
+    free(conn);
+}
+
+
+static ASYNC
 tcpserverA(struct caio_task *self, struct tcpserver *state) {
     socklen_t addrlen = sizeof(struct sockaddr);
     struct sockaddr bindaddr;
@@ -97,16 +158,20 @@ tcpserverA(struct caio_task *self, struct tcpserver *state) {
 
         /* New Connection */
         INFO("New connection from: %s", sockaddr_dump(&connaddr));
-        // struct tcpconn *c = malloc(sizeof(struct tcpconn));
-        // if (c == NULL) {
-        //     CORO_REJECT("Out of memory");
-        // }
+        struct tcpconn *c = malloc(sizeof(struct tcpconn));
+        if (c == NULL) {
+            CORO_REJECT("Out of memory");
+        }
 
-        // c->fd = connfd;
-        // c->localaddr = bindaddr;
-        // c->remoteaddr = connaddr;
-        // c->buff = mrb_create(BUFFSIZE);
-        // tcpconn_coro_create_and_run(echoA, c);
+        c->fd = connfd;
+        c->localaddr = bindaddr;
+        c->remoteaddr = connaddr;
+        c->buff = mrb_create(BUFFSIZE);
+        if (CORO_RUN(echoA, c)) {
+            ERROR("Maximum connection exceeded, fd: %d", connfd);
+            close(connfd);
+            free(c);
+        }
     }
 
     CORO_FINALLY;
@@ -130,70 +195,3 @@ main() {
 
     return caio_forever();
 }
-
-
-// static void
-// echoA(struct tcpconn_coro *self, struct tcpconn *conn) {
-//     ssize_t bytes;
-//     struct mrb *buff = conn->buff;
-//     CORO_START;
-//     static int e = 0;
-//     INFO("New conn: %s", sockaddr_dump(&conn->remoteaddr));
-//
-//     while (true) {
-//         e = CET;
-//
-//         /* tcp write */
-//         /* Write as mush as possible until EAGAIN */
-//         while (!mrb_isempty(buff)) {
-//             bytes = mrb_writeout(buff, conn->fd, mrb_used(buff));
-//             if ((bytes == -1) && CMUSTWAIT()) {
-//                 e |= COUT;
-//                 break;
-//             }
-//             if (bytes == -1) {
-//                 CORO_REJECT("write(%d)", conn->fd);
-//             }
-//             if (bytes == 0) {
-//                 CORO_REJECT("write(%d) EOF", conn->fd);
-//             }
-//         }
-//
-//         /* tcp read */
-//         /* Read as mush as possible until EAGAIN */
-//         while (!mrb_isfull(buff)) {
-//             bytes = mrb_readin(buff, conn->fd, mrb_available(buff));
-//             if ((bytes == -1) && CMUSTWAIT()) {
-//                 e |= CIN;
-//                 break;
-//             }
-//             if (bytes == -1) {
-//                 CORO_REJECT("read(%d)", conn->fd);
-//             }
-//             if (bytes == 0) {
-//                 CORO_REJECT("read(%d) EOF", conn->fd);
-//             }
-//         }
-//
-//         /* reset errno and rewait events if neccessary */
-//         errno = 0;
-//         if (mrb_isempty(buff) || (e & COUT)) {
-//             CORO_WAIT(conn->fd, e);
-//         }
-//     }
-//
-//     CORO_FINALLY;
-//     if (conn->fd != -1) {
-//         tcpconn_evloop_unregister(conn->fd);
-//         close(conn->fd);
-//     }
-//     if (mrb_destroy(conn->buff)) {
-//         ERROR("Cannot dispose buffers.");
-//     }
-//     free(conn);
-// }
-//
-//
-// static void
-// listenA(struct tcpserver_coro *self, struct tcpserver *state) {
-// }

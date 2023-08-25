@@ -72,6 +72,9 @@ timerA(struct caio_task *self, struct timer *state) {
     }
 
     CORO_FINALLY;
+    if (state->fd != -1) {
+        close(state->fd);
+    }
 }
 
 
@@ -100,15 +103,5 @@ main() {
     CORO_RUN(timerA, &foo);
     CORO_RUN(timerA, &bar);
 
-    status = caio_forever();
-
-    if (foo.fd != -1) {
-        close(foo.fd);
-    }
-
-    if (bar.fd != -1) {
-        close(bar.fd);
-    }
-
-    return status;
+    return caio_forever();
 }

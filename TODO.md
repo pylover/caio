@@ -1,2 +1,2 @@
-- Genric coroutines
+- CORO_REJECT -> line number, function and debug info
 - Readme
