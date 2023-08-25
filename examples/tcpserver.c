@@ -19,7 +19,6 @@
  *
  * An edge-triggered epoll(7) example using caio.
  */
-#include <stdlib.h>
 #include <unistd.h>
 #include <sys/socket.h>
 
@@ -168,7 +167,7 @@ tcpserverA(struct caio_task *self, struct tcpserver *state) {
         c->localaddr = bindaddr;
         c->remoteaddr = connaddr;
         c->buff = mrb_create(BUFFSIZE);
-        if (CORO_RUN(echoA, c)) {
+        if (CAIO_RUN(echoA, c)) {
             ERROR("Maximum connection exceeded, fd: %d", connfd);
             close(connfd);
             mrb_destroy(c->buff);
@@ -189,11 +188,5 @@ main() {
         .backlog = 2,
     };
 
-    if (caio_init(2, CAIO_SIG)) {
-        return EXIT_FAILURE;
-    }
-
-    CORO_RUN(tcpserverA, &state);
-
-    return caio_forever();
+    return CAIO(tcpserverA, &state, 5);
 }

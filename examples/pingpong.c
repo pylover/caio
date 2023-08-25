@@ -18,8 +18,6 @@
  */
 #include <stdlib.h>
 
-#include <clog.h>
-
 #include "caio.h"
 
 
@@ -29,7 +27,7 @@ struct pingpong {
 };
 
 
-ASYNC
+static ASYNC
 pongA(struct caio_task *self, struct pingpong *state) {
     CORO_START;
     INFO("Table: %s: pong #%d", state->table, state->shoots++);
@@ -37,7 +35,7 @@ pongA(struct caio_task *self, struct pingpong *state) {
 }
 
 
-ASYNC
+static ASYNC
 pingA(struct caio_task *self, struct pingpong *state) {
     CORO_START;
 
@@ -58,11 +56,11 @@ main() {
     struct pingpong foo = {"foo", 0};
     struct pingpong bar = {"bar", 0};
 
-    if (caio_init(2, 0)) {
+    if (caio_init(2, CAIO_NONE)) {
         return EXIT_FAILURE;
     }
-    CORO_RUN(pingA, &foo);
-    CORO_RUN(pingA, &bar);
+    CAIO_RUN(pingA, &foo);
+    CAIO_RUN(pingA, &bar);
 
     return caio_forever();
 }

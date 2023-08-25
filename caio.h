@@ -84,10 +84,6 @@
     return;
 
 
-#define CORO_RUN(coro, state) \
-    caio_task_new((caio_coro)coro, (void *)(state))
-
-
 #define CORO_WAITFD(fd, events) \
     do { \
         (self)->current->line = __LINE__; \
@@ -104,6 +100,14 @@
 
 #define CORO_MUSTWAIT() \
     ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINPROGRESS))
+
+
+#define CAIO(coro, state, maxtasks) \
+    caio((caio_coro)(coro), (void*)(state), maxtasks)
+
+
+#define CAIO_RUN(coro, state) \
+    caio_task_new((caio_coro)coro, (void *)(state))
 
 
 enum caio_flags {
@@ -156,7 +160,23 @@ struct caio_sleep {
 
 
 int
+caio(caio_coro coro, void *state, size_t maxtasks);
+
+
+int
 caio_init(size_t maxtasks, int flags);
+
+
+void
+caio_deinit();
+
+
+int
+caio_start();
+
+
+int
+caio_forever();
 
 
 int
@@ -167,8 +187,8 @@ int
 caio_task_new(caio_coro coro, void *state);
 
 
-int
-caio_forever();
+void
+caio_task_killall();
 
 
 int
@@ -179,16 +199,8 @@ int
 caio_evloop_unregister(int fd);
 
 
-void
-caio_task_killall();
-
-
 int
 caio_handleinterrupts();
-
-
-void
-caio_deinit();
 
 
 ASYNC

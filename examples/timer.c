@@ -100,8 +100,8 @@ main() {
         return EXIT_FAILURE;
     }
 
-    CORO_RUN(timerA, &foo);
-    CORO_RUN(timerA, &bar);
+    CAIO_RUN(timerA, &foo);
+    CAIO_RUN(timerA, &bar);
 
     return caio_forever();
 }

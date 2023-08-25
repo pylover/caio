@@ -307,7 +307,7 @@ start:
 
 
 int
-caio_forever() {
+caio_start() {
     int taskindex;
     int evloop_timeout;
     struct caio_task *task = NULL;
@@ -331,7 +331,7 @@ caio_forever() {
                     errno = 0;
                 }
                 else {
-                    goto onerror;
+                    return -1;
                 }
             }
         }
@@ -350,10 +350,43 @@ caio_forever() {
         }
     }
 
+    return 0;
+}
+
+
+int
+caio_forever() {
+    if (caio_start()) {
+        goto onerror;
+    }
+
     caio_deinit();
-    return EXIT_SUCCESS;
+    return 0;
 
 onerror:
     caio_deinit();
-    return EXIT_FAILURE;
+    return -1;
+}
+
+
+int
+caio(caio_coro coro, void *state, size_t maxtasks) {
+    if (caio_init(maxtasks, CAIO_SIG)) {
+        return -1;
+    }
+
+    if (caio_task_new(coro, state)) {
+        goto failure;
+    }
+
+    if (caio_start()) {
+        goto failure;
+    }
+
+    caio_deinit();
+    return 0;
+
+failure:
+    caio_deinit();
+    return -1;
 }

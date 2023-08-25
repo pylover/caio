@@ -16,11 +16,6 @@
  *
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
-#include <stdlib.h>
-#include <unistd.h>
-
-#include <clog.h>
-
 #include "caio.h"
 
 
@@ -37,11 +32,5 @@ fooA(struct caio_task *self) {
 
 int
 main() {
-    if (caio_init(2, CAIO_SIG)) {
-        return EXIT_FAILURE;
-    }
-
-    CORO_RUN(fooA, NULL);
-
-    return caio_forever();
+    return CAIO(fooA, NULL, 2);
 }
