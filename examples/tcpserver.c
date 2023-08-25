@@ -64,6 +64,7 @@ echoA(struct caio_task *self, struct tcpconn *conn) {
         /* Write as mush as possible until EAGAIN */
         while (!mrb_isempty(buff)) {
             bytes = mrb_writeout(buff, conn->fd, mrb_used(buff));
+            DEBUG("writing: %d bytes: %d", conn->fd, bytes);
             if ((bytes == -1) && CORO_MUSTWAIT()) {
                 events |= EPOLLOUT;
                 break;
@@ -170,6 +171,7 @@ tcpserverA(struct caio_task *self, struct tcpserver *state) {
         if (CORO_RUN(echoA, c)) {
             ERROR("Maximum connection exceeded, fd: %d", connfd);
             close(connfd);
+            mrb_destroy(c->buff);
             free(c);
         }
     }
@@ -187,7 +189,7 @@ main() {
         .backlog = 2,
     };
 
-    if (caio_init(5, CAIO_SIG)) {
+    if (caio_init(2, CAIO_SIG)) {
         return EXIT_FAILURE;
     }
 

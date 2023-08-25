@@ -264,6 +264,8 @@ bool
 caio_task_step(struct caio_task *task) {
     struct caio_call *call = task->current;
 
+start:
+
     /* Pre execution */
     switch (task->status) {
         case CAIO_TERMINATING:
@@ -279,6 +281,8 @@ caio_task_step(struct caio_task *task) {
 
     /* Post execution */
     switch (task->status) {
+        case CAIO_TERMINATING:
+            goto start;
         case CAIO_YIELDING:
             if (call->parent == NULL) {
                 task->status = CAIO_RUNNING;
