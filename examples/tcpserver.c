@@ -57,15 +57,15 @@ echoA(struct caio_task *self, struct tcpconn *conn) {
     static int events = 0;
 
     while (true) {
-        events = EPOLLET;
+        events = CAIO_ET;
 
         /* tcp write */
         /* Write as mush as possible until EAGAIN */
         while (!mrb_isempty(buff)) {
             bytes = mrb_writeout(buff, conn->fd, mrb_used(buff));
             DEBUG("writing: %d bytes: %d", conn->fd, bytes);
-            if ((bytes == -1) && CORO_MUSTWAIT()) {
-                events |= EPOLLOUT;
+            if ((bytes == -1) && CORO_MUSTWAITFD()) {
+                events |= CAIO_OUT;
                 break;
             }
             if (bytes == -1) {
@@ -81,8 +81,8 @@ echoA(struct caio_task *self, struct tcpconn *conn) {
         while (!mrb_isfull(buff)) {
             bytes = mrb_readin(buff, conn->fd, mrb_available(buff));
             DEBUG("reading: %d bytes: %d", conn->fd, bytes);
-            if ((bytes == -1) && CORO_MUSTWAIT()) {
-                events |= EPOLLIN;
+            if ((bytes == -1) && CORO_MUSTWAITFD()) {
+                events |= CAIO_IN;
                 break;
             }
             if (bytes == -1) {
@@ -95,7 +95,7 @@ echoA(struct caio_task *self, struct tcpconn *conn) {
 
         /* reset errno and rewait events if neccessary */
         errno = 0;
-        if (mrb_isempty(buff) || (events & EPOLLOUT)) {
+        if (mrb_isempty(buff) || (events & CAIO_OUT)) {
             CORO_WAITFD(conn->fd, events);
         }
     }
@@ -147,8 +147,8 @@ tcpserverA(struct caio_task *self, struct tcpserver *state) {
 
     while (true) {
         connfd = accept4(fd, &connaddr, &addrlen, SOCK_NONBLOCK);
-        if ((connfd == -1) && CORO_MUSTWAIT()) {
-            CORO_WAITFD(fd, EPOLLIN | EPOLLET);
+        if ((connfd == -1) && CORO_MUSTWAITFD()) {
+            CORO_WAITFD(fd, CAIO_IN | CAIO_ET);
             continue;
         }
 

@@ -98,7 +98,7 @@
     } while (0)
 
 
-#define CORO_MUSTWAIT() \
+#define CORO_MUSTWAITFD() \
     ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINPROGRESS))
 
 
@@ -122,6 +122,20 @@ enum caio_taskstatus {
     CAIO_WAITINGIO,
     CAIO_TERMINATING,
     CAIO_TERMINATED,
+};
+
+
+enum caio_fdflags {
+    CAIO_IN = EPOLLIN,
+    CAIO_OUT = EPOLLOUT,
+    CAIO_RDHUP = EPOLLRDHUP,
+    CAIO_PRI = EPOLLPRI,
+    CAIO_ERR = EPOLLERR,
+    CAIO_HUP = EPOLLHUP,
+    CAIO_ET = EPOLLET,
+    CAIO_ONESHOT = EPOLLONESHOT,
+    CAIO_WAKEUP = EPOLLWAKEUP,
+    CAIO_EXCLUSIVE = EPOLLEXCLUSIVE,
 };
 
 
