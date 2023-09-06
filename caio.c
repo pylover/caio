@@ -143,7 +143,7 @@ caio_task_new(caio_coro coro, void *state) {
     /* Register task */
     index = taskpool_append(&_tasks, task);
     if (index == -1) {
-        _caio_task_dispose(task);
+        free(task);
         return -1;
     }
     task->index = index;
