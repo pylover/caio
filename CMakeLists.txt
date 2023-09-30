@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.7)
 project(caio 
-    VERSION 0.2.1
+    VERSION 0.3.0
     LANGUAGES C
 )
 
