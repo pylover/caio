@@ -173,7 +173,6 @@ caio_evloop_register(struct caio_task *task, int fd, int events) {
     }
 
     _evloop_pendingtasks++;
-    DEBUG("pending +: %d", _evloop_pendingtasks);
     return 0;
 }
 
@@ -210,7 +209,6 @@ caio_evloop_wait(int timeout) {
             task->status = CAIO_RUNNING;
         }
         _evloop_pendingtasks--;
-        DEBUG("pending -: %d", _evloop_pendingtasks);
     }
 
     return 0;
@@ -230,7 +228,6 @@ caio_task_killall() {
 
         if (task->status == CAIO_WAITINGIO) {
             _evloop_pendingtasks--;
-            DEBUG("pending -: %d", _evloop_pendingtasks);
         }
         task->status = CAIO_TERMINATING;
     }
@@ -318,7 +315,6 @@ caio_start() {
     while (_tasks.count) {
         vacuum_needed = false;
 
-        DEBUG("pending: %d, tasks: %d", _evloop_pendingtasks, _tasks.count);
         if (_evloop_pendingtasks) {
             if (_evloop_pendingtasks == _tasks.count) {
                 /* Wait forever */
@@ -329,7 +325,6 @@ caio_start() {
                 evloop_timeout = 0;
             }
 
-            DEBUG("epoll_wait(%d)", evloop_timeout);
             if (caio_evloop_wait(evloop_timeout)) {
                 if (_killing) {
                     errno = 0;
@@ -338,7 +333,6 @@ caio_start() {
                     return -1;
                 }
             }
-            DEBUG("After epoll wait");
         }
 
         for (taskindex = 0; taskindex < _tasks.count; taskindex++) {
@@ -347,7 +341,6 @@ caio_start() {
                 continue;
             }
 
-            DEBUG("Stepping task %d", taskindex);
             vacuum_needed |= caio_task_step(task);
         }
 
