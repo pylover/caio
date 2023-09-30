@@ -35,11 +35,6 @@
         case 0:
 
 
-#define CORO_RETURN \
-    (self)->status = CAIO_TERMINATED; \
-    return
-
-
 #define CORO_FINALLY \
         case -1:; } \
     (self)->status = CAIO_TERMINATED;
@@ -85,6 +80,11 @@
     if (fmt) { \
         ERROR(fmt, ## __VA_ARGS__); \
     } \
+    (self)->status = CAIO_TERMINATING; \
+    return;
+
+
+#define CORO_RETURN \
     (self)->status = CAIO_TERMINATING; \
     return;
 
