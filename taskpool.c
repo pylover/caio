@@ -62,7 +62,7 @@ taskpool_append(struct caio_taskpool *self, struct caio_task *item) {
         }
     }
 
-notfound:
+    /* Not found */
     return -1;
 
 found:

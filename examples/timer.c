@@ -80,8 +80,6 @@ timerA(struct caio_task *self, struct timer *state) {
 
 int
 main() {
-    int status;
-
     struct timer foo = {
         .fd = -1,
         .title = "Foo",

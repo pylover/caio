@@ -47,7 +47,13 @@ _sighandler(int s) {
 
 static int
 caio_handleinterrupts() {
-    struct sigaction new_action = {_sighandler, 0, 0, 0, 0};
+    struct sigaction new_action = {
+        .sa_handler = _sighandler,
+        .sa_sigaction = NULL,
+        .sa_mask = {{0}},
+        .sa_flags = 0,
+        .sa_restorer = NULL,
+    };
     if (sigaction(SIGINT, &new_action, &old_action) != 0) {
         return -1;
     }
@@ -189,7 +195,6 @@ caio_evloop_unregister(int fd) {
 static int
 caio_evloop_wait(int timeout) {
     int nfds;
-    int fd;
     int i;
     struct epoll_event events[_tasks.count];
     struct caio_task *task;
@@ -274,6 +279,7 @@ start:
         case CAIO_WAITINGIO:
             /* Ignore if task is waiting for IO events */
             return false;
+        default:
     }
 
     call->coro(task, call->state);
@@ -294,6 +300,7 @@ start:
                 task->status = CAIO_RUNNING;
             }
             break;
+        default:
     }
 
     if (task->current == NULL) {

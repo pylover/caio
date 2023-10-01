@@ -4,8 +4,11 @@ project(caio
     LANGUAGES C
 )
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -fms-extensions -D_GNU_SOURCE=1")
-# set(CMAKE_VERBOSE_MAKEFILE ON)
+set(CMAKE_C_COMPILER gcc)
+set(CMAKE_VERBOSE_MAKEFILE OFF)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -fms-extensions")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_GNU_SOURCE=1")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
 
 
 configure_file(manifest.h.in manifest.h)
