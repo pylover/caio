@@ -34,10 +34,13 @@
     switch ((self)->current->line) { \
         case 0:
 
+#define CORO_JUMP_FINALLY goto caio_finally
+
 
 #define CORO_FINALLY \
         case -1:; } \
-    (self)->status = CAIO_TERMINATED;
+    caio_finally: \
+    (self)->status = CAIO_TERMINATED
 
 
 #define CORO_YIELD(v) \
@@ -81,12 +84,12 @@
         ERROR(fmt, ## __VA_ARGS__); \
     } \
     (self)->status = CAIO_TERMINATING; \
-    return;
+    return
 
 
 #define CORO_RETURN \
     (self)->status = CAIO_TERMINATING; \
-    return;
+    return
 
 
 #define CORO_WAITFD(fd, events) \

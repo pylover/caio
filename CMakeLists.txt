@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.7)
 project(caio 
-    VERSION 0.3.0
+    VERSION 0.4.0
     LANGUAGES C
 )
 
@@ -9,6 +9,7 @@ set(CMAKE_VERBOSE_MAKEFILE OFF)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -fms-extensions")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_GNU_SOURCE=1")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-label")
 
 
 configure_file(manifest.h.in manifest.h)
