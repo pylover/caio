@@ -47,13 +47,7 @@ _sighandler(int s) {
 
 static int
 caio_handleinterrupts() {
-    struct sigaction new_action = {
-        .sa_handler = _sighandler,
-        .sa_sigaction = NULL,
-        .sa_mask = {{0}},
-        .sa_flags = 0,
-        .sa_restorer = NULL,
-    };
+    struct sigaction new_action = {{_sighandler}, {{0, 0, 0, 0}}};
     if (sigaction(SIGINT, &new_action, &old_action) != 0) {
         return -1;
     }

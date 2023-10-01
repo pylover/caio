@@ -34,12 +34,9 @@
     switch ((self)->current->line) { \
         case 0:
 
-#define CORO_JUMP_FINALLY goto caio_finally
-
 
 #define CORO_FINALLY \
         case -1:; } \
-    caio_finally: \
     (self)->status = CAIO_TERMINATED
 
 
