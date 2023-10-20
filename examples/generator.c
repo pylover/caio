@@ -19,9 +19,19 @@
 #include "caio.h"
 
 
+struct state {
+    const char *name;
+    int count;
+};
+static struct state bar = {.name="bar", 0};
+static struct state baz = {.name="baz", 0};
+static struct state qux = {.name="qux", 0};
+
+
 static ASYNC
-quxA(struct caio_task *self) {
+quxA(struct caio_task *self, struct state *state) {
     CORO_START;
+    state->count++;
     static int value = 0;
     while (true) {
         CORO_YIELD(value++);
@@ -31,8 +41,9 @@ quxA(struct caio_task *self) {
 
 
 static ASYNC
-barA(struct caio_task *self) {
+barA(struct caio_task *self, struct state *state) {
     CORO_START;
+    state->count++;
     static int value = 0;
     while (true) {
         CORO_YIELD(value++);
@@ -42,11 +53,12 @@ barA(struct caio_task *self) {
 
 
 static ASYNC
-bazA(struct caio_task *self) {
+bazA(struct caio_task *self, struct state *state) {
     CORO_START;
+    state->count++;
     int value;
     while (true) {
-        CORO_YIELDFROM(quxA, NULL, value, int);
+        CORO_YIELDFROM(quxA, &qux, value, int);
         CORO_YIELD(value * 2);
     }
     CORO_FINALLY;
@@ -59,15 +71,18 @@ fooA(struct caio_task *self) {
     CORO_START;
     INFO("Foo consumer");
     while (true) {
-        CORO_YIELDFROM(barA, NULL, value, int);
-        INFO("Bar: %d", value);
+        CORO_YIELDFROM(barA, &bar, value, int);
+        INFO("Bar yields: %d", value);
 
-        CORO_YIELDFROM(bazA, NULL, value, int);
-        INFO("Baz: %d", value);
+        CORO_YIELDFROM(bazA, &baz, value, int);
+        INFO("Baz yields: %d", value);
         if (value > 5) {
             break;
         }
     }
+    INFO("Bar called %d times.", bar.count);
+    INFO("Baz called %d times.", baz.count);
+    INFO("Qux called %d times.", qux.count);
     CORO_FINALLY;
 }
 

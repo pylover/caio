@@ -51,16 +51,8 @@
 
 
 #define CORO_YIELDFROM(coro, state, v, t) \
+    CORO_WAIT(coro, state); \
     do { \
-        (self)->current->line = __LINE__; \
-        if (caio_call_new(self, (caio_coro)coro, (void *)state)) { \
-            (self)->status = CAIO_TERMINATING; \
-        } \
-        else { \
-            (self)->status = CAIO_RUNNING; \
-        } \
-        return; \
-        case __LINE__:; \
         v = (t)(self)->value; \
     } while (0)
 
