@@ -44,7 +44,7 @@
     do { \
         (self)->current->line = __LINE__; \
         (self)->status = CAIO_YIELDING; \
-        (self)->value = v; \
+        (self)->value = (int)v; \
         return; \
         case __LINE__:; \
     } while (0)
