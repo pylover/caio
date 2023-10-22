@@ -50,13 +50,6 @@
     } while (0)
 
 
-#define CORO_YIELDFROM(coro, state, v, t) \
-    CORO_WAIT(coro, state); \
-    do { \
-        v = (t)(self)->value; \
-    } while (0)
-
-
 #define CORO_WAIT(coro, state) \
     do { \
         (self)->current->line = __LINE__; \
@@ -65,6 +58,13 @@
         } \
         return; \
         case __LINE__:; \
+    } while (0)
+
+
+#define CORO_YIELDFROM(coro, state, v, t) \
+    CORO_WAIT(coro, state); \
+    do { \
+        v = (t)(self)->value; \
     } while (0)
 
 

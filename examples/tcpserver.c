@@ -20,18 +20,22 @@
  * An edge-triggered epoll(7) example using caio.
  */
 #include <unistd.h>
+#include <stdio.h>
+#include <string.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
 
 #include <mrb.h>
 
 #include "caio.h"
-#include "addr.h"
 
 
 /* TCP server caio state and */
 struct tcpserver {
-    const char *bindaddr;
-    unsigned short bindport;
+    struct sockaddr_in bindaddr;
     int backlog;
 };
 
@@ -39,14 +43,19 @@ struct tcpserver {
 /* TCP connection state types */
 struct tcpconn {
     int fd;
-    struct sockaddr localaddr;
-    struct sockaddr remoteaddr;
+    struct sockaddr_in localaddr;
+    struct sockaddr_in remoteaddr;
     mrb_t buff;
 };
 
 
 #define PAGESIZE 4096
 #define BUFFSIZE (PAGESIZE * 32768)
+
+
+#define ADDRFMTS "%s:%d"
+#define ADDRFMTV(a) inet_ntoa((a).sin_addr), ntohs((a).sin_port)
+
 
 
 static ASYNC
@@ -115,16 +124,12 @@ echoA(struct caio_task *self, struct tcpconn *conn) {
 static ASYNC
 tcpserverA(struct caio_task *self, struct tcpserver *state) {
     socklen_t addrlen = sizeof(struct sockaddr);
-    struct sockaddr bindaddr;
-    struct sockaddr connaddr;
+    struct sockaddr_in connaddr;
     static int fd;
     int connfd;
     int res;
     int option = 1;
     CORO_START;
-
-    /* Parse listen address */
-    sockaddr_parse(&bindaddr, state->bindaddr, state->bindport);
 
     /* Create socket */
     fd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
@@ -133,16 +138,16 @@ tcpserverA(struct caio_task *self, struct tcpserver *state) {
     setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
 
     /* Bind to tcp port */
-    res = bind(fd, &bindaddr, sizeof(bindaddr));
+    res = bind(fd, &state->bindaddr, sizeof(state->bindaddr));
     if (res) {
-        CORO_REJECT("Cannot bind on: %s", sockaddr_dump(&bindaddr));
+        CORO_REJECT("Cannot bind on: "ADDRFMTS, ADDRFMTV(state->bindaddr));
     }
 
     /* Listen */
     res = listen(fd, state->backlog);
-    INFO("Listening on: %s", sockaddr_dump(&bindaddr));
+    INFO("Listening on: "ADDRFMTS, ADDRFMTV(state->bindaddr));
     if (res) {
-        CORO_REJECT("Cannot listen on: %s", sockaddr_dump(&bindaddr));
+        CORO_REJECT("Cannot listen on: "ADDRFMTS, ADDRFMTV(state->bindaddr));
     }
 
     while (true) {
@@ -157,14 +162,14 @@ tcpserverA(struct caio_task *self, struct tcpserver *state) {
         }
 
         /* New Connection */
-        INFO("New connection from: %s", sockaddr_dump(&connaddr));
+        INFO("New connection from: "ADDRFMTS, ADDRFMTV(connaddr));
         struct tcpconn *c = malloc(sizeof(struct tcpconn));
         if (c == NULL) {
             CORO_REJECT("Out of memory");
         }
 
         c->fd = connfd;
-        c->localaddr = bindaddr;
+        c->localaddr = state->bindaddr;
         c->remoteaddr = connaddr;
         c->buff = mrb_create(BUFFSIZE);
         if (CAIO_RUN(echoA, c)) {
@@ -186,8 +191,10 @@ tcpserverA(struct caio_task *self, struct tcpserver *state) {
 int
 main() {
     struct tcpserver state = {
-        .bindaddr = "0.0.0.0",
-        .bindport = 3030,
+        .bindaddr = {
+            .sin_addr = {htons(0)},
+            .sin_port = htons(3030),
+        },
         .backlog = 2,
     };
 
