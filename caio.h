@@ -27,6 +27,12 @@
 #include <clog.h>
 
 
+/* Generic stuff */
+#define CAIO_NAME_PASTER(x, y) x ## _ ## y
+#define CAIO_NAME_EVALUATOR(x, y)  CAIO_NAME_PASTER(x, y)
+#define CAIO_NAME(n) CAIO_NAME_EVALUATOR(CAIO_ENTITY, n)
+
+
 #define ASYNC void
 
 
@@ -103,10 +109,6 @@
     caio((caio_coro)(coro), (void*)(state), maxtasks)
 
 
-#define CAIO_RUN(coro, state) \
-    caio_task_new((caio_coro)coro, (void *)(state))
-
-
 enum caio_flags {
     CAIO_NONE = 0,
     CAIO_SIG = 1,
@@ -138,13 +140,15 @@ enum caio_fdflags {
 
 struct caio_task;
 typedef void (*caio_coro) (struct caio_task *self, void *state);
+typedef void (*caio_invoker) (struct caio_task *self);
 
 
 struct caio_call {
-    caio_coro coro;
-    int line;
     struct caio_call *parent;
+    int line;
+    caio_coro coro;
     void *state;
+    caio_invoker invoke;
 };
 
 
@@ -189,12 +193,16 @@ int
 caio_start();
 
 
-int
-caio_task_new(caio_coro coro, void *state);
+struct caio_task *
+caio_task_new();
 
 
 int
 caio_call_new(struct caio_task *task, caio_coro coro, void *state);
+
+
+void
+caio_task_dispose(struct caio_task *task);
 
 
 void

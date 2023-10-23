@@ -23,9 +23,9 @@ struct state {
     const char *name;
     int count;
 };
-static struct state bar = {.name="bar", 0};
-static struct state baz = {.name="baz", 0};
-static struct state qux = {.name="qux", 0};
+static struct state bar = {.name = "bar", 0};
+static struct state baz = {.name = "baz", 0};
+static struct state qux = {.name = "qux", 0};
 
 
 static ASYNC

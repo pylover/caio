@@ -1,8 +1,8 @@
 list(APPEND examples
-    pingpong
-    generator
-    timer
-    sleep
+    # pingpong
+    # generator
+    # timer
+    # sleep
     tcpserver
 )
 

@@ -119,43 +119,37 @@ caio_deinit() {
 }
 
 
-static void
-_caio_task_dispose(struct caio_task *task) {
+void
+caio_task_dispose(struct caio_task *task) {
     taskpool_delete(&_tasks, task->index);
     free(task);
 }
 
 
-int
-caio_task_new(caio_coro coro, void *state) {
+struct caio_task *
+caio_task_new() {
     int index;
     struct caio_task *task;
 
     if (TASKPOOL_ISFULL(&_tasks)) {
-        return -1;
+        return NULL;
     }
 
     task = malloc(sizeof(struct caio_task));
     if (task == NULL) {
-        return -1;
+        return NULL;
     }
 
     /* Register task */
     index = taskpool_append(&_tasks, task);
     if (index == -1) {
         free(task);
-        return -1;
+        return NULL;
     }
     task->index = index;
     task->current = NULL;
 
-    /* Update the task->current */
-    if (caio_call_new(task, coro, state)) {
-        _caio_task_dispose(task);
-        return -1;
-    }
-
-    return 0;
+    return task;
 }
 
 
@@ -233,24 +227,26 @@ caio_task_killall() {
 }
 
 
+void
+caio_invoker_default(struct caio_task *task) {
+    struct caio_call *call = task->current;
+
+    call->coro(task, call->state);
+}
+
+
 int
 caio_call_new(struct caio_task *task, caio_coro coro, void *state) {
-    struct caio_call *parent = task->current;
     struct caio_call *call = malloc(sizeof(struct caio_call));
     if (call == NULL) {
         return -1;
     }
 
-    if (parent == NULL) {
-        call->parent = NULL;
-    }
-    else {
-        call->parent = parent;
-    }
-
+    call->parent = task->current;
     call->coro = coro;
     call->state = state;
     call->line = 0;
+    call->invoke = caio_invoker_default;
 
     task->status = CAIO_RUNNING;
     task->current = call;
@@ -276,7 +272,7 @@ start:
         default:
     }
 
-    call->coro(task, call->state);
+    call->invoke(task);
 
     /* Post execution */
     switch (task->status) {
@@ -298,7 +294,7 @@ start:
     }
 
     if (task->current == NULL) {
-        _caio_task_dispose(task);
+        caio_task_dispose(task);
         return true;
     }
 
@@ -371,11 +367,18 @@ onerror:
 
 int
 caio(caio_coro coro, void *state, size_t maxtasks) {
+    struct caio_task *task = NULL;
+
     if (caio_init(maxtasks, CAIO_SIG)) {
         return -1;
     }
 
-    if (caio_task_new(coro, state)) {
+    task = caio_task_new();
+    if (task == NULL) {
+        return -1;
+    }
+
+    if (caio_call_new(task, coro, state)) {
         goto failure;
     }
 
@@ -387,6 +390,7 @@ caio(caio_coro coro, void *state, size_t maxtasks) {
     return 0;
 
 failure:
+    caio_task_dispose(task);
     caio_deinit();
     return -1;
 }

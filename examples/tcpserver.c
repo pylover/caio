@@ -24,7 +24,6 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
-#include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
 
@@ -34,19 +33,37 @@
 
 
 /* TCP server caio state and */
-struct tcpserver {
-    struct sockaddr_in bindaddr;
-    int backlog;
-};
+typedef struct tcpserver {
+    int connections_active;
+    int connections_total;
+} tcpserver_t;
 
 
 /* TCP connection state types */
-struct tcpconn {
+typedef struct tcpconn {
     int fd;
     struct sockaddr_in localaddr;
     struct sockaddr_in remoteaddr;
     mrb_t buff;
-};
+} tcpconn_t;
+
+
+#undef CAIO_ARG1
+#undef CAIO_ARG2
+#undef CAIO_ENTITY
+#define CAIO_ENTITY  tcpserver
+#define CAIO_ARG1 struct sockaddr_in
+#define CAIO_ARG2 int
+#include "caio_generic.h"
+#include "caio_generic.c"
+
+
+#undef CAIO_ARG1
+#undef CAIO_ARG2
+#undef CAIO_ENTITY
+#define CAIO_ENTITY  tcpconn
+#include "caio_generic.h"  // NOLINT
+#include "caio_generic.c"  // NOLINT
 
 
 #define PAGESIZE 4096
@@ -122,7 +139,8 @@ echoA(struct caio_task *self, struct tcpconn *conn) {
 
 
 static ASYNC
-tcpserverA(struct caio_task *self, struct tcpserver *state) {
+listenA(struct caio_task *self, struct tcpserver *state,
+        struct sockaddr_in bindaddr, int backlog) {
     socklen_t addrlen = sizeof(struct sockaddr);
     struct sockaddr_in connaddr;
     static int fd;
@@ -138,16 +156,16 @@ tcpserverA(struct caio_task *self, struct tcpserver *state) {
     setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
 
     /* Bind to tcp port */
-    res = bind(fd, &state->bindaddr, sizeof(state->bindaddr));
+    res = bind(fd, &bindaddr, sizeof(bindaddr));
     if (res) {
-        CORO_REJECT("Cannot bind on: "ADDRFMTS, ADDRFMTV(state->bindaddr));
+        CORO_REJECT("Cannot bind on: "ADDRFMTS, ADDRFMTV(bindaddr));
     }
 
     /* Listen */
-    res = listen(fd, state->backlog);
-    INFO("Listening on: "ADDRFMTS, ADDRFMTV(state->bindaddr));
+    res = listen(fd, backlog);
+    INFO("Listening on: "ADDRFMTS" backlog: %d", ADDRFMTV(bindaddr), backlog);
     if (res) {
-        CORO_REJECT("Cannot listen on: "ADDRFMTS, ADDRFMTV(state->bindaddr));
+        CORO_REJECT("Cannot listen on: "ADDRFMTS, ADDRFMTV(bindaddr));
     }
 
     while (true) {
@@ -169,10 +187,10 @@ tcpserverA(struct caio_task *self, struct tcpserver *state) {
         }
 
         c->fd = connfd;
-        c->localaddr = state->bindaddr;
+        c->localaddr = bindaddr;
         c->remoteaddr = connaddr;
         c->buff = mrb_create(BUFFSIZE);
-        if (CAIO_RUN(echoA, c)) {
+        if (tcpconn_spawn(echoA, c)) {
             ERROR("Maximum connection exceeded, fd: %d", connfd);
             close(connfd);
             mrb_destroy(c->buff);
@@ -190,13 +208,12 @@ tcpserverA(struct caio_task *self, struct tcpserver *state) {
 
 int
 main() {
-    struct tcpserver state = {
-        .bindaddr = {
-            .sin_addr = {htons(0)},
-            .sin_port = htons(3030),
-        },
-        .backlog = 2,
+    int backlog = 2;
+    struct sockaddr_in bindaddr = {
+        .sin_addr = {htons(0)},
+        .sin_port = htons(3030),
     };
+    struct tcpserver state = {0, 0};
 
-    return CAIO(tcpserverA, &state, 5);
+    return tcpserver_forever(listenA, &state, bindaddr, backlog, 5, CAIO_SIG);
 }
