@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.7)
 project(caio 
-    VERSION 1.0.0
+    VERSION 1.0.1
     LANGUAGES C
 )
 
@@ -27,6 +27,8 @@ add_library(caio STATIC
 # Install
 install(TARGETS caio DESTINATION "lib")
 install(FILES caio.h DESTINATION "include")
+install(FILES caio_generic.h DESTINATION "include")
+install(FILES caio_generic.c DESTINATION "include")
 
 
 # Lint

@@ -51,7 +51,7 @@ typedef struct tcpconn {
 #undef CAIO_ARG1
 #undef CAIO_ARG2
 #undef CAIO_ENTITY
-#define CAIO_ENTITY  tcpserver
+#define CAIO_ENTITY tcpserver
 #define CAIO_ARG1 struct sockaddr_in
 #define CAIO_ARG2 int
 #include "caio_generic.h"
@@ -61,7 +61,7 @@ typedef struct tcpconn {
 #undef CAIO_ARG1
 #undef CAIO_ARG2
 #undef CAIO_ENTITY
-#define CAIO_ENTITY  tcpconn
+#define CAIO_ENTITY tcpconn
 #include "caio_generic.h"  // NOLINT
 #include "caio_generic.c"  // NOLINT
 
