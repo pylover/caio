@@ -98,8 +98,8 @@ main() {
         return EXIT_FAILURE;
     }
 
-    CAIO_RUN(timerA, &foo);
-    CAIO_RUN(timerA, &bar);
+    CAIO_SPAWN(timerA, &foo);
+    CAIO_SPAWN(timerA, &bar);
 
-    return caio_forever();
+    return caio_start();
 }

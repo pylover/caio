@@ -102,10 +102,6 @@ CAIO_NAME(spawn) (CAIO_NAME(coro) coro, CAIO_NAME(t) *state
         goto failure;
     }
 
-    if (caio_start()) {
-        goto failure;
-    }
-
     return 0;
 
 failure:
@@ -135,7 +131,7 @@ CAIO_NAME(forever) (CAIO_NAME(coro) coro, CAIO_NAME(t) *state
         , arg2
 #endif
         )) {  // NOLINT
-        return -1;
+        goto failure;
     }
 
     if (caio_start()) {

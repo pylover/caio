@@ -59,8 +59,8 @@ main() {
     if (caio_init(2, CAIO_NONE)) {
         return EXIT_FAILURE;
     }
-    CAIO_RUN(pingA, &foo);
-    CAIO_RUN(pingA, &bar);
+    CAIO_SPAWN(pingA, &foo);
+    CAIO_SPAWN(pingA, &bar);
 
-    return caio_forever();
+    return caio_start();
 }

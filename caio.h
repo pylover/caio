@@ -105,8 +105,9 @@
     ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINPROGRESS))
 
 
-#define CAIO(coro, state, maxtasks) \
-    caio((caio_coro)(coro), (void*)(state), maxtasks)
+#define CAIO_SPAWN(coro, state) caio_spawn((caio_coro)(coro), (void*)(state))
+#define CAIO_FOREVER(coro, state, maxtasks) \
+    caio_forever((caio_coro)(coro), (void*)(state), maxtasks)
 
 
 enum caio_flags {
@@ -174,11 +175,11 @@ struct caio_sleep {
 
 
 int
-caio(caio_coro coro, void *state, size_t maxtasks);
+caio_forever(caio_coro coro, void *state, size_t maxtasks);
 
 
 int
-caio_forever();
+caio_start();
 
 
 int
@@ -190,7 +191,7 @@ caio_deinit();
 
 
 int
-caio_start();
+caio_loop();
 
 
 struct caio_task *
@@ -215,6 +216,10 @@ caio_evloop_register(struct caio_task *task, int fd, int events);
 
 int
 caio_evloop_unregister(int fd);
+
+
+int
+caio_spawn(caio_coro coro, void *state);
 
 
 ASYNC

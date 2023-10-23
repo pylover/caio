@@ -227,7 +227,7 @@ caio_task_killall() {
 }
 
 
-void
+static void
 caio_invoker_default(struct caio_task *task) {
     struct caio_call *call = task->current;
 
@@ -303,7 +303,7 @@ start:
 
 
 int
-caio_start() {
+caio_loop() {
     int taskindex;
     int evloop_timeout;
     struct caio_task *task = NULL;
@@ -351,8 +351,29 @@ caio_start() {
 
 
 int
-caio_forever() {
-    if (caio_start()) {
+caio_spawn(caio_coro coro, void *state) {
+    struct caio_task *task = NULL;
+
+    task = caio_task_new();
+    if (task == NULL) {
+        return -1;
+    }
+
+    if (caio_call_new(task, coro, state)) {
+        goto failure;
+    }
+
+    return 0;
+
+failure:
+    caio_task_dispose(task);
+    return -1;
+}
+
+
+int
+caio_start() {
+    if (caio_loop()) {
         goto onerror;
     }
 
@@ -366,23 +387,16 @@ onerror:
 
 
 int
-caio(caio_coro coro, void *state, size_t maxtasks) {
-    struct caio_task *task = NULL;
-
+caio_forever(caio_coro coro, void *state, size_t maxtasks) {
     if (caio_init(maxtasks, CAIO_SIG)) {
         return -1;
     }
 
-    task = caio_task_new();
-    if (task == NULL) {
-        return -1;
-    }
-
-    if (caio_call_new(task, coro, state)) {
+    if (caio_spawn(coro, state)) {
         goto failure;
     }
 
-    if (caio_start()) {
+    if (caio_loop()) {
         goto failure;
     }
 
@@ -390,7 +404,6 @@ caio(caio_coro coro, void *state, size_t maxtasks) {
     return 0;
 
 failure:
-    caio_task_dispose(task);
     caio_deinit();
     return -1;
 }

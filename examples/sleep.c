@@ -32,5 +32,5 @@ fooA(struct caio_task *self) {
 
 int
 main() {
-    return CAIO(fooA, NULL, 2);
+    return CAIO_FOREVER(fooA, NULL, 2);
 }
