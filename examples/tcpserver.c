@@ -54,16 +54,16 @@ typedef struct tcpconn {
 #define CAIO_ENTITY tcpserver
 #define CAIO_ARG1 struct sockaddr_in
 #define CAIO_ARG2 int
-#include "caio_generic.h"
-#include "caio_generic.c"
+#include "generic.h"
+#include "generic.c"
 
 
 #undef CAIO_ARG1
 #undef CAIO_ARG2
 #undef CAIO_ENTITY
 #define CAIO_ENTITY tcpconn
-#include "caio_generic.h"  // NOLINT
-#include "caio_generic.c"  // NOLINT
+#include "generic.h"  // NOLINT
+#include "generic.c"  // NOLINT
 
 
 #define PAGESIZE 4096

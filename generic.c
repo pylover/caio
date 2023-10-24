@@ -19,7 +19,11 @@
  *
  * An edge-triggered epoll(7) example using caio.
  */
-#include "caio.h"  // NOLINT
+#include <stdlib.h>  // NOLINT
+#include <unistd.h>
+
+
+#include "caio.h"
 
 
 void

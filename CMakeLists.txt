@@ -20,15 +20,17 @@ include_directories(
 
 add_library(caio STATIC 
     caio.c caio.h
+    sleep.c
     taskpool.c taskpool.h
 )
 
 
 # Install
 install(TARGETS caio DESTINATION "lib")
-install(FILES caio.h DESTINATION "include")
-install(FILES caio_generic.h DESTINATION "include")
-install(FILES caio_generic.c DESTINATION "include")
+install(FILES caio.h DESTINATION "include/caio")
+install(FILES sleep.h DESTINATION "include/caio")
+install(FILES generic.h DESTINATION "include/caio")
+install(FILES generic.c DESTINATION "include/caio")
 
 
 # Lint

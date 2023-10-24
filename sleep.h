@@ -16,42 +16,29 @@
  *
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
-#ifndef CAIO_H_  // NOLINT(build/header_guard)
-#error "caio.h and clog.h must be imported before importing the" \
-    "caio.h"
-#error "And also #undef and #define CAIO_ENTITY before importing the " \
-    "caio.h"
-#else
+#ifndef SLEEP_H_
+#define SLEEP_H_
 
 
-#include <stdbool.h>
+#include "caio.h"
 
 
-typedef void (*CAIO_NAME(coro)) (struct caio_task *self, CAIO_NAME(t) *state
-#ifdef CAIO_ARG1
-        , CAIO_ARG1 arg1
-#endif
-#ifdef CAIO_ARG2
-        , CAIO_ARG2 arg2
-#endif
-        );  // NOLINT
+typedef int sleep_t;
 
 
-typedef struct CAIO_NAME(call) {
-    struct caio_call *parent;
-    int line;
-    CAIO_NAME(coro) coro;
-    CAIO_NAME(t) *state;
-    caio_invoker invoke;
-
-#ifdef CAIO_ARG1
-    CAIO_ARG1 arg1;
-#endif
-#ifdef CAIO_ARG2
-    CAIO_ARG2 arg2;
-#endif
-} CAIO_NAME(call);
+#undef CAIO_ARG1
+#undef CAIO_ARG2
+#undef CAIO_ENTITY
+#define CAIO_ENTITY sleep
+#define CAIO_ARG1 time_t
+#include "generic.h"
 
 
-#endif
+#define CORO_SLEEP(state, ...) AWAIT(sleep, caio_sleepA, state, __VA_ARGS__)
 
+
+ASYNC
+caio_sleepA(struct caio_task *self, int *state, time_t seconds);
+
+
+#endif  // SLEEP_H_

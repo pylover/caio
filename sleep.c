@@ -16,23 +16,41 @@
  *
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
+#include <unistd.h>
+
+#include "caio.h"
 #include "sleep.h"
 
 
-static ASYNC
-fooA(struct caio_task *self) {
+#undef CAIO_ARG1
+#undef CAIO_ARG2
+#undef CAIO_ENTITY
+#define CAIO_ENTITY sleep
+#define CAIO_ARG1 time_t
+#include "generic.c"
+
+
+ASYNC
+caio_sleepA(struct caio_task *self, int *state, time_t seconds) {
+    int fd = *state;
     CORO_START;
-    static int sleep;
-    INFO("Waiting 2 seconds");
-    CORO_SLEEP(&sleep, 2);
 
-    INFO("Waiting 3 seconds");
-    CORO_SLEEP(&sleep, 3);
+    fd = timerfd_create(CLOCK_REALTIME, TFD_NONBLOCK);
+    if (fd == -1) {
+        CORO_REJECT("timerfd_create");
+    }
+    *state = fd;
+
+    struct timespec sec = {seconds, 0};
+    struct timespec zero = {0, 0};
+    struct itimerspec spec = {zero, sec};
+    if (timerfd_settime(fd, 0, &spec, NULL) == -1) {
+        close(fd);
+        CORO_REJECT("timerfd_settime");
+    }
+
+    CORO_WAITFD(fd, EPOLLIN);
     CORO_FINALLY;
-}
-
-
-int
-main() {
-    return CAIO_FOREVER(fooA, NULL, 2);
+    caio_evloop_unregister(fd);
+    close(fd);
 }
