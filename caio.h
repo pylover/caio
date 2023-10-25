@@ -57,23 +57,6 @@
     } while (0)
 
 
-#define CORO_YIELD(v) \
-    do { \
-        (self)->current->line = __LINE__; \
-        (self)->status = CAIO_YIELDING; \
-        (self)->value = (int)v; \
-        return; \
-        case __LINE__:; \
-    } while (0)
-
-
-#define CORO_YIELDFROM(coro, state, v, t) \
-    CORO_WAIT(coro, state); \
-    do { \
-        v = (t)(self)->value; \
-    } while (0)
-
-
 #define CORO_REJECT(fmt, ...) \
     if (fmt) { \
         ERROR(fmt, ## __VA_ARGS__); \
@@ -157,7 +140,6 @@ struct caio_task {
     int index;
     enum caio_taskstatus status;
     struct caio_call *current;
-    int value;
 };
 
 
@@ -165,12 +147,6 @@ struct caio_taskpool {
     struct caio_task **pool;
     size_t size;
     size_t count;
-};
-
-
-struct caio_sleep {
-    int fd;
-    time_t seconds;
 };
 
 
@@ -220,10 +196,6 @@ caio_evloop_unregister(int fd);
 
 int
 caio_spawn(caio_coro coro, void *state);
-
-
-ASYNC
-sleepA(struct caio_task *self, struct caio_sleep *state);
 
 
 #endif  // CAIO_H_

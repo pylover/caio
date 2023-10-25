@@ -43,28 +43,28 @@ producerA(struct caio_task *self, struct generator *state, int *out) {
 
 
 static ASYNC
-fooA(struct caio_task *self) {
+consumerA(struct caio_task *self) {
+    static struct generator foo = {.name = "foo", 0};
     static struct generator bar = {.name = "bar", 0};
-    static struct generator baz = {.name = "baz", 0};
     static int value;
     CORO_START;
     while (true) {
-        AWAIT(generator, producerA, &bar, &value);
-        INFO("Bar yields: %d", value);
+        AWAIT(generator, producerA, &foo, &value);
+        INFO("foo yields: %d", value);
 
-        AWAIT(generator, producerA, &baz, &value);
-        INFO("Baz yields: %d", value);
+        AWAIT(generator, producerA, &bar, &value);
+        INFO("bar yields: %d", value);
         if (value > 5) {
             break;
         }
     }
+    INFO("Baz called %d times.", foo.count);
     INFO("Bar called %d times.", bar.count);
-    INFO("Baz called %d times.", baz.count);
     CORO_FINALLY;
 }
 
 
 int
 main() {
-    return CAIO_FOREVER(fooA, NULL, 1);
+    return CAIO_FOREVER(consumerA, NULL, 1);
 }
