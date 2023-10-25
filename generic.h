@@ -24,24 +24,6 @@
 #else
 
 
-#ifndef CAIO_GENERIC_H
-#define CAIO_GENERIC_H
-
-
-#define AWAIT(entity, coro, state, ...) \
-    do { \
-        (self)->current->line = __LINE__; \
-        if (entity ## _call_new(self, coro, state, __VA_ARGS__)) { \
-            (self)->status = CAIO_TERMINATING; \
-        } \
-        return; \
-        case __LINE__:; \
-    } while (0)
-
-
-#endif
-
-
 #include <stdbool.h>
 
 
