@@ -101,7 +101,6 @@ enum caio_flags {
 
 enum caio_taskstatus {
     CAIO_RUNNING,
-    CAIO_YIELDING,
     CAIO_WAITINGIO,
     CAIO_TERMINATING,
     CAIO_TERMINATED,

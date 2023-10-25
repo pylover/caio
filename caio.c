@@ -255,11 +255,6 @@ start:
     switch (task->status) {
         case CAIO_TERMINATING:
             goto start;
-        case CAIO_YIELDING:
-            if (call->parent == NULL) {
-                task->status = CAIO_RUNNING;
-                break;
-            }
         case CAIO_TERMINATED:
             task->current = call->parent;
             free(call);
