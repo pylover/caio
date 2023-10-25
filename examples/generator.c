@@ -59,6 +59,7 @@ fooA(struct caio_task *self) {
         }
     }
     INFO("Bar called %d times.", bar.count);
+    INFO("Baz called %d times.", baz.count);
     CORO_FINALLY;
 }
 
