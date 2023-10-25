@@ -54,14 +54,16 @@ timerA(struct caio_task *self, struct timer *state) {
 
     state->fd = maketimer(state->interval);
     if (state->fd == -1) {
-        CORO_REJECT("maketimer");
+        ERROR("maketimer");
+        CORO_RETURN;
     }
 
     while (true) {
         CORO_WAITFD(state->fd, EPOLLIN);
         bytes = read(state->fd, &tmp, sizeof(tmp));
         if (bytes == -1) {
-            CORO_REJECT("read");
+            ERROR("read");
+            CORO_RETURN;
         }
         state->value += tmp;
         if (state->value > 4) {

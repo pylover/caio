@@ -57,14 +57,6 @@
     } while (0)
 
 
-#define CORO_REJECT(fmt, ...) \
-    if (fmt) { \
-        ERROR(fmt, ## __VA_ARGS__); \
-    } \
-    (self)->status = CAIO_TERMINATING; \
-    return
-
-
 #define CORO_RETURN \
     (self)->status = CAIO_TERMINATING; \
     return

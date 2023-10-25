@@ -95,10 +95,12 @@ echoA(struct caio_task *self, struct tcpconn *conn) {
                 break;
             }
             if (bytes == -1) {
-                CORO_REJECT("write(%d)", conn->fd);
+                ERROR("write(%d)", conn->fd);
+                CORO_RETURN;
             }
             if (bytes == 0) {
-                CORO_REJECT("write(%d) EOF", conn->fd);
+                ERROR("write(%d) EOF", conn->fd);
+                CORO_RETURN;
             }
         }
 
@@ -112,10 +114,12 @@ echoA(struct caio_task *self, struct tcpconn *conn) {
                 break;
             }
             if (bytes == -1) {
-                CORO_REJECT("read(%d)", conn->fd);
+                ERROR("read(%d)", conn->fd);
+                CORO_RETURN;
             }
             if (bytes == 0) {
-                CORO_REJECT("read(%d) EOF", conn->fd);
+                ERROR("read(%d) EOF", conn->fd);
+                CORO_RETURN;
             }
         }
 
@@ -158,14 +162,16 @@ listenA(struct caio_task *self, struct tcpserver *state,
     /* Bind to tcp port */
     res = bind(fd, &bindaddr, sizeof(bindaddr));
     if (res) {
-        CORO_REJECT("Cannot bind on: "ADDRFMTS, ADDRFMTV(bindaddr));
+        ERROR("Cannot bind on: "ADDRFMTS, ADDRFMTV(bindaddr));
+        CORO_RETURN;
     }
 
     /* Listen */
     res = listen(fd, backlog);
     INFO("Listening on: "ADDRFMTS" backlog: %d", ADDRFMTV(bindaddr), backlog);
     if (res) {
-        CORO_REJECT("Cannot listen on: "ADDRFMTS, ADDRFMTV(bindaddr));
+        ERROR("Cannot listen on: "ADDRFMTS, ADDRFMTV(bindaddr));
+        CORO_RETURN;
     }
 
     while (true) {
@@ -176,14 +182,16 @@ listenA(struct caio_task *self, struct tcpserver *state,
         }
 
         if (connfd == -1) {
-            CORO_REJECT("accept4");
+            ERROR("accept4");
+            CORO_RETURN;
         }
 
         /* New Connection */
         INFO("New connection from: "ADDRFMTS, ADDRFMTV(connaddr));
         struct tcpconn *c = malloc(sizeof(struct tcpconn));
         if (c == NULL) {
-            CORO_REJECT("Out of memory");
+            ERROR("Out of memory");
+            CORO_RETURN;
         }
 
         c->fd = connfd;

@@ -37,7 +37,8 @@ caio_sleepA(struct caio_task *self, int *state, time_t seconds) {
 
     fd = timerfd_create(CLOCK_REALTIME, TFD_NONBLOCK);
     if (fd == -1) {
-        CORO_REJECT("timerfd_create");
+        ERROR("timerfd_create");
+        CORO_RETURN;
     }
     *state = fd;
 
@@ -46,7 +47,8 @@ caio_sleepA(struct caio_task *self, int *state, time_t seconds) {
     struct itimerspec spec = {zero, sec};
     if (timerfd_settime(fd, 0, &spec, NULL) == -1) {
         close(fd);
-        CORO_REJECT("timerfd_settime");
+        ERROR("timerfd_settime");
+        CORO_RETURN;
     }
 
     CORO_WAITFD(fd, EPOLLIN);
