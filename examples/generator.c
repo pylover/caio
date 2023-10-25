@@ -19,70 +19,46 @@
 #include "caio.h"
 
 
-struct state {
+typedef struct generator {
     const char *name;
     int count;
-};
-static struct state bar = {.name = "bar", 0};
-static struct state baz = {.name = "baz", 0};
-static struct state qux = {.name = "qux", 0};
+} generator_t;
+
+
+#undef CAIO_ARG1
+#undef CAIO_ARG2
+#undef CAIO_ENTITY
+#define CAIO_ENTITY generator
+#define CAIO_ARG1 int*
+#include "generic.h"
+#include "generic.c"
 
 
 static ASYNC
-quxA(struct caio_task *self, struct state *state) {
+producerA(struct caio_task *self, struct generator *state, int *out) {
     CORO_START;
-    state->count++;
-    static int value = 0;
-    while (true) {
-        CORO_YIELD(value++);
-    }
-    CORO_FINALLY;
-}
-
-
-static ASYNC
-barA(struct caio_task *self, struct state *state) {
-    CORO_START;
-    state->count++;
-    static int value = 0;
-    while (true) {
-        CORO_YIELD(value++);
-    }
-    CORO_FINALLY;
-}
-
-
-static ASYNC
-bazA(struct caio_task *self, struct state *state) {
-    CORO_START;
-    state->count++;
-    int value;
-    while (true) {
-        CORO_YIELDFROM(quxA, &qux, value, int);
-        CORO_YIELD(value * 2);
-    }
+    *out = state->count++;
     CORO_FINALLY;
 }
 
 
 static ASYNC
 fooA(struct caio_task *self) {
-    int value;
+    static struct generator bar = {.name = "bar", 0};
+    static struct generator baz = {.name = "baz", 0};
+    static int value;
     CORO_START;
-    INFO("Foo consumer");
     while (true) {
-        CORO_YIELDFROM(barA, &bar, value, int);
+        AWAIT(generator, producerA, &bar, &value);
         INFO("Bar yields: %d", value);
 
-        CORO_YIELDFROM(bazA, &baz, value, int);
+        AWAIT(generator, producerA, &baz, &value);
         INFO("Baz yields: %d", value);
         if (value > 5) {
             break;
         }
     }
     INFO("Bar called %d times.", bar.count);
-    INFO("Baz called %d times.", baz.count);
-    INFO("Qux called %d times.", qux.count);
     CORO_FINALLY;
 }
 

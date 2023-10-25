@@ -46,22 +46,22 @@
     (self)->status = CAIO_TERMINATED
 
 
-#define CORO_YIELD(v) \
-    do { \
-        (self)->current->line = __LINE__; \
-        (self)->status = CAIO_YIELDING; \
-        (self)->value = (int)v; \
-        return; \
-        case __LINE__:; \
-    } while (0)
-
-
 #define CORO_WAIT(coro, state) \
     do { \
         (self)->current->line = __LINE__; \
         if (caio_call_new(self, (caio_coro)coro, (void *)state)) { \
             (self)->status = CAIO_TERMINATING; \
         } \
+        return; \
+        case __LINE__:; \
+    } while (0)
+
+
+#define CORO_YIELD(v) \
+    do { \
+        (self)->current->line = __LINE__; \
+        (self)->status = CAIO_YIELDING; \
+        (self)->value = (int)v; \
         return; \
         case __LINE__:; \
     } while (0)

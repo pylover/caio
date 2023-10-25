@@ -22,12 +22,12 @@
 #include "caio.h"
 
 
-typedef struct timer {
+struct timer {
     int fd;
     unsigned int interval;
     unsigned long value;
     const char *title;
-} timer;
+};
 
 
 static int
