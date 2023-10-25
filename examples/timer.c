@@ -101,5 +101,5 @@ main() {
     CAIO_SPAWN(timerA, &foo);
     CAIO_SPAWN(timerA, &bar);
 
-    return caio_start();
+    return caio_handover();
 }

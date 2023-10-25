@@ -344,7 +344,7 @@ failure:
 
 
 int
-caio_start() {
+caio_handover() {
     if (caio_loop()) {
         goto onerror;
     }

@@ -154,7 +154,7 @@ caio_forever(caio_coro coro, void *state, size_t maxtasks);
 
 
 int
-caio_start();
+caio_handover();
 
 
 int

@@ -48,10 +48,10 @@
 typedef void (*CAIO_NAME(coro)) (struct caio_task *self, CAIO_NAME(t) *state
 #ifdef CAIO_ARG1
         , CAIO_ARG1 arg1
-#endif
-#ifdef CAIO_ARG2
-        , CAIO_ARG2 arg2
-#endif
+    #ifdef CAIO_ARG2
+            , CAIO_ARG2 arg2
+    #endif  // CAIO_ARG2
+#endif  // CAIO_ARG1
         );  // NOLINT
 
 
@@ -64,10 +64,10 @@ typedef struct CAIO_NAME(call) {
 
 #ifdef CAIO_ARG1
     CAIO_ARG1 arg1;
-#endif
-#ifdef CAIO_ARG2
-    CAIO_ARG2 arg2;
-#endif
+    #ifdef CAIO_ARG2
+        CAIO_ARG2 arg2;
+    #endif  // CAIO_ARG2
+#endif  // CAIO_ARG1
 } CAIO_NAME(call);
 
 
@@ -82,10 +82,10 @@ CAIO_NAME(call_new)(struct caio_task *task, CAIO_NAME(coro) coro,
         CAIO_NAME(t) *state
 #ifdef CAIO_ARG1
         , CAIO_ARG1 arg1
-#endif
-#ifdef CAIO_ARG2
-        , CAIO_ARG2 arg2
-#endif
+    #ifdef CAIO_ARG2
+            , CAIO_ARG2 arg2
+    #endif  // CAIO_ARG2
+#endif  // CAIO_ARG1
         );  // NOLINT
 
 
@@ -93,10 +93,10 @@ int
 CAIO_NAME(spawn) (CAIO_NAME(coro) coro, CAIO_NAME(t) *state
 #ifdef CAIO_ARG1
         , CAIO_ARG1 arg1
-#endif
-#ifdef CAIO_ARG2
-        , CAIO_ARG2 arg2
-#endif
+    #ifdef CAIO_ARG2
+            , CAIO_ARG2 arg2
+    #endif  // CAIO_ARG2
+#endif  // CAIO_ARG1
         );  // NOLINT
 
 
@@ -104,10 +104,10 @@ int
 CAIO_NAME(forever) (CAIO_NAME(coro) coro, CAIO_NAME(t) *state
 #ifdef CAIO_ARG1
         , CAIO_ARG1 arg1
-#endif
-#ifdef CAIO_ARG2
-        , CAIO_ARG2 arg2
-#endif
+    #ifdef CAIO_ARG2
+            , CAIO_ARG2 arg2
+    #endif  // CAIO_ARG2
+#endif  // CAIO_ARG1
         , size_t maxtasks, int flags);
 
 #endif  // CAIO_H_

@@ -62,5 +62,5 @@ main() {
     CAIO_SPAWN(pingA, &foo);
     CAIO_SPAWN(pingA, &bar);
 
-    return caio_start();
+    return caio_handover();
 }
