@@ -58,8 +58,8 @@ consumerA(struct caio_task *self) {
             break;
         }
     }
-    INFO("Baz called %d times.", foo.count);
-    INFO("Bar called %d times.", bar.count);
+    INFO("foo called %d times.", foo.count);
+    INFO("bar called %d times.", bar.count);
     CORO_FINALLY;
 }
 
