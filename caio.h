@@ -32,10 +32,10 @@
 #define CAIO_NAME_EVALUATOR(x, y)  CAIO_NAME_PASTER(x, y)
 #define CAIO_NAME(n) CAIO_NAME_EVALUATOR(CAIO_ENTITY, n)
 #define ASYNC void
-#define AWAIT(entity, coro, state, ...) \
+#define AWAIT(entity, coro, ...) \
     do { \
         (self)->current->line = __LINE__; \
-        if (entity ## _call_new(self, coro, state, __VA_ARGS__)) { \
+        if (entity ## _call_new(self, coro, __VA_ARGS__)) { \
             (self)->status = CAIO_TERMINATING; \
         } \
         return; \
