@@ -41,7 +41,7 @@
         return; \
         case __LINE__:; \
     } while (0)
-#define CAIO_AWAIT(coro, ...) AWAIT(caio, coro, __VA_ARGS__)
+#define CAIO_AWAIT(coro, ...) AWAIT(caio, (caio_coro)coro, __VA_ARGS__)
 
 
 #define CORO_START \
@@ -52,17 +52,6 @@
 #define CORO_FINALLY \
         case -1:; } \
     (self)->status = CAIO_TERMINATED
-
-
-#define CORO_WAIT(coro, state) \
-    do { \
-        (self)->current->line = __LINE__; \
-        if (caio_call_new(self, (caio_coro)coro, (void *)state)) { \
-            (self)->status = CAIO_TERMINATING; \
-        } \
-        return; \
-        case __LINE__:; \
-    } while (0)
 
 
 #define CORO_RETURN \

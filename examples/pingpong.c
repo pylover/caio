@@ -44,7 +44,7 @@ pingA(struct caio_task *self, struct pingpong *state) {
         if (state->shoots > 9) {
             break;
         }
-        CORO_WAIT(pongA, state);
+        CAIO_AWAIT(pongA, state);
     }
 
     CORO_FINALLY;
