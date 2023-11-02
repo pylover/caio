@@ -41,6 +41,7 @@
         return; \
         case __LINE__:; \
     } while (0)
+#define CAIO_AWAIT(coro, ...) AWAIT(caio, coro, __VA_ARGS__)
 
 
 #define CORO_START \
