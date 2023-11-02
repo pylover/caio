@@ -15,9 +15,6 @@
  *  with caio. If not, see <https://www.gnu.org/licenses/>.
  *
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
- *
- *
- * An edge-triggered epoll(7) example using caio.
  */
 #include <stdlib.h>  // NOLINT
 #include <unistd.h>
