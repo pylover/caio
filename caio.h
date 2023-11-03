@@ -59,6 +59,17 @@
     return
 
 
+#define CORO_REJECT(n) \
+    (self)->eno = n; \
+    (self)->status = CAIO_TERMINATING; \
+    return
+
+
+#define CAIO_HASERROR(task) (task->eno != 0)
+#define CAIO_ISERROR(task, e) (CAIO_HASERROR(task) && (task->eno == e))
+#define CAIO_CLEARERROR(task) task->eno = 0
+
+
 #define CORO_WAITFD(fd, events) \
     do { \
         (self)->current->line = __LINE__; \
@@ -126,6 +137,7 @@ struct caio_call {
 
 struct caio_task {
     int index;
+    int eno;
     enum caio_taskstatus status;
     struct caio_call *current;
 };

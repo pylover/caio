@@ -124,6 +124,7 @@ caio_task_new() {
         return NULL;
     }
     task->index = index;
+    task->eno = 0;
     task->current = NULL;
 
     return task;
