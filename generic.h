@@ -38,11 +38,13 @@ typedef void (*CAIO_NAME(coro)) (struct caio_task *self, CAIO_NAME(t) *state
 
 
 typedef struct CAIO_NAME(call) {
+    /* Do not modify -- start */
     struct caio_call *parent;
     int line;
     CAIO_NAME(coro) coro;
     CAIO_NAME(t) *state;
     caio_invoker invoke;
+    /* Do not modify -- end */
 
 #ifdef CAIO_ARG1
     CAIO_ARG1 arg1;

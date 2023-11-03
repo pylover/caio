@@ -127,11 +127,13 @@ typedef void (*caio_invoker) (struct caio_task *self);
 
 
 struct caio_call {
+    /* Do not modify -- start */
     struct caio_call *parent;
     int line;
     caio_coro coro;
     void *state;
     caio_invoker invoke;
+    /* Do not modify -- end */
 };
 
 
