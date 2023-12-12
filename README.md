@@ -42,7 +42,7 @@ foo(struct caio_task *self, struct bar* state) {
       /* Do something with state */
       state->baz++;
 
-    case -1:; 
+    case -1:
   }
   self->status = CAIO_TERMINATED
 }
