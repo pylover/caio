@@ -36,12 +36,12 @@ typedef struct generator {
 
 static ASYNC
 producerA(struct caio_task *self, struct generator *state, int *out) {
-    CORO_START;
+    CORO_START(self);
     if (state->count >= 5) {
-        CORO_REJECT(ECANCELED);
+        CORO_REJECT(self, ECANCELED);
     }
     *out = state->count++;
-    CORO_FINALLY;
+    CORO_FINALLY(self);
 }
 
 
@@ -50,12 +50,12 @@ consumerA(struct caio_task *self) {
     static struct generator foo = {.name = "foo", 0};
     static struct generator bar = {.name = "bar", 0};
     static int value;
-    CORO_START;
+    CORO_START(self);
     while (true) {
-        AWAIT(generator, producerA, &foo, &value);
+        AWAIT(self, generator, producerA, &foo, &value);
         INFO("foo yields: %d", value);
 
-        AWAIT(generator, producerA, &bar, &value);
+        AWAIT(self, generator, producerA, &bar, &value);
         if (!CAIO_HASERROR(self)) {
             INFO("bar yields: %d", value);
         }
@@ -71,7 +71,7 @@ consumerA(struct caio_task *self) {
     }
     INFO("foo called %d times.", foo.count);
     INFO("bar called %d times.", bar.count);
-    CORO_FINALLY;
+    CORO_FINALLY(self);
 }
 
 

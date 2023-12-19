@@ -21,14 +21,14 @@
 
 static ASYNC
 fooA(struct caio_task *self) {
-    CORO_START;
+    CORO_START(self);
     static int sleep;
     INFO("Waiting 2 seconds");
-    CORO_SLEEP(&sleep, 2);
+    CORO_SLEEP(self, &sleep, 2);
 
     INFO("Waiting 3 seconds");
-    CORO_SLEEP(&sleep, 3);
-    CORO_FINALLY;
+    CORO_SLEEP(self, &sleep, 3);
+    CORO_FINALLY(self);
 }
 
 

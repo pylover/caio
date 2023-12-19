@@ -33,36 +33,37 @@
 #define CAIO_NAME(n) CAIO_NAME_EVALUATOR(CAIO_ENTITY, n)
 
 #define ASYNC void
-#define AWAIT(entity, coro, ...) \
+#define AWAIT(task, entity, coro, ...) \
     do { \
-        (self)->current->line = __LINE__; \
-        if (entity ## _call_new(self, coro, __VA_ARGS__)) { \
-            (self)->status = CAIO_TERMINATING; \
+        (task)->current->line = __LINE__; \
+        if (entity ## _call_new(task, coro, __VA_ARGS__)) { \
+            (task)->status = CAIO_TERMINATING; \
         } \
         return; \
         case __LINE__:; \
     } while (0)
-#define CAIO_AWAIT(coro, ...) AWAIT(caio, (caio_coro)coro, __VA_ARGS__)
+#define CAIO_AWAIT(task, coro, ...) \
+    AWAIT(task, caio, (caio_coro)coro, __VA_ARGS__)
 
 
-#define CORO_START \
-    switch ((self)->current->line) { \
+#define CORO_START(task) \
+    switch ((task)->current->line) { \
         case 0:
 
 
-#define CORO_FINALLY \
+#define CORO_FINALLY(task) \
         case -1:; } \
-    (self)->status = CAIO_TERMINATED
+    (task)->status = CAIO_TERMINATED
 
 
-#define CORO_RETURN \
-    (self)->status = CAIO_TERMINATING; \
+#define CORO_RETURN(task) \
+    (task)->status = CAIO_TERMINATING; \
     return
 
 
-#define CORO_REJECT(n) \
-    (self)->eno = n; \
-    (self)->status = CAIO_TERMINATING; \
+#define CORO_REJECT(task, n) \
+    (task)->eno = n; \
+    (task)->status = CAIO_TERMINATING; \
     return
 
 
@@ -71,14 +72,14 @@
 #define CAIO_CLEARERROR(task) task->eno = 0
 
 
-#define CORO_WAITFD(fd, events) \
+#define CORO_WAITFD(task, fd, events) \
     do { \
-        (self)->current->line = __LINE__; \
-        if (caio_evloop_register(self, fd, events)) { \
-            (self)->status = CAIO_TERMINATING; \
+        (task)->current->line = __LINE__; \
+        if (caio_evloop_register(task, fd, events)) { \
+            (task)->status = CAIO_TERMINATING; \
         } \
         else { \
-            (self)->status = CAIO_WAITINGIO; \
+            (task)->status = CAIO_WAITINGIO; \
         } \
         return; \
         case __LINE__:; \

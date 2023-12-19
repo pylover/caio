@@ -33,12 +33,12 @@
 ASYNC
 caio_sleepA(struct caio_task *self, int *state, time_t seconds) {
     int fd = *state;
-    CORO_START;
+    CORO_START(self);
 
     fd = timerfd_create(CLOCK_REALTIME, TFD_NONBLOCK);
     if (fd == -1) {
         ERROR("timerfd_create");
-        CORO_RETURN;
+        CORO_RETURN(self);
     }
     *state = fd;
 
@@ -48,11 +48,11 @@ caio_sleepA(struct caio_task *self, int *state, time_t seconds) {
     if (timerfd_settime(fd, 0, &spec, NULL) == -1) {
         close(fd);
         ERROR("timerfd_settime");
-        CORO_RETURN;
+        CORO_RETURN(self);
     }
 
-    CORO_WAITFD(fd, EPOLLIN);
-    CORO_FINALLY;
+    CORO_WAITFD(self, fd, EPOLLIN);
+    CORO_FINALLY(self);
     caio_evloop_unregister(fd);
     close(fd);
 }

@@ -29,25 +29,25 @@ struct pingpong {
 
 static ASYNC
 pongA(struct caio_task *self, struct pingpong *state) {
-    CORO_START;
+    CORO_START(self);
     INFO("Table: %s: pong #%d", state->table, state->shoots++);
-    CORO_FINALLY;
+    CORO_FINALLY(self);
 }
 
 
 static ASYNC
 pingA(struct caio_task *self, struct pingpong *state) {
-    CORO_START;
+    CORO_START(self);
 
     while (true) {
         INFO("Table: %s: ping #%d", state->table, state->shoots++);
         if (state->shoots > 9) {
             break;
         }
-        CAIO_AWAIT(pongA, state);
+        CAIO_AWAIT(self, pongA, state);
     }
 
-    CORO_FINALLY;
+    CORO_FINALLY(self);
 }
 
 
