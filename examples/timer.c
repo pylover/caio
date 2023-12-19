@@ -48,22 +48,22 @@ maketimer(unsigned int interval) {
 
 static ASYNC
 timerA(struct caio_task *self, struct timer *state) {
-    CORO_START(self);
+    CAIO_BEGIN(self);
     unsigned long tmp;
     ssize_t bytes;
 
     state->fd = maketimer(state->interval);
     if (state->fd == -1) {
         ERROR("maketimer");
-        CORO_RETURN(self);
+        CAIO_RETURN(self);
     }
 
     while (true) {
-        CORO_WAITFD(self, state->fd, EPOLLIN);
+        CAIO_WAITFD(self, state->fd, EPOLLIN);
         bytes = read(state->fd, &tmp, sizeof(tmp));
         if (bytes == -1) {
             ERROR("read");
-            CORO_RETURN(self);
+            CAIO_RETURN(self);
         }
         state->value += tmp;
         if (state->value > 4) {
@@ -73,7 +73,7 @@ timerA(struct caio_task *self, struct timer *state) {
                 state->fd, state->value);
     }
 
-    CORO_FINALLY(self);
+    CAIO_FINALLY(self);
     if (state->fd != -1) {
         close(state->fd);
     }

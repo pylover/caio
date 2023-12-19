@@ -46,23 +46,29 @@
     AWAIT(task, caio, (caio_coro)coro, __VA_ARGS__)
 
 
-#define CORO_START(task) \
+#define CAIO_BEGIN(task) \
     switch ((task)->current->line) { \
         case 0:
 
 
-#define CORO_FINALLY(task) \
+#define CAIO_FINALLY(task) \
         case -1:; } \
     (task)->status = CAIO_TERMINATED
 
 
-#define CORO_RETURN(task) \
+#define CAIO_RETURN(task) \
+    (task)->eno = 0; \
     (task)->status = CAIO_TERMINATING; \
     return
 
 
-#define CORO_REJECT(task, n) \
+#define CAIO_THROW(task, n) \
     (task)->eno = n; \
+    (task)->status = CAIO_TERMINATING; \
+    return
+
+
+#define CAIO_RETHROW(task) \
     (task)->status = CAIO_TERMINATING; \
     return
 
@@ -72,7 +78,7 @@
 #define CAIO_CLEARERROR(task) task->eno = 0
 
 
-#define CORO_WAITFD(task, fd, events) \
+#define CAIO_WAITFD(task, fd, events) \
     do { \
         (task)->current->line = __LINE__; \
         if (caio_evloop_register(task, fd, events)) { \
@@ -86,7 +92,7 @@
     } while (0)
 
 
-#define CORO_MUSTWAITFD() \
+#define CAIO_MUSTWAITFD() \
     ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINPROGRESS))
 
 

@@ -34,7 +34,7 @@ typedef int sleep_t;
 #include "generic.h"
 
 
-#define CORO_SLEEP(self, state, ...) \
+#define CAIO_SLEEP(self, state, ...) \
     AWAIT(self, sleep, caio_sleepA, state, __VA_ARGS__)
 
 

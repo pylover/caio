@@ -16,12 +16,12 @@ struct bar {
 
 ASYNC
 foo(struct caio_task *self, struct bar* state) {
-  CORO_START;
+  CAIO_BEGIN(self);
 
   /* Do something with state */
   state->baz++;
 
-  CORO_FINALLY;
+  CAIO_FINALLY(self);
 }
 
 
@@ -36,7 +36,7 @@ Which translates to:
 ```C
 void
 foo(struct caio_task *self, struct bar* state) {
-  switch ((self)->current->line) {
+  switch (self->current->line) {
     case 0:
 
       /* Do something with state */

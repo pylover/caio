@@ -79,7 +79,7 @@ static ASYNC
 echoA(struct caio_task *self, struct tcpconn *conn) {
     ssize_t bytes;
     struct mrb *buff = conn->buff;
-    CORO_START(self);
+    CAIO_BEGIN(self);
     static int events = 0;
 
     while (true) {
@@ -90,17 +90,17 @@ echoA(struct caio_task *self, struct tcpconn *conn) {
         while (!mrb_isempty(buff)) {
             bytes = mrb_writeout(buff, conn->fd, mrb_used(buff));
             DEBUG("writing: %d bytes: %d", conn->fd, bytes);
-            if ((bytes == -1) && CORO_MUSTWAITFD()) {
+            if ((bytes == -1) && CAIO_MUSTWAITFD()) {
                 events |= CAIO_OUT;
                 break;
             }
             if (bytes == -1) {
                 ERROR("write(%d)", conn->fd);
-                CORO_RETURN(self);
+                CAIO_RETURN(self);
             }
             if (bytes == 0) {
                 ERROR("write(%d) EOF", conn->fd);
-                CORO_RETURN(self);
+                CAIO_RETURN(self);
             }
         }
 
@@ -109,28 +109,28 @@ echoA(struct caio_task *self, struct tcpconn *conn) {
         while (!mrb_isfull(buff)) {
             bytes = mrb_readin(buff, conn->fd, mrb_available(buff));
             DEBUG("reading: %d bytes: %d", conn->fd, bytes);
-            if ((bytes == -1) && CORO_MUSTWAITFD()) {
+            if ((bytes == -1) && CAIO_MUSTWAITFD()) {
                 events |= CAIO_IN;
                 break;
             }
             if (bytes == -1) {
                 ERROR("read(%d)", conn->fd);
-                CORO_RETURN(self);
+                CAIO_RETURN(self);
             }
             if (bytes == 0) {
                 ERROR("read(%d) EOF", conn->fd);
-                CORO_RETURN(self);
+                CAIO_RETURN(self);
             }
         }
 
         /* reset errno and rewait events if neccessary */
         errno = 0;
         if (mrb_isempty(buff) || (events & CAIO_OUT)) {
-            CORO_WAITFD(self, conn->fd, events);
+            CAIO_WAITFD(self, conn->fd, events);
         }
     }
 
-    CORO_FINALLY(self);
+    CAIO_FINALLY(self);
     if (conn->fd != -1) {
         caio_evloop_unregister(conn->fd);
         close(conn->fd);
@@ -151,7 +151,7 @@ listenA(struct caio_task *self, struct tcpserver *state,
     int connfd;
     int res;
     int option = 1;
-    CORO_START(self);
+    CAIO_BEGIN(self);
 
     /* Create socket */
     fd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
@@ -163,7 +163,7 @@ listenA(struct caio_task *self, struct tcpserver *state,
     res = bind(fd, &bindaddr, sizeof(bindaddr));
     if (res) {
         ERROR("Cannot bind on: "ADDRFMTS, ADDRFMTV(bindaddr));
-        CORO_RETURN(self);
+        CAIO_RETURN(self);
     }
 
     /* Listen */
@@ -171,19 +171,19 @@ listenA(struct caio_task *self, struct tcpserver *state,
     INFO("Listening on: "ADDRFMTS" backlog: %d", ADDRFMTV(bindaddr), backlog);
     if (res) {
         ERROR("Cannot listen on: "ADDRFMTS, ADDRFMTV(bindaddr));
-        CORO_RETURN(self);
+        CAIO_RETURN(self);
     }
 
     while (true) {
         connfd = accept4(fd, &connaddr, &addrlen, SOCK_NONBLOCK);
-        if ((connfd == -1) && CORO_MUSTWAITFD()) {
-            CORO_WAITFD(self, fd, CAIO_IN | CAIO_ET);
+        if ((connfd == -1) && CAIO_MUSTWAITFD()) {
+            CAIO_WAITFD(self, fd, CAIO_IN | CAIO_ET);
             continue;
         }
 
         if (connfd == -1) {
             ERROR("accept4");
-            CORO_RETURN(self);
+            CAIO_RETURN(self);
         }
 
         /* New Connection */
@@ -191,7 +191,7 @@ listenA(struct caio_task *self, struct tcpserver *state,
         struct tcpconn *c = malloc(sizeof(struct tcpconn));
         if (c == NULL) {
             ERROR("Out of memory");
-            CORO_RETURN(self);
+            CAIO_RETURN(self);
         }
 
         c->fd = connfd;
@@ -206,7 +206,7 @@ listenA(struct caio_task *self, struct tcpserver *state,
         }
     }
 
-    CORO_FINALLY(self);
+    CAIO_FINALLY(self);
     if (fd != -1) {
         caio_evloop_unregister(fd);
         close(fd);
