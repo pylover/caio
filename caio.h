@@ -129,7 +129,7 @@ enum caio_fdflags {
 };
 
 
-struct caio_task;
+typedef struct caio_task caiotask_t;
 typedef void (*caio_coro) (struct caio_task *self, void *state);
 typedef void (*caio_invoker) (struct caio_task *self);
 
@@ -206,6 +206,10 @@ caio_evloop_unregister(int fd);
 
 int
 caio_spawn(caio_coro coro, void *state);
+
+
+void
+caio_invoker_default(struct caio_task *task);
 
 
 #endif  // CAIO_H_

@@ -35,7 +35,7 @@ typedef struct generator {
 
 
 static ASYNC
-producerA(struct caio_task *self, struct generator *state, int *out) {
+producerA(caiotask_t *self, struct generator *state, int *out) {
     CAIO_BEGIN(self);
     if (state->count >= 5) {
         CAIO_THROW(self, ECANCELED);
@@ -46,7 +46,7 @@ producerA(struct caio_task *self, struct generator *state, int *out) {
 
 
 static ASYNC
-consumerA(struct caio_task *self) {
+consumerA(caiotask_t *self) {
     static struct generator foo = {.name = "foo", 0};
     static struct generator bar = {.name = "bar", 0};
     static int value;

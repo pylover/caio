@@ -205,7 +205,7 @@ caio_task_killall() {
 }
 
 
-static void
+void
 caio_invoker_default(struct caio_task *task) {
     struct caio_call *call = task->current;
 
