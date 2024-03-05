@@ -21,10 +21,18 @@
 #include "caio.h"
 
 
-struct pingpong {
+typedef struct pingpong {
     const char *table;
     int shoots;
-};
+} pingpong_t;
+
+
+#undef CAIO_ARG1
+#undef CAIO_ARG2
+#undef CAIO_ENTITY
+#define CAIO_ENTITY pingpong
+#include "generic.h"
+#include "generic.c"
 
 
 static ASYNC
@@ -44,7 +52,7 @@ pingA(struct caio_task *self, struct pingpong *state) {
         if (state->shoots > 9) {
             break;
         }
-        CAIO_AWAIT(self, pongA, state);
+        AWAIT(self, pingpong, pongA, state);
     }
 
     CAIO_FINALLY(self);
@@ -59,8 +67,8 @@ main() {
     if (caio_init(2, CAIO_NONE)) {
         return EXIT_FAILURE;
     }
-    CAIO_SPAWN(pingA, &foo);
-    CAIO_SPAWN(pingA, &bar);
+    pingpong_spawn(pingA, &foo);
+    pingpong_spawn(pingA, &bar);
 
     return caio_handover();
 }

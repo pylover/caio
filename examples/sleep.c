@@ -18,9 +18,17 @@
  */
 #include "sleep.h"
 
+typedef void foo_t;
+#undef CAIO_ARG1
+#undef CAIO_ARG2
+#undef CAIO_ENTITY
+#define CAIO_ENTITY foo
+#include "generic.h"
+#include "generic.c"
+
 
 static ASYNC
-fooA(struct caio_task *self) {
+fooA(struct caio_task *self, foo_t *) {
     CAIO_BEGIN(self);
     static int sleep;
     INFO("Waiting 2 seconds");
@@ -34,5 +42,5 @@ fooA(struct caio_task *self) {
 
 int
 main() {
-    return CAIO_FOREVER(fooA, NULL, 2);
+    return foo_forever(fooA, NULL, 2, CAIO_SIG);
 }

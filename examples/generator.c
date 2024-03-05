@@ -34,6 +34,15 @@ typedef struct generator {
 #include "generic.c"
 
 
+typedef void consumer_t;
+#undef CAIO_ARG1
+#undef CAIO_ARG2
+#undef CAIO_ENTITY
+#define CAIO_ENTITY consumer
+#include "generic.h"
+#include "generic.c"
+
+
 static ASYNC
 producerA(caiotask_t *self, struct generator *state, int *out) {
     CAIO_BEGIN(self);
@@ -46,7 +55,7 @@ producerA(caiotask_t *self, struct generator *state, int *out) {
 
 
 static ASYNC
-consumerA(caiotask_t *self) {
+consumerA(caiotask_t *self, consumer_t *) {
     static struct generator foo = {.name = "foo", 0};
     static struct generator bar = {.name = "bar", 0};
     static int value;
@@ -79,5 +88,5 @@ consumerA(caiotask_t *self) {
 
 int
 main() {
-    return CAIO_FOREVER(consumerA, NULL, 1);
+    return consumer_forever(consumerA, NULL, 1, CAIO_SIG);
 }

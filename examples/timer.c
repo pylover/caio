@@ -22,16 +22,24 @@
 #include "caio.h"
 
 
-struct timer {
+typedef struct tmr {
     int fd;
     unsigned int interval;
     unsigned long value;
     const char *title;
-};
+} tmr_t;
+
+
+#undef CAIO_ARG1
+#undef CAIO_ARG2
+#undef CAIO_ENTITY
+#define CAIO_ENTITY tmr
+#include "generic.h"
+#include "generic.c"
 
 
 static int
-maketimer(unsigned int interval) {
+maketmr(unsigned int interval) {
     int fd = timerfd_create(CLOCK_REALTIME, TFD_NONBLOCK);
     if (fd == -1) {
         return -1;
@@ -47,14 +55,14 @@ maketimer(unsigned int interval) {
 
 
 static ASYNC
-timerA(struct caio_task *self, struct timer *state) {
+tmrA(struct caio_task *self, struct tmr *state) {
     CAIO_BEGIN(self);
     unsigned long tmp;
     ssize_t bytes;
 
-    state->fd = maketimer(state->interval);
+    state->fd = maketmr(state->interval);
     if (state->fd == -1) {
-        ERROR("maketimer");
+        ERROR("maketmr");
         CAIO_RETURN(self);
     }
 
@@ -82,14 +90,14 @@ timerA(struct caio_task *self, struct timer *state) {
 
 int
 main() {
-    struct timer foo = {
+    struct tmr foo = {
         .fd = -1,
         .title = "Foo",
         .interval = 1,
         .value = 0,
     };
 
-    struct timer bar = {
+    struct tmr bar = {
         .fd = -1,
         .title = "Bar",
         .interval = 3,
@@ -100,8 +108,8 @@ main() {
         return EXIT_FAILURE;
     }
 
-    CAIO_SPAWN(timerA, &foo);
-    CAIO_SPAWN(timerA, &bar);
+    tmr_spawn(tmrA, &foo);
+    tmr_spawn(tmrA, &bar);
 
     return caio_handover();
 }

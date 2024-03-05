@@ -42,8 +42,6 @@
         return; \
         case __LINE__:; \
     } while (0)
-#define CAIO_AWAIT(task, coro, ...) \
-    AWAIT(task, caio, (caio_coro)coro, __VA_ARGS__)
 
 
 #define CAIO_BEGIN(task) \
@@ -96,9 +94,8 @@
     ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINPROGRESS))
 
 
-#define CAIO_SPAWN(coro, state) caio_spawn((caio_coro)(coro), (void*)(state))
-#define CAIO_FOREVER(coro, state, maxtasks) \
-    caio_forever((caio_coro)(coro), (void*)(state), maxtasks)
+// #define CAIO_SPAWN(coro, state) caio_spawn((caio_coro)(coro), (void*)(state))
+// #define CAIO_FOREVER(coro, state, maxtasks) caio_forever((caio_coro)(coro), (void*)(state), maxtasks)
 
 
 enum caio_flags {
@@ -134,14 +131,17 @@ typedef void (*caio_coro) (struct caio_task *self, void *state);
 typedef void (*caio_invoker) (struct caio_task *self);
 
 
-struct caio_call {
-    /* Do not modify -- start */
+struct caio_basecall {
     struct caio_call *parent;
     int line;
+    caio_invoker invoke;
+};
+
+
+struct caio_call {
+    struct caio_basecall;
     caio_coro coro;
     void *state;
-    caio_invoker invoke;
-    /* Do not modify -- end */
 };
 
 
@@ -158,10 +158,6 @@ struct caio_taskpool {
     size_t size;
     size_t count;
 };
-
-
-int
-caio_forever(caio_coro coro, void *state, size_t maxtasks);
 
 
 int
@@ -184,10 +180,6 @@ struct caio_task *
 caio_task_new();
 
 
-int
-caio_call_new(struct caio_task *task, caio_coro coro, void *state);
-
-
 void
 caio_task_dispose(struct caio_task *task);
 
@@ -202,10 +194,6 @@ caio_evloop_register(struct caio_task *task, int fd, int events);
 
 int
 caio_evloop_unregister(int fd);
-
-
-int
-caio_spawn(caio_coro coro, void *state);
 
 
 void

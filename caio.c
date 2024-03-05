@@ -205,33 +205,6 @@ caio_task_killall() {
 }
 
 
-void
-caio_invoker_default(struct caio_task *task) {
-    struct caio_call *call = task->current;
-
-    call->coro(task, call->state);
-}
-
-
-int
-caio_call_new(struct caio_task *task, caio_coro coro, void *state) {
-    struct caio_call *call = malloc(sizeof(struct caio_call));
-    if (call == NULL) {
-        return -1;
-    }
-
-    call->parent = task->current;
-    call->coro = coro;
-    call->state = state;
-    call->line = 0;
-    call->invoke = caio_invoker_default;
-
-    task->status = CAIO_RUNNING;
-    task->current = call;
-    return 0;
-}
-
-
 bool
 caio_task_step(struct caio_task *task) {
     struct caio_call *call = task->current;
@@ -324,27 +297,6 @@ caio_loop() {
 
 
 int
-caio_spawn(caio_coro coro, void *state) {
-    struct caio_task *task = NULL;
-
-    task = caio_task_new();
-    if (task == NULL) {
-        return -1;
-    }
-
-    if (caio_call_new(task, coro, state)) {
-        goto failure;
-    }
-
-    return 0;
-
-failure:
-    caio_task_dispose(task);
-    return -1;
-}
-
-
-int
 caio_handover() {
     if (caio_loop()) {
         goto onerror;
@@ -354,29 +306,6 @@ caio_handover() {
     return 0;
 
 onerror:
-    caio_deinit();
-    return -1;
-}
-
-
-int
-caio_forever(caio_coro coro, void *state, size_t maxtasks) {
-    if (caio_init(maxtasks, CAIO_SIG)) {
-        return -1;
-    }
-
-    if (caio_spawn(coro, state)) {
-        goto failure;
-    }
-
-    if (caio_loop()) {
-        goto failure;
-    }
-
-    caio_deinit();
-    return 0;
-
-failure:
     caio_deinit();
     return -1;
 }
