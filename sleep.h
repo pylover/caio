@@ -35,7 +35,7 @@ typedef int sleep_t;
 
 
 #define CAIO_SLEEP(self, state, ...) \
-    AWAIT(self, sleep, caio_sleepA, state, __VA_ARGS__)
+    CAIO_AWAIT(self, sleep, caio_sleepA, state, __VA_ARGS__)
 
 
 ASYNC

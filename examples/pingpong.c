@@ -52,7 +52,7 @@ pingA(struct caio_task *self, struct pingpong *state) {
         if (state->shoots > 9) {
             break;
         }
-        AWAIT(self, pingpong, pongA, state);
+        CAIO_AWAIT(self, pingpong, pongA, state);
     }
 
     CAIO_FINALLY(self);

@@ -61,12 +61,12 @@ consumerA(caiotask_t *self, consumer_t *) {
     static int value;
     CAIO_BEGIN(self);
     while (true) {
-        AWAIT(self, generator, producerA, &foo, &value);
+        CAIO_AWAIT(self, generator, producerA, &foo, &value);
         if (!CAIO_HASERROR(self)) {
             INFO("foo yields: %d", value);
         }
 
-        AWAIT(self, generator, producerA, &bar, &value);
+        CAIO_AWAIT(self, generator, producerA, &bar, &value);
         if (!CAIO_HASERROR(self)) {
             INFO("bar yields: %d", value);
         }

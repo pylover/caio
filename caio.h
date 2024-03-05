@@ -33,7 +33,7 @@
 #define CAIO_NAME(n) CAIO_NAME_EVALUATOR(CAIO_ENTITY, n)
 
 #define ASYNC void
-#define AWAIT(task, entity, coro, ...) \
+#define CAIO_AWAIT(task, entity, coro, ...) \
     do { \
         (task)->current->line = __LINE__; \
         if (entity ## _call_new(task, coro, __VA_ARGS__)) { \
