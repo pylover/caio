@@ -3,7 +3,8 @@ list(APPEND examples
     generator
     timer
     sleep
-    tcpserver
+    tcpserver_epoll
+    tcpserver_iouring
 )
 
 
