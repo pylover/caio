@@ -30,6 +30,13 @@
 #define TASKPOOL_ISEMPTY(self) ((self)->count == 0)
 
 
+struct caio_taskpool {
+    struct caio_task **pool;
+    size_t size;
+    size_t count;
+};
+
+
 int
 taskpool_init(struct caio_taskpool *self, size_t size);
 

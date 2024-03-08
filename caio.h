@@ -153,13 +153,6 @@ struct caio_task {
 };
 
 
-struct caio_taskpool {
-    struct caio_task **pool;
-    size_t size;
-    size_t count;
-};
-
-
 int
 caio_handover();
 
