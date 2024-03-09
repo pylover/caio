@@ -173,7 +173,7 @@ struct caio_task *
 caio_task_new();
 
 
-void
+int
 caio_task_dispose(struct caio_task *task);
 
 

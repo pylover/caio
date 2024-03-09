@@ -21,6 +21,27 @@
 
 #include "taskpool.h"
 
+#define TASK_RESET(t, s) \
+    (t)->status = s; \
+    (t)->eno = 0; \
+    (t)->current = NULL
+
+
+int
+caio_taskpool_release(struct caio_taskpool *pool, struct caio_task *task) {
+    if (pool == NULL) {
+        return -1;
+    }
+
+    if (task == NULL) {
+        return -1;
+    }
+
+    TASK_RESET(task, CAIO_IDLE);
+    pool->count--;
+    return 0;
+}
+
 
 struct caio_task *
 caio_taskpool_next(struct caio_taskpool *pool, struct caio_task *task,
@@ -48,9 +69,8 @@ caio_taskpool_lease(struct caio_taskpool *pool) {
         return NULL;
     }
 
-    task->status = CAIO_RUNNING;
-    task->eno = 0;
-    task->current = NULL;
+    TASK_RESET(task, CAIO_RUNNING);
+    pool->count++;
 
     return task;
 }
@@ -76,9 +96,7 @@ caio_taskpool_init(struct caio_taskpool *pool, size_t size) {
 
     while ((task = caio_taskpool_next(pool, task, CAIO_RUNNING |
                     CAIO_WAITINGIO | CAIO_TERMINATING | CAIO_TERMINATED))) {
-        task->eno = 0;
-        task->current = 0;
-        task->status = CAIO_IDLE;
+        TASK_RESET(task, CAIO_IDLE);
         task++;
     }
 
@@ -96,76 +114,3 @@ caio_taskpool_destroy(struct caio_taskpool *pool) {
         free(pool->tasks);
     }
 }
-
-
-// int
-// taskpool_append(struct caio_taskpool *self, struct caio_task *item) {
-//     int i;
-//
-//     if (item == NULL) {
-//         return -1;
-//     }
-//
-//     if (TASKPOOL_ISFULL(self)) {
-//         return -1;
-//     }
-//
-//     for (i = 0; i < self->size; i++) {
-//         if (self->pool[i] == NULL) {
-//             goto found;
-//         }
-//     }
-//
-//     /* Not found */
-//     return -1;
-//
-// found:
-//     self->pool[i] = item;
-//     self->count++;
-//     return i;
-// }
-//
-//
-// int
-// taskpool_delete(struct caio_taskpool *self, unsigned int index) {
-//     if (self->size <= index) {
-//         return -1;
-//     }
-//
-//     self->pool[index] = NULL;
-//     return 0;
-// }
-//
-//
-// struct caio_task*
-// taskpool_get(struct caio_taskpool *self, unsigned int index) {
-//     if (self->size <= index) {
-//         return NULL;
-//     }
-//
-//     return self->pool[index];
-// }
-//
-//
-// void
-// taskpool_vacuum(struct caio_taskpool *self) {
-//     int i;
-//     int shift = 0;
-//
-//     for (i = 0; i < self->count; i++) {
-//         if (self->pool[i] == NULL) {
-//             shift++;
-//             continue;
-//         }
-//
-//         if (!shift) {
-//             continue;
-//         }
-//
-//         self->pool[i - shift] = self->pool[i];
-//         self->pool[i - shift]->index = i - shift;
-//         self->pool[i] = NULL;
-//     }
-//
-//     self->count -= shift;
-// }

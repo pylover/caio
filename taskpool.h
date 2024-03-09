@@ -43,28 +43,16 @@ caio_taskpool_destroy(struct caio_taskpool *pool);
 
 
 struct caio_task *
-caio_taskpool_lease(struct caio_taskpool *pool);
-
-
-struct caio_task *
 caio_taskpool_next(struct caio_taskpool *pool, struct caio_task *task,
         enum caio_taskstatus statuses);
 
 
-// int
-// taskpool_append(struct caio_taskpool *self, struct caio_task *item);
-//
-//
-// int
-// taskpool_delete(struct caio_taskpool *self, unsigned int index);
-//
-//
-// struct caio_task*
-// taskpool_get(struct caio_taskpool *self, unsigned int index);
-//
-//
-// void
-// taskpool_vacuum(struct caio_taskpool *self);
+struct caio_task *
+caio_taskpool_lease(struct caio_taskpool *pool);
+
+
+int
+caio_taskpool_release(struct caio_taskpool *pool, struct caio_task *task);
 
 
 #endif  // TASKPOOL_H_

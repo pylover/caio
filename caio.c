@@ -110,6 +110,12 @@ caio_task_new() {
 
 
 int
+caio_task_dispose(struct caio_task *task) {
+    return caio_taskpool_release(&_taskpool, task);
+}
+
+
+int
 caio_evloop_register(struct caio_task *task, int fd, int events) {
     struct epoll_event ee;
 
@@ -246,7 +252,7 @@ caio_loop() {
         while ((task = caio_taskpool_next(&_taskpool, task,
                     CAIO_RUNNING | CAIO_TERMINATING))) {
             if (caio_task_step(task)) {
-                caio_taskpool_release(_taskpool, task);
+                caio_taskpool_release(&_taskpool, task);
             }
             task++;
         }
