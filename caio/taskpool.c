@@ -82,6 +82,12 @@ caio_taskpool_init(struct caio_taskpool *pool, size_t size) {
     struct caio_task *task = NULL;
 
     if (pool == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    if (size < 1) {
+        errno = EINVAL;
         return -1;
     }
 
@@ -89,7 +95,7 @@ caio_taskpool_init(struct caio_taskpool *pool, size_t size) {
     if (pool->tasks == NULL) {
         return -1;
     }
-    pool->last = pool->tasks + size;
+    pool->last = pool->tasks + (size - 1);
     memset(pool->tasks, 0, size * sizeof(struct caio_task));
     task = pool->tasks;
     while (task <= pool->last) {
