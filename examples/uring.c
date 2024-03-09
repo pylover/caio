@@ -1,3 +1,21 @@
+// Copyright 2023 Vahid Mardani
+/*
+ * This file is part of caio.
+ *  caio is free software: you can redistribute it and/or modify it under
+ *  the terms of the GNU General Public License as published by the Free
+ *  Software Foundation, either version 3 of the License, or (at your option)
+ *  any later version.
+ *
+ *  caio is distributed in the hope that it will be useful, but WITHOUT ANY
+ *  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ *  FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ *  details.
+ *
+ *  You should have received a copy of the GNU General Public License along
+ *  with caio. If not, see <https://www.gnu.org/licenses/>.
+ *
+ *  Author: Vahid Mardani <vahid.mardani@gmail.com>
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -37,17 +55,19 @@ off_t offset;
  * provide wrappers for io_uring system calls.
 * */
 
-int io_uring_setup(unsigned entries, struct io_uring_params *p)
-{
+int
+io_uring_setup(unsigned entries, struct io_uring_params *p) {
     return (int) syscall(__NR_io_uring_setup, entries, p);
 }
 
-int io_uring_enter(int ring_fd, unsigned int to_submit,
-                   unsigned int min_complete, unsigned int flags)
-{
+
+int
+io_uring_enter(int ring_fd, unsigned int to_submit, unsigned int min_complete,
+        unsigned int flags) {
     return (int) syscall(__NR_io_uring_enter, ring_fd, to_submit,
                     min_complete, flags, NULL, 0);
 }
+
 
 int app_setup_uring(void) {
     struct io_uring_params p;
@@ -95,8 +115,10 @@ int app_setup_uring(void) {
 
     if (p.features & IORING_FEAT_SINGLE_MMAP) {
         cq_ptr = sq_ptr;
-    } else {
-        /* Map in the completion queue ring buffer in older kernels separately */
+    }
+    else {
+        /* Map in the completion queue ring buffer in older kernels
+         * separately */
         cq_ptr = mmap(0, cring_sz, PROT_READ | PROT_WRITE,
                       MAP_SHARED | MAP_POPULATE,
                       ring_fd, IORING_OFF_CQ_RING);
@@ -195,9 +217,8 @@ int submit_to_sq(int fd, int op) {
     * causes the io_uring_enter() call to wait until min_complete
     * (the 3rd param) events complete.
     * */
-    int ret =  io_uring_enter(ring_fd, 1,1,
-                              IORING_ENTER_GETEVENTS);
-    if(ret < 0) {
+    int ret =  io_uring_enter(ring_fd, 1, 1, IORING_ENTER_GETEVENTS);
+    if (ret < 0) {
         perror("io_uring_enter");
         return -1;
     }
@@ -209,7 +230,7 @@ int main(int argc, char *argv[]) {
     int res;
 
     /* Setup io_uring for use */
-    if(app_setup_uring()) {
+    if (app_setup_uring()) {
         fprintf(stderr, "Unable to setup uring!\n");
         return 1;
     }

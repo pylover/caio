@@ -94,10 +94,6 @@
     ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINPROGRESS))
 
 
-// #define CAIO_SPAWN(coro, state) caio_spawn((caio_coro)(coro), (void*)(state))
-// #define CAIO_FOREVER(coro, state, maxtasks) caio_forever((caio_coro)(coro), (void*)(state), maxtasks)
-
-
 enum caio_flags {
     CAIO_NONE = 0,
     CAIO_SIG = 1,

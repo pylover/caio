@@ -228,7 +228,6 @@ caio_loop() {
 
     while (_taskpool.count) {
         if (_evloop_pendingtasks) {
-
             /* Check whenever all tasks are pending IO operation. */
             if (_evloop_pendingtasks == _taskpool.count) {
                 /* Wait forever */

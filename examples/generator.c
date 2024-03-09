@@ -39,8 +39,8 @@ typedef void consumer_t;
 #undef CAIO_ARG2
 #undef CAIO_ENTITY
 #define CAIO_ENTITY consumer
-#include "generic.h"
-#include "generic.c"
+#include "generic.h"  // NOLINT
+#include "generic.c"  // NOLINT
 
 
 static ASYNC
