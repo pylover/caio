@@ -26,39 +26,45 @@
 #include "caio.h"
 
 
-#define TASKPOOL_ISFULL(self) ((self)->count == (self)->size)
-#define TASKPOOL_ISEMPTY(self) ((self)->count == 0)
-
-
 struct caio_taskpool {
-    struct caio_task **pool;
+    struct caio_task *tasks;
+    struct caio_task *last;
     size_t size;
     size_t count;
 };
 
 
 int
-taskpool_init(struct caio_taskpool *self, size_t size);
+caio_taskpool_init(struct caio_taskpool *pool, size_t size);
 
 
 void
-taskpool_deinit(struct caio_taskpool *self);
+caio_taskpool_destroy(struct caio_taskpool *pool);
 
 
-int
-taskpool_append(struct caio_taskpool *self, struct caio_task *item);
+struct caio_task *
+caio_taskpool_lease(struct caio_taskpool *pool);
 
 
-int
-taskpool_delete(struct caio_taskpool *self, unsigned int index);
+struct caio_task *
+caio_taskpool_next(struct caio_taskpool *pool, struct caio_task *task,
+        enum caio_taskstatus statuses);
 
 
-struct caio_task*
-taskpool_get(struct caio_taskpool *self, unsigned int index);
-
-
-void
-taskpool_vacuum(struct caio_taskpool *self);
+// int
+// taskpool_append(struct caio_taskpool *self, struct caio_task *item);
+//
+//
+// int
+// taskpool_delete(struct caio_taskpool *self, unsigned int index);
+//
+//
+// struct caio_task*
+// taskpool_get(struct caio_taskpool *self, unsigned int index);
+//
+//
+// void
+// taskpool_vacuum(struct caio_taskpool *self);
 
 
 #endif  // TASKPOOL_H_

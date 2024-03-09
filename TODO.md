@@ -1,2 +1,3 @@
+- All todos
 - Use pre allocated callstack instead of multiple malloc/free
 - Readme

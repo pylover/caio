@@ -33,7 +33,7 @@
 static int _epollfd = -1;
 static int _evloop_pendingtasks = 0;
 static bool _killing = false;
-static struct caio_taskpool _tasks;
+static struct caio_taskpool _taskpool;
 static struct sigaction old_action;
 
 
@@ -73,7 +73,7 @@ caio_init(size_t maxtasks, int flags) {
     }
 
     /* Initialize task pool */
-    if (taskpool_init(&_tasks, maxtasks)) {
+    if (caio_taskpool_init(&_taskpool, maxtasks)) {
         goto onerror;
     }
 
@@ -91,42 +91,20 @@ caio_deinit() {
         close(_epollfd);
         _epollfd = -1;
     }
-    taskpool_deinit(&_tasks);
+    caio_taskpool_destroy(&_taskpool);
     errno = 0;
-}
-
-
-void
-caio_task_dispose(struct caio_task *task) {
-    taskpool_delete(&_tasks, task->index);
-    free(task);
 }
 
 
 struct caio_task *
 caio_task_new() {
-    int index;
     struct caio_task *task;
 
-    if (TASKPOOL_ISFULL(&_tasks)) {
-        return NULL;
-    }
-
-    task = malloc(sizeof(struct caio_task));
+    /* Register task */
+    task = caio_taskpool_lease(&_taskpool);
     if (task == NULL) {
         return NULL;
     }
-
-    /* Register task */
-    index = taskpool_append(&_tasks, task);
-    if (index == -1) {
-        free(task);
-        return NULL;
-    }
-    task->index = index;
-    task->eno = 0;
-    task->current = NULL;
-
     return task;
 }
 
@@ -154,18 +132,19 @@ caio_evloop_unregister(int fd) {
     if (epoll_ctl(_epollfd, EPOLL_CTL_DEL, fd, NULL)) {
         return -1;
     }
+    _evloop_pendingtasks--;
     return 0;
 }
 
 
 static int
-caio_evloop_wait(int timeout) {
+caio_evloop_wait(int count, int timeout) {
     int nfds;
     int i;
-    struct epoll_event events[_tasks.count];
+    struct epoll_event events[count];
     struct caio_task *task;
 
-    nfds = epoll_wait(_epollfd, events, _tasks.count, timeout);
+    nfds = epoll_wait(_epollfd, events, count, timeout);
     if (nfds < 0) {
         return -1;
     }
@@ -188,19 +167,12 @@ caio_evloop_wait(int timeout) {
 
 void
 caio_task_killall() {
-    int taskindex;
-    struct caio_task *task;
+    struct caio_task *task = NULL;
 
-    for (taskindex = 0; taskindex < _tasks.count; taskindex++) {
-        task = taskpool_get(&_tasks, taskindex);
-        if (task == NULL) {
-            continue;
-        }
-
-        if (task->status == CAIO_WAITINGIO) {
-            _evloop_pendingtasks--;
-        }
+    while ((task = caio_taskpool_next(&_taskpool, task,
+                    CAIO_RUNNING | CAIO_WAITINGIO))) {
         task->status = CAIO_TERMINATING;
+        task++;
     }
 }
 
@@ -239,27 +211,20 @@ start:
         default:
     }
 
-    if (task->current == NULL) {
-        caio_task_dispose(task);
-        return true;
-    }
-
-    return false;
+    return task->current == NULL;
 }
 
 
 int
 caio_loop() {
-    int taskindex;
     int evloop_timeout;
     struct caio_task *task = NULL;
-    bool vacuum_needed;
 
-    while (_tasks.count) {
-        vacuum_needed = false;
-
+    while (_taskpool.count) {
         if (_evloop_pendingtasks) {
-            if (_evloop_pendingtasks == _tasks.count) {
+
+            /* Check whenever all tasks are pending IO operation. */
+            if (_evloop_pendingtasks == _taskpool.count) {
                 /* Wait forever */
                 evloop_timeout = -1;
             }
@@ -268,7 +233,7 @@ caio_loop() {
                 evloop_timeout = 0;
             }
 
-            if (caio_evloop_wait(evloop_timeout)) {
+            if (caio_evloop_wait(_evloop_pendingtasks, evloop_timeout)) {
                 if (_killing) {
                     errno = 0;
                 }
@@ -278,17 +243,12 @@ caio_loop() {
             }
         }
 
-        for (taskindex = 0; taskindex < _tasks.count; taskindex++) {
-            task = taskpool_get(&_tasks, taskindex);
-            if (task == NULL) {
-                continue;
+        while ((task = caio_taskpool_next(&_taskpool, task,
+                    CAIO_RUNNING | CAIO_TERMINATING))) {
+            if (caio_task_step(task)) {
+                caio_taskpool_release(_taskpool, task);
             }
-
-            vacuum_needed |= caio_task_step(task);
-        }
-
-        if (vacuum_needed) {
-            taskpool_vacuum(&_tasks);
+            task++;
         }
     }
 

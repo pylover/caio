@@ -105,10 +105,11 @@ enum caio_flags {
 
 
 enum caio_taskstatus {
-    CAIO_RUNNING,
-    CAIO_WAITINGIO,
-    CAIO_TERMINATING,
-    CAIO_TERMINATED,
+    CAIO_IDLE = 1,
+    CAIO_RUNNING = 2,
+    CAIO_WAITINGIO = 4,
+    CAIO_TERMINATING = 8,
+    CAIO_TERMINATED = 16,
 };
 
 
@@ -146,9 +147,8 @@ struct caio_call {
 
 
 struct caio_task {
-    int index;
-    int eno;
     enum caio_taskstatus status;
+    int eno;
     struct caio_call *current;
 };
 
