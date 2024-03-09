@@ -29,7 +29,7 @@
 
 #include <mrb.h>
 
-#include "caio.h"
+#include "caio/caio.h"
 
 
 /* TCP server caio state and */
@@ -54,16 +54,16 @@ typedef struct tcpconn {
 #define CAIO_ENTITY tcpserver
 #define CAIO_ARG1 struct sockaddr_in
 #define CAIO_ARG2 int
-#include "generic.h"
-#include "generic.c"
+#include "caio/generic.h"
+#include "caio/generic.c"
 
 
 #undef CAIO_ARG1
 #undef CAIO_ARG2
 #undef CAIO_ENTITY
 #define CAIO_ENTITY tcpconn
-#include "generic.h"  // NOLINT
-#include "generic.c"  // NOLINT
+#include "caio/generic.h"  // NOLINT
+#include "caio/generic.c"  // NOLINT
 
 
 #define PAGESIZE 4096

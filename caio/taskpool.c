@@ -21,6 +21,7 @@
 
 #include "taskpool.h"
 
+
 #define TASK_RESET(t, s) \
     (t)->status = s; \
     (t)->eno = 0; \
@@ -89,17 +90,15 @@ caio_taskpool_init(struct caio_taskpool *pool, size_t size) {
         return -1;
     }
     pool->last = pool->tasks + size;
-
     memset(pool->tasks, 0, size * sizeof(struct caio_task));
-    pool->count = 0;
-    pool->size = size;
-
-    while ((task = caio_taskpool_next(pool, task, CAIO_RUNNING |
-                    CAIO_WAITINGIO | CAIO_TERMINATING | CAIO_TERMINATED))) {
+    task = pool->tasks;
+    while (task <= pool->last) {
         TASK_RESET(task, CAIO_IDLE);
         task++;
     }
 
+    pool->count = 0;
+    pool->size = size;
     return 0;
 }
 

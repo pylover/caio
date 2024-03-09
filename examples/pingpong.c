@@ -18,7 +18,7 @@
  */
 #include <stdlib.h>
 
-#include "caio.h"
+#include "caio/caio.h"
 
 
 typedef struct pingpong {
@@ -31,8 +31,8 @@ typedef struct pingpong {
 #undef CAIO_ARG2
 #undef CAIO_ENTITY
 #define CAIO_ENTITY pingpong
-#include "generic.h"
-#include "generic.c"
+#include "caio/generic.h"
+#include "caio/generic.c"
 
 
 static ASYNC

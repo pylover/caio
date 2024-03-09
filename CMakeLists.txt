@@ -11,17 +11,14 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_GNU_SOURCE=1")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
 
 
-configure_file(manifest.h.in manifest.h)
-include_directories(
-    ${PROJECT_SOURCE_DIR}
-    ${PROJECT_BINARY_DIR}
-)
+configure_file(caio/manifest.h.in caio/manifest.h)
+include_directories(${PROJECT_SOURCE_DIR})
 
 
 add_library(caio STATIC 
-    caio.c caio.h
-    sleep.c
-    taskpool.c taskpool.h
+    caio/caio.c caio/caio.h
+    caio/sleep.c
+    caio/taskpool.c caio/taskpool.h
 )
 
 

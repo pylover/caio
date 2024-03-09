@@ -18,7 +18,7 @@
  */
 #include <unistd.h>
 
-#include "caio.h"
+#include "caio/caio.h"
 #include "sleep.h"
 
 
@@ -27,7 +27,7 @@
 #undef CAIO_ENTITY
 #define CAIO_ENTITY sleep
 #define CAIO_ARG1 time_t
-#include "generic.c"
+#include "caio/generic.c"
 
 
 ASYNC

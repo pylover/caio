@@ -16,7 +16,7 @@
  *
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
-#include "caio.h"
+#include "caio/caio.h"
 
 
 typedef struct generator {
@@ -30,8 +30,8 @@ typedef struct generator {
 #undef CAIO_ENTITY
 #define CAIO_ENTITY generator
 #define CAIO_ARG1 int*
-#include "generic.h"
-#include "generic.c"
+#include "caio/generic.h"
+#include "caio/generic.c"
 
 
 typedef void consumer_t;
@@ -39,8 +39,8 @@ typedef void consumer_t;
 #undef CAIO_ARG2
 #undef CAIO_ENTITY
 #define CAIO_ENTITY consumer
-#include "generic.h"  // NOLINT
-#include "generic.c"  // NOLINT
+#include "caio/generic.h"  // NOLINT
+#include "caio/generic.c"  // NOLINT
 
 
 static ASYNC

@@ -16,15 +16,15 @@
  *
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
-#include "sleep.h"
+#include "caio/sleep.h"
 
 typedef void foo_t;
 #undef CAIO_ARG1
 #undef CAIO_ARG2
 #undef CAIO_ENTITY
 #define CAIO_ENTITY foo
-#include "generic.h"
-#include "generic.c"
+#include "caio/generic.h"
+#include "caio/generic.c"
 
 
 static ASYNC
