@@ -6,9 +6,17 @@ project(caio
 
 set(CMAKE_C_COMPILER gcc)
 set(CMAKE_VERBOSE_MAKEFILE OFF)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -fms-extensions")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fms-extensions")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_GNU_SOURCE=1")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
+
+
+if(NOT CMAKE_BUILD_TYPE)
+set(CMAKE_BUILD_TYPE Debug)
+endif()
+if(CMAKE_BUILD_TYPE=Debug)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")
+endif()
 
 
 configure_file(caio/manifest.h.in caio/manifest.h)

@@ -28,4 +28,4 @@ int
 caio_io_uring_init(struct caio_iouring *u, maxtasks);
 
 
-#endif CAIO_IO_URING_H_
+#endif  // CAIO_IO_URING_H_
