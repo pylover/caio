@@ -21,11 +21,11 @@
 #include <errno.h>
 #include <stdlib.h>
 
-#include "epoll.h"
+#include "caio/io_epoll.h"
 
 
 int
-caio_epoll_init(struct caio_epoll *e, size_t maxevents) {
+caio_io_epoll_init(struct caio_io_epoll *e, size_t maxevents) {
     if (e == NULL) {
         return -1;
     }
@@ -48,7 +48,7 @@ caio_epoll_init(struct caio_epoll *e, size_t maxevents) {
 
 
 int
-caio_epoll_deinit(struct caio_epoll *e) {
+caio_io_epoll_deinit(struct caio_io_epoll *e) {
     if (e == NULL) {
         return -1;
     }
@@ -67,7 +67,7 @@ caio_epoll_deinit(struct caio_epoll *e) {
 
 
 int
-caio_epoll_monitor(struct caio_epoll *e, struct caio_task *task, int fd,
+caio_io_epoll_monitor(struct caio_io_epoll *e, struct caio_task *task, int fd,
         int events) {
     struct epoll_event ee;
 
@@ -85,7 +85,7 @@ caio_epoll_monitor(struct caio_epoll *e, struct caio_task *task, int fd,
 
 
 int
-caio_epoll_forget(struct caio_epoll *e, int fd) {
+caio_io_epoll_forget(struct caio_io_epoll *e, int fd) {
     if (epoll_ctl(e->fd, EPOLL_CTL_DEL, fd, NULL)) {
         return -1;
     }
@@ -95,7 +95,7 @@ caio_epoll_forget(struct caio_epoll *e, int fd) {
 
 
 int
-caio_epoll_wait(struct caio_epoll *e, int timeout) {
+caio_io_epoll_wait(struct caio_io_epoll *e, int timeout) {
     int nfds;
     int i;
     struct caio_task *task;

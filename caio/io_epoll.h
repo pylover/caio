@@ -16,14 +16,14 @@
  *
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
-#ifndef CAIO_EPOLL_H_
-#define CAIO_EPOLL_H_
+#ifndef CAIO_IO_EPOLL_H_
+#define CAIO_IO_EPOLL_H_
 
 
 #include "caio/caio.h"
 
 
-struct caio_epoll {
+struct caio_io_epoll {
     int fd;
     struct epoll_event *events;
     size_t maxevents;
@@ -31,24 +31,24 @@ struct caio_epoll {
 
 
 int
-caio_epoll_init(struct caio_epoll *e, size_t maxevents);
+caio_io_epoll_init(struct caio_io_epoll *e, size_t maxevents);
 
 
 int
-caio_epoll_deinit(struct caio_epoll *io);
+caio_io_epoll_deinit(struct caio_io_epoll *io);
 
 
 int
-caio_epoll_monitor(struct caio_epoll *e, struct caio_task *task, int fd,
+caio_io_epoll_monitor(struct caio_io_epoll *e, struct caio_task *task, int fd,
         int events);
 
 
 int
-caio_epoll_forget(struct caio_epoll *e, int fd);
+caio_io_epoll_forget(struct caio_io_epoll *e, int fd);
 
 
 int
-caio_epoll_wait(struct caio_epoll *e, int timeout);
+caio_io_epoll_wait(struct caio_io_epoll *e, int timeout);
 
 
-#endif  // CAIO_EPOLL_H_
+#endif  // CAIO_IO_EPOLL_H_

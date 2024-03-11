@@ -27,13 +27,13 @@
 #include <clog.h>
 
 #include "caio/caio.h"
-#include "caio/epoll.h"
+#include "caio/io_epoll.h"
 #include "caio/taskpool.h"
 
 
 static bool _killing = false;
 static struct caio_taskpool _taskpool;
-static struct caio_epoll _epoll;
+static struct caio_io_epoll _epoll;
 static struct sigaction old_action;
 
 
@@ -63,7 +63,7 @@ caio_init(size_t maxtasks, int flags) {
     }
 
     /* Initialize IO monitoring backend */
-    if (caio_epoll_init(&_epoll, maxtasks)) {
+    if (caio_io_epoll_init(&_epoll, maxtasks)) {
         goto onerror;
     }
 
@@ -82,7 +82,7 @@ onerror:
 
 void
 caio_deinit() {
-    caio_epoll_deinit(&_epoll);
+    caio_io_epoll_deinit(&_epoll);
     caio_taskpool_destroy(&_taskpool);
     errno = 0;
 }
@@ -175,7 +175,7 @@ caio_loop() {
                 epoll_timeout = 0;
             }
 
-            if (caio_epoll_wait(&_epoll, epoll_timeout)) {
+            if (caio_io_epoll_wait(&_epoll, epoll_timeout)) {
                 if (_killing) {
                     errno = 0;
                 }
@@ -219,11 +219,11 @@ onerror:
 
 int
 caio_file_monitor(struct caio_task *task, int fd, int events) {
-    return caio_epoll_monitor(&_epoll, task, fd, events);
+    return caio_io_epoll_monitor(&_epoll, task, fd, events);
 }
 
 
 int
 caio_file_forget(int fd) {
-    return caio_epoll_forget(&_epoll, fd);
+    return caio_io_epoll_forget(&_epoll, fd);
 }

@@ -17,7 +17,7 @@ include_directories(${PROJECT_SOURCE_DIR})
 
 add_library(caio STATIC 
     caio/taskpool.c caio/taskpool.h
-    caio/epoll.c caio/epoll.h
+    caio/io_epoll.c caio/io_epoll.h
     caio/caio.c caio/caio.h
     caio/sleep.c
 )
