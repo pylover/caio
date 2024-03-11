@@ -59,15 +59,15 @@ io_uring_enter(int ringfd, unsigned int to_submit, unsigned int min_complete,
 
 int
 caio_io_uring_init(struct caio_io_uring *u, size_t maxtasks) {
-    struct io_uring_params p;
+    struct io_uring_params *p = &u->params;
     int sqringlen;
     int cqringlen;
     void *sq;
     void *cq;
 
     /* See io_uring_setup(2) for io_uring_params.flags you can set */
-    memset(&p, 0, sizeof(p));
-    u->ringfd = io_uring_setup(maxtasks, &p);
+    memset(p, 0, sizeof(struct io_uring_params));
+    u->ringfd = io_uring_setup(maxtasks, p);
     if (u->ringfd < 0) {
         return -1;
     }
@@ -77,15 +77,15 @@ caio_io_uring_init(struct caio_io_uring *u, size_t maxtasks) {
      * buffers, which can be jointly mapped with a single mmap() call in
      * kernels >= 5.4.
      */
-    sqringlen = p.sq_off.array + p.sq_entries * sizeof(__u32);
-    cqringlen = p.cq_off.cqes + p.cq_entries * sizeof(struct io_uring_cqe);
+    sqringlen = p->sq_off.array + p->sq_entries * sizeof(__u32);
+    cqringlen = p->cq_off.cqes + p->cq_entries * sizeof(struct io_uring_cqe);
 
     /* Rather than check for kernel version, the recommended way is to
      * check the features field of the io_uring_params structure, which is a
      * bitmask. If IORING_FEAT_SINGLE_MMAP is set, we can do away with the
      * second mmap() call to map in the completion ring separately.
      */
-    if (p.features & IORING_FEAT_SINGLE_MMAP) {
+    if (p->features & IORING_FEAT_SINGLE_MMAP) {
         if (cqringlen > sqringlen)
             sqringlen = cqringlen;
         cqringlen = sqringlen;
@@ -101,7 +101,7 @@ caio_io_uring_init(struct caio_io_uring *u, size_t maxtasks) {
         return -1;
     }
 
-    if (p.features & IORING_FEAT_SINGLE_MMAP) {
+    if (p->features & IORING_FEAT_SINGLE_MMAP) {
         cq = sq;
     }
     else {
@@ -115,13 +115,13 @@ caio_io_uring_init(struct caio_io_uring *u, size_t maxtasks) {
         }
     }
 
-    // /* Save useful fields for later easy reference */
-    // sring_tail = sq + p.sq_off.tail;
-    // sring_mask = sq + p.sq_off.ring_mask;
-    // sring_array = sq + p.sq_off.array;
+    /* Save useful fields for later easy reference */
+    u->sq_tail = sq + p->sq_off.tail;
+    u->sq_mask = sq + p->sq_off.ring_mask;
+    u->sq_array = sq + p->sq_off.array;
 
     /* Map in the submission queue entries array */
-    u->sqes = mmap(0, p.sq_entries * sizeof(struct io_uring_sqe),
+    u->sqes = mmap(0, p->sq_entries * sizeof(struct io_uring_sqe),
                    PROT_READ | PROT_WRITE, MAP_SHARED | MAP_POPULATE,
                    u->ringfd, IORING_OFF_SQES);
     if (u->sqes == MAP_FAILED) {
@@ -129,12 +129,17 @@ caio_io_uring_init(struct caio_io_uring *u, size_t maxtasks) {
     }
 
     // /* Save useful fields for later easy reference */
-    // cring_head = cq_ptr + p.cq_off.head;
-    // cring_tail = cq_ptr + p.cq_off.tail;
-    // cring_mask = cq_ptr + p.cq_off.ring_mask;
-    // cqes = cq_ptr + p.cq_off.cqes;
+    u->cq_head = cq + p->cq_off.head;
+    u->cq_tail = cq + p->cq_off.tail;
+    u->cq_mask = cq + p->cq_off.ring_mask;
+    u->cqes = cq + p->cq_off.cqes;
 
     return 0;
+}
+
+
+void
+caio_io_uring_deinit(struct caio_io_uring *u) {
 }
 
 

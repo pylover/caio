@@ -25,8 +25,17 @@
 
 struct caio_io_uring {
     int ringfd;
+    struct io_uring_params params;
+
     struct io_uring_sqe *sqes;
     struct io_uring_cqe *cqes;
+    unsigned int *sq_tail;
+    unsigned int *sq_mask;
+    unsigned int *sq_array;
+
+    unsigned int *cq_head;
+    unsigned int *cq_tail;
+    unsigned int *cq_mask;
 };
 
 
@@ -71,6 +80,10 @@ struct caio_io_uring {
  */
 int
 caio_io_uring_init(struct caio_io_uring *u, size_t maxtasks);
+
+
+void
+caio_io_uring_deinit(struct caio_io_uring *u);
 
 
 #endif  // CAIO_IO_URING_H_
