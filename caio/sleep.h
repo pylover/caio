@@ -16,8 +16,8 @@
  *
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
-#ifndef SLEEP_H_
-#define SLEEP_H_
+#ifndef CAIO_SLEEP_H_
+#define CAIO_SLEEP_H_
 
 
 #include "caio.h"
@@ -42,4 +42,4 @@ ASYNC
 caio_sleepA(struct caio_task *self, int *state, time_t seconds);
 
 
-#endif  // SLEEP_H_
+#endif  // CAIO_SLEEP_H_

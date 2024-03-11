@@ -16,8 +16,8 @@
  *  
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
-#ifndef MANIFEST_H_IN_
-#define MANIFEST_H_IN_
+#ifndef CAIO_MANIFEST_H_IN_
+#define CAIO_MANIFEST_H_IN_
 
 
 #define CAIO_VERSION_MAJOR "@PROJECT_VERSION_MAJOR@"
@@ -25,4 +25,4 @@
 #define CAIO_VERSION "@PROJECT_VERSION@"
 
 
-#endif  // MANIFEST_H_IN_
+#endif  // CAIO_MANIFEST_H_IN_

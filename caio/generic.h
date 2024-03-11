@@ -16,7 +16,7 @@
  *
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
-#ifndef CAIO_H_  // NOLINT(build/header_guard)
+#ifndef CAIO_CAIO_H_  // NOLINT(build/header_guard)
 #error "caio.h and clog.h must be imported before importing the" \
     "caio.h"
 #error "And also #undef and #define CAIO_ENTITY before importing the " \

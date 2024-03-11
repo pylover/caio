@@ -36,6 +36,7 @@ static struct caio_taskpool _taskpool;
 static struct caio_epoll _epoll;
 static struct sigaction old_action;
 
+
 static void
 _sighandler(int s) {
     _killing = true;

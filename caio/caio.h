@@ -16,8 +16,8 @@
  *
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
-#ifndef CAIO_H_
-#define CAIO_H_
+#ifndef CAIO_CAIO_H_
+#define CAIO_CAIO_H_
 
 
 #include <errno.h>
@@ -190,4 +190,4 @@ int
 caio_handover();
 
 
-#endif  // CAIO_H_
+#endif  // CAIO_CAIO_H_

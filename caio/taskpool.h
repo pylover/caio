@@ -16,8 +16,8 @@
  *
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
-#ifndef TASKPOOL_H_
-#define TASKPOOL_H_
+#ifndef CAIO_TASKPOOL_H_
+#define CAIO_TASKPOOL_H_
 
 
 #include <stddef.h>
@@ -55,4 +55,4 @@ int
 caio_taskpool_release(struct caio_taskpool *pool, struct caio_task *task);
 
 
-#endif  // TASKPOOL_H_
+#endif  // CAIO_TASKPOOL_H_
