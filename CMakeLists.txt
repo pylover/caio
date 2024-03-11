@@ -25,10 +25,10 @@ add_library(caio STATIC
 
 # Install
 install(TARGETS caio DESTINATION "lib")
-install(FILES caio.h DESTINATION "include/caio")
-install(FILES sleep.h DESTINATION "include/caio")
-install(FILES generic.h DESTINATION "include/caio")
-install(FILES generic.c DESTINATION "include/caio")
+install(FILES caio/caio.h DESTINATION "include/caio")
+install(FILES caio/sleep.h DESTINATION "include/caio")
+install(FILES caio/generic.h DESTINATION "include/caio")
+install(FILES caio/generic.c DESTINATION "include/caio")
 
 
 # Lint
