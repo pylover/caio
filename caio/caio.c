@@ -26,16 +26,15 @@
 
 #include <clog.h>
 
-#include "caio.h"
-#include "taskpool.h"
+#include "caio/caio.h"
+#include "caio/epoll.h"
+#include "caio/taskpool.h"
 
 
-static int _epollfd = -1;
-static int _evloop_pendingtasks = 0;
 static bool _killing = false;
 static struct caio_taskpool _taskpool;
+static struct caio_epoll _epoll;
 static struct sigaction old_action;
-
 
 static void
 _sighandler(int s) {
@@ -58,17 +57,12 @@ caio_handleinterrupts() {
 
 int
 caio_init(size_t maxtasks, int flags) {
-    if (_epollfd != -1) {
-        return -1;
-    }
-
     if ((flags & CAIO_SIG) && (caio_handleinterrupts())) {
         goto onerror;
     }
 
-    /* Create epoll instance */
-    _epollfd = epoll_create1(0);
-    if (_epollfd < 0) {
+    /* Initialize IO monitoring backend */
+    if (caio_epoll_init(&_epoll, maxtasks)) {
         goto onerror;
     }
 
@@ -87,10 +81,7 @@ onerror:
 
 void
 caio_deinit() {
-    if (_epollfd != -1) {
-        close(_epollfd);
-        _epollfd = -1;
-    }
+    caio_epoll_deinit(&_epoll);
     caio_taskpool_destroy(&_taskpool);
     errno = 0;
 }
@@ -115,62 +106,6 @@ caio_task_dispose(struct caio_task *task) {
 }
 
 
-int
-caio_evloop_register(struct caio_task *task, int fd, int events) {
-    struct epoll_event ee;
-
-    ee.events = events | EPOLLONESHOT;
-    ee.data.ptr = task;
-    if (epoll_ctl(_epollfd, EPOLL_CTL_MOD, fd, &ee)) {
-        if (epoll_ctl(_epollfd, EPOLL_CTL_ADD, fd, &ee)) {
-            return -1;
-        }
-        errno = 0;
-    }
-
-    _evloop_pendingtasks++;
-    return 0;
-}
-
-
-int
-caio_evloop_unregister(int fd) {
-    if (epoll_ctl(_epollfd, EPOLL_CTL_DEL, fd, NULL)) {
-        return -1;
-    }
-    _evloop_pendingtasks--;
-    return 0;
-}
-
-
-static int
-caio_evloop_wait(int count, int timeout) {
-    int nfds;
-    int i;
-    struct epoll_event events[count];
-    struct caio_task *task;
-
-    nfds = epoll_wait(_epollfd, events, count, timeout);
-    if (nfds < 0) {
-        return -1;
-    }
-
-    if (nfds == 0) {
-        return 0;
-    }
-
-    for (i = 0; i < nfds; i++) {
-        task = (struct caio_task*)events[i].data.ptr;
-        if (task->status == CAIO_WAITINGIO) {
-            task->status = CAIO_RUNNING;
-        }
-        _evloop_pendingtasks--;
-    }
-
-    return 0;
-}
-
-
 void
 caio_task_killall() {
     struct caio_task *task = NULL;
@@ -183,7 +118,7 @@ caio_task_killall() {
 }
 
 
-bool
+static bool
 caio_task_step(struct caio_task *task) {
     struct caio_call *call = task->current;
 
@@ -223,22 +158,23 @@ start:
 
 int
 caio_loop() {
-    int evloop_timeout;
+    int epoll_timeout;
     struct caio_task *task = NULL;
+    int iopending = 0;
 
     while (_taskpool.count) {
-        if (_evloop_pendingtasks) {
+        if (iopending) {
             /* Check whenever all tasks are pending IO operation. */
-            if (_evloop_pendingtasks == _taskpool.count) {
+            if (iopending == _taskpool.count) {
                 /* Wait forever */
-                evloop_timeout = -1;
+                epoll_timeout = -1;
             }
             else {
                 /* No Wait */
-                evloop_timeout = 0;
+                epoll_timeout = 0;
             }
 
-            if (caio_evloop_wait(_evloop_pendingtasks, evloop_timeout)) {
+            if (caio_epoll_wait(&_epoll, epoll_timeout)) {
                 if (_killing) {
                     errno = 0;
                 }
@@ -248,9 +184,13 @@ caio_loop() {
             }
         }
 
+        iopending = 0;
         while ((task = caio_taskpool_next(&_taskpool, task,
-                    CAIO_RUNNING | CAIO_TERMINATING))) {
-            if (caio_task_step(task)) {
+                    CAIO_RUNNING | CAIO_WAITINGIO | CAIO_TERMINATING))) {
+            if (task->status == CAIO_WAITINGIO) {
+                iopending++;
+            }
+            else if (caio_task_step(task)) {
                 caio_taskpool_release(&_taskpool, task);
             }
             task++;
@@ -273,4 +213,16 @@ caio_handover() {
 onerror:
     caio_deinit();
     return -1;
+}
+
+
+int
+caio_file_monitor(struct caio_task *task, int fd, int events) {
+    return caio_epoll_monitor(&_epoll, task, fd, events);
+}
+
+
+int
+caio_file_forget(int fd) {
+    return caio_epoll_forget(&_epoll, fd);
 }

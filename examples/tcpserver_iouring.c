@@ -132,7 +132,7 @@ echoA(struct caio_task *self, struct tcpconn *conn) {
 
     CAIO_FINALLY(self);
     if (conn->fd != -1) {
-        caio_evloop_unregister(conn->fd);
+        caio_file_forget(conn->fd);
         close(conn->fd);
     }
     if (mrb_destroy(conn->buff)) {
@@ -208,7 +208,7 @@ listenA(struct caio_task *self, struct tcpserver *state,
 
     CAIO_FINALLY(self);
     if (fd != -1) {
-        caio_evloop_unregister(fd);
+        caio_file_forget(fd);
         close(fd);
     }
 }

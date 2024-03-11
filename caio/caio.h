@@ -27,10 +27,11 @@
 #include <clog.h>
 
 
-/* Generic stuff */
+/* Generic stuff -- START */
 #define CAIO_NAME_PASTER(x, y) x ## _ ## y
 #define CAIO_NAME_EVALUATOR(x, y)  CAIO_NAME_PASTER(x, y)
 #define CAIO_NAME(n) CAIO_NAME_EVALUATOR(CAIO_ENTITY, n)
+
 
 #define ASYNC void
 #define CAIO_AWAIT(task, entity, coro, ...) \
@@ -79,7 +80,7 @@
 #define CAIO_WAITFD(task, fd, events) \
     do { \
         (task)->current->line = __LINE__; \
-        if (caio_evloop_register(task, fd, events)) { \
+        if (caio_file_monitor(task, fd, events)) { \
             (task)->status = CAIO_TERMINATING; \
         } \
         else { \
@@ -149,8 +150,8 @@ struct caio_task {
 };
 
 
-int
-caio_handover();
+void
+caio_invoker_default(struct caio_task *task);
 
 
 int
@@ -159,10 +160,6 @@ caio_init(size_t maxtasks, int flags);
 
 void
 caio_deinit();
-
-
-int
-caio_loop();
 
 
 struct caio_task *
@@ -178,15 +175,19 @@ caio_task_killall();
 
 
 int
-caio_evloop_register(struct caio_task *task, int fd, int events);
+caio_file_monitor(struct caio_task *task, int fd, int events);
 
 
 int
-caio_evloop_unregister(int fd);
+caio_file_forget(int fd);
 
 
-void
-caio_invoker_default(struct caio_task *task);
+int
+caio_loop();
+
+
+int
+caio_handover();
 
 
 #endif  // CAIO_H_

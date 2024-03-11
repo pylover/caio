@@ -53,6 +53,6 @@ caio_sleepA(struct caio_task *self, int *state, time_t seconds) {
 
     CAIO_WAITFD(self, fd, EPOLLIN);
     CAIO_FINALLY(self);
-    caio_evloop_unregister(fd);
+    caio_file_forget(fd);
     close(fd);
 }
