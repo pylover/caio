@@ -37,12 +37,12 @@ io_uring_setup(unsigned entries, struct io_uring_params *p) {
 }
 
 
-static int
-io_uring_enter(int ringfd, unsigned int to_submit, unsigned int min_complete,
-        unsigned int flags) {
-    return (int) syscall(__NR_io_uring_enter, ringfd, to_submit,
-                    min_complete, flags, NULL, 0);
-}
+// static int
+// io_uring_enter(int ringfd, unsigned int to_submit, unsigned int min_complete,
+//         unsigned int flags) {
+//     return (int) syscall(__NR_io_uring_enter, ringfd, to_submit,
+//                     min_complete, flags, NULL, 0);
+// }
 
 
 /*
@@ -60,10 +60,6 @@ io_uring_enter(int ringfd, unsigned int to_submit, unsigned int min_complete,
 int
 caio_io_uring_init(struct caio_io_uring *u, size_t maxtasks) {
     struct io_uring_params *p = &u->params;
-    int sqringlen;
-    int cqringlen;
-    void *sq;
-    void *cq;
 
     /* See io_uring_setup(2) for io_uring_params.flags you can set */
     memset(p, 0, sizeof(struct io_uring_params));
@@ -77,8 +73,8 @@ caio_io_uring_init(struct caio_io_uring *u, size_t maxtasks) {
      * buffers, which can be jointly mapped with a single mmap() call in
      * kernels >= 5.4.
      */
-    sqringlen = p->sq_off.array + p->sq_entries * sizeof(__u32);
-    cqringlen = p->cq_off.cqes + p->cq_entries * sizeof(struct io_uring_cqe);
+    u->sq_len = p->sq_off.array + p->sq_entries * sizeof(__u32);
+    u->cq_len = p->cq_off.cqes + p->cq_entries * sizeof(struct io_uring_cqe);
 
     /* Rather than check for kernel version, the recommended way is to
      * check the features field of the io_uring_params structure, which is a
@@ -86,39 +82,39 @@ caio_io_uring_init(struct caio_io_uring *u, size_t maxtasks) {
      * second mmap() call to map in the completion ring separately.
      */
     if (p->features & IORING_FEAT_SINGLE_MMAP) {
-        if (cqringlen > sqringlen)
-            sqringlen = cqringlen;
-        cqringlen = sqringlen;
+        if (u->cq_len > u->sq_len)
+            u->sq_len = u->cq_len;
+        u->cq_len = u->sq_len;
     }
 
     /* Map in the submission and completion queue ring buffers.
      *  Kernels < 5.4 only map in the submission queue, though.
      */
-    sq = mmap(0, sqringlen, PROT_READ | PROT_WRITE,
+    u->sq_ptr = mmap(0, u->sq_len, PROT_READ | PROT_WRITE,
                   MAP_SHARED | MAP_POPULATE,
                   u->ringfd, IORING_OFF_SQ_RING);
-    if (sq == MAP_FAILED) {
+    if (u->sq_ptr == MAP_FAILED) {
         return -1;
     }
 
     if (p->features & IORING_FEAT_SINGLE_MMAP) {
-        cq = sq;
+        u->cq_ptr = u->sq_ptr;
     }
     else {
         /* Map in the completion queue ring buffer in older kernels
          * separately */
-        cq = mmap(0, cqringlen, PROT_READ | PROT_WRITE,
+        u->cq_ptr = mmap(0, u->cq_len, PROT_READ | PROT_WRITE,
                       MAP_SHARED | MAP_POPULATE,
                       u->ringfd, IORING_OFF_CQ_RING);
-        if (cq == MAP_FAILED) {
+        if (u->cq_ptr == MAP_FAILED) {
             return 1;
         }
     }
 
     /* Save useful fields for later easy reference */
-    u->sq_tail = sq + p->sq_off.tail;
-    u->sq_mask = sq + p->sq_off.ring_mask;
-    u->sq_array = sq + p->sq_off.array;
+    u->sq_tail = u->sq_ptr + p->sq_off.tail;
+    u->sq_mask = u->sq_ptr + p->sq_off.ring_mask;
+    u->sq_array = u->sq_ptr + p->sq_off.array;
 
     /* Map in the submission queue entries array */
     u->sqes = mmap(0, p->sq_entries * sizeof(struct io_uring_sqe),
@@ -129,17 +125,41 @@ caio_io_uring_init(struct caio_io_uring *u, size_t maxtasks) {
     }
 
     // /* Save useful fields for later easy reference */
-    u->cq_head = cq + p->cq_off.head;
-    u->cq_tail = cq + p->cq_off.tail;
-    u->cq_mask = cq + p->cq_off.ring_mask;
-    u->cqes = cq + p->cq_off.cqes;
+    u->cq_head = u->cq_ptr + p->cq_off.head;
+    u->cq_tail = u->cq_ptr + p->cq_off.tail;
+    u->cq_mask = u->cq_ptr + p->cq_off.ring_mask;
+    u->cqes = u->cq_ptr + p->cq_off.cqes;
 
     return 0;
 }
 
 
-void
+int
 caio_io_uring_deinit(struct caio_io_uring *u) {
+    struct io_uring_params *p = &u->params;
+
+    /* Unmap the submission queue entries array */
+    if (u->sqes && munmap(u->sqes,
+                p->sq_entries * sizeof(struct io_uring_sqe))) {
+        goto failed;
+    }
+
+    if (munmap(u->sq_ptr, u->sq_len)) {
+        goto failed;
+    }
+
+    if (!(p->features & IORING_FEAT_SINGLE_MMAP)) {
+        if (munmap(u->sq_ptr, u->cq_len)) {
+            goto failed;
+        }
+    }
+
+    close(u->ringfd);
+    return 0;
+
+failed:
+    close(u->ringfd);
+    return -1;
 }
 
 

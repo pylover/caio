@@ -87,12 +87,19 @@ onerror:
 }
 
 
-void
+int
 caio_deinit() {
-    // TODO: caio_io_uring_deinit(&_uring);
-    caio_io_epoll_deinit(&_epoll);
+    if (caio_io_uring_deinit(&_uring)) {
+        return -1;
+    }
+
+    if (caio_io_epoll_deinit(&_epoll)) {
+        return -1;
+    }
     caio_taskpool_destroy(&_taskpool);
     errno = 0;
+
+    return 0;
 }
 
 
@@ -216,7 +223,10 @@ caio_handover() {
         goto onerror;
     }
 
-    caio_deinit();
+    if (caio_deinit()) {
+        return -1;
+    }
+
     return 0;
 
 onerror:

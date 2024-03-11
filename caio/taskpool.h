@@ -38,7 +38,7 @@ int
 caio_taskpool_init(struct caio_taskpool *pool, size_t size);
 
 
-void
+int
 caio_taskpool_destroy(struct caio_taskpool *pool);
 
 

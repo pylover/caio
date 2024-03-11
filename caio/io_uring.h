@@ -29,10 +29,15 @@ struct caio_io_uring {
 
     struct io_uring_sqe *sqes;
     struct io_uring_cqe *cqes;
+
+    int sq_len;
+    void *sq_ptr;
     unsigned int *sq_tail;
     unsigned int *sq_mask;
     unsigned int *sq_array;
 
+    void *cq_ptr;
+    int cq_len;
     unsigned int *cq_head;
     unsigned int *cq_tail;
     unsigned int *cq_mask;
@@ -82,7 +87,7 @@ int
 caio_io_uring_init(struct caio_io_uring *u, size_t maxtasks);
 
 
-void
+int
 caio_io_uring_deinit(struct caio_io_uring *u);
 
 

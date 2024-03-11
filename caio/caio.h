@@ -27,7 +27,7 @@
 #include <clog.h>
 
 
-/* Generic stuff -- START */
+/* Generic stuff */
 #define CAIO_NAME_PASTER(x, y) x ## _ ## y
 #define CAIO_NAME_EVALUATOR(x, y)  CAIO_NAME_PASTER(x, y)
 #define CAIO_NAME(n) CAIO_NAME_EVALUATOR(CAIO_ENTITY, n)
@@ -158,7 +158,7 @@ int
 caio_init(size_t maxtasks, int flags);
 
 
-void
+int
 caio_deinit();
 
 
