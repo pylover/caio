@@ -17,10 +17,10 @@
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
 #ifndef CAIO_CAIO_H_  // NOLINT(build/header_guard)
-#error "caio.h and clog.h must be imported before importing the" \
-    "caio.h"
-#error "And also #undef and #define CAIO_ENTITY before importing the " \
-    "caio.h"
+#error "caio/caio.h must be imported before importing the caio/generic.h"
+#error "And also #undef CAIO_ENTITY, CAIO_ARG1 and CAIO_ARG2 then #define " \
+    "CAIO_ENTITY and optionals: CAIO_ARG1/CAIO_ARG2 before importing the " \
+    "caio/generic.h"
 #else
 
 

@@ -33,12 +33,12 @@
 ASYNC
 caio_sleepA(struct caio_task *self, int *state, time_t seconds) {
     int fd = *state;
+    int eno;
     CAIO_BEGIN(self);
 
     fd = timerfd_create(CLOCK_REALTIME, TFD_NONBLOCK);
     if (fd == -1) {
-        ERROR("timerfd_create");
-        CAIO_RETURN(self);
+        CAIO_THROW(self, errno);
     }
     *state = fd;
 
@@ -46,9 +46,9 @@ caio_sleepA(struct caio_task *self, int *state, time_t seconds) {
     struct timespec zero = {0, 0};
     struct itimerspec spec = {zero, sec};
     if (timerfd_settime(fd, 0, &spec, NULL) == -1) {
+        eno = errno;
         close(fd);
-        ERROR("timerfd_settime");
-        CAIO_RETURN(self);
+        CAIO_THROW(self, eno);
     }
 
     CAIO_WAITFD(self, fd, EPOLLIN);

@@ -16,7 +16,10 @@
  *
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
+#include <stdio.h>
+
 #include "caio/sleep.h"
+
 
 typedef void foo_t;
 #undef CAIO_ARG1
@@ -31,10 +34,10 @@ static ASYNC
 fooA(struct caio_task *self, foo_t *) {
     CAIO_BEGIN(self);
     static int sleep;
-    INFO("Waiting 2 seconds");
+    printf("Waiting 2 seconds\n");
     CAIO_SLEEP(self, &sleep, 2);
 
-    INFO("Waiting 3 seconds");
+    printf("Waiting 3 seconds\n");
     CAIO_SLEEP(self, &sleep, 3);
     CAIO_FINALLY(self);
 }

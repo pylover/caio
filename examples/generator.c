@@ -16,6 +16,9 @@
  *
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
+#include <stdio.h>
+#include <err.h>
+
 #include "caio/caio.h"
 
 
@@ -63,25 +66,25 @@ consumerA(caiotask_t *self, consumer_t *) {
     while (true) {
         CAIO_AWAIT(self, generator, producerA, &foo, &value);
         if (!CAIO_HASERROR(self)) {
-            INFO("foo yields: %d", value);
+            printf("foo yields: %d\n", value);
         }
 
         CAIO_AWAIT(self, generator, producerA, &bar, &value);
         if (!CAIO_HASERROR(self)) {
-            INFO("bar yields: %d", value);
+            printf("bar yields: %d\n", value);
         }
         else if (CAIO_ISERROR(self, ECANCELED)) {
-            INFO("bar stopped");
+            printf("bar stopped\n");
             CAIO_CLEARERROR(self);
             break;
         }
         else {
-            INFO("Unknowd error: %d", self->eno);
+            warn("Unknowd error: %d", self->eno);
             break;
         }
     }
-    INFO("foo called %d times.", foo.count);
-    INFO("bar called %d times.", bar.count);
+    printf("foo called %d times.\n", foo.count);
+    printf("bar called %d times.\n", bar.count);
     CAIO_FINALLY(self);
 }
 

@@ -21,6 +21,7 @@
  */
 #include <unistd.h>
 #include <stdio.h>
+#include <err.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -89,17 +90,16 @@ echoA(struct caio_task *self, struct tcpconn *conn) {
         /* Write as mush as possible until EAGAIN */
         while (!mrb_isempty(buff)) {
             bytes = mrb_writeout(buff, conn->fd, mrb_used(buff));
-            DEBUG("writing: %d bytes: %d", conn->fd, bytes);
             if ((bytes == -1) && CAIO_MUSTWAITFD()) {
                 events |= CAIO_OUT;
                 break;
             }
             if (bytes == -1) {
-                ERROR("write(%d)", conn->fd);
+                warn("write(%d)", conn->fd);
                 CAIO_RETURN(self);
             }
             if (bytes == 0) {
-                ERROR("write(%d) EOF", conn->fd);
+                warn("write(%d) EOF", conn->fd);
                 CAIO_RETURN(self);
             }
         }
@@ -108,17 +108,16 @@ echoA(struct caio_task *self, struct tcpconn *conn) {
         /* Read as mush as possible until EAGAIN */
         while (!mrb_isfull(buff)) {
             bytes = mrb_readin(buff, conn->fd, mrb_available(buff));
-            DEBUG("reading: %d bytes: %d", conn->fd, bytes);
             if ((bytes == -1) && CAIO_MUSTWAITFD()) {
                 events |= CAIO_IN;
                 break;
             }
             if (bytes == -1) {
-                ERROR("read(%d)", conn->fd);
+                warn("read(%d)", conn->fd);
                 CAIO_RETURN(self);
             }
             if (bytes == 0) {
-                ERROR("read(%d) EOF", conn->fd);
+                warn("read(%d) EOF", conn->fd);
                 CAIO_RETURN(self);
             }
         }
@@ -136,7 +135,7 @@ echoA(struct caio_task *self, struct tcpconn *conn) {
         close(conn->fd);
     }
     if (mrb_destroy(conn->buff)) {
-        ERROR("Cannot dispose buffers.");
+        warn("Cannot dispose buffers.");
     }
     free(conn);
 }
@@ -162,15 +161,16 @@ listenA(struct caio_task *self, struct tcpserver *state,
     /* Bind to tcp port */
     res = bind(fd, &bindaddr, sizeof(bindaddr));
     if (res) {
-        ERROR("Cannot bind on: "ADDRFMTS, ADDRFMTV(bindaddr));
+        warn("Cannot bind on: "ADDRFMTS, ADDRFMTV(bindaddr));
         CAIO_RETURN(self);
     }
 
     /* Listen */
     res = listen(fd, backlog);
-    INFO("Listening on: "ADDRFMTS" backlog: %d", ADDRFMTV(bindaddr), backlog);
+    printf("Listening on: tcp://"ADDRFMTS" backlog: %d", ADDRFMTV(bindaddr),
+            backlog);
     if (res) {
-        ERROR("Cannot listen on: "ADDRFMTS, ADDRFMTV(bindaddr));
+        warn("Cannot listen on: "ADDRFMTS, ADDRFMTV(bindaddr));
         CAIO_RETURN(self);
     }
 
@@ -182,15 +182,15 @@ listenA(struct caio_task *self, struct tcpserver *state,
         }
 
         if (connfd == -1) {
-            ERROR("accept4");
+            warn("accept4");
             CAIO_RETURN(self);
         }
 
         /* New Connection */
-        INFO("New connection from: "ADDRFMTS, ADDRFMTV(connaddr));
+        printf("New connection from: "ADDRFMTS, ADDRFMTV(connaddr));
         struct tcpconn *c = malloc(sizeof(struct tcpconn));
         if (c == NULL) {
-            ERROR("Out of memory");
+            warn("Out of memory");
             CAIO_RETURN(self);
         }
 
@@ -199,7 +199,7 @@ listenA(struct caio_task *self, struct tcpserver *state,
         c->remoteaddr = connaddr;
         c->buff = mrb_create(BUFFSIZE);
         if (tcpconn_spawn(echoA, c)) {
-            ERROR("Maximum connection exceeded, fd: %d", connfd);
+            warn("Maximum connection exceeded, fd: %d", connfd);
             close(connfd);
             mrb_destroy(c->buff);
             free(c);

@@ -16,7 +16,9 @@
  *
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
+#include <stdio.h>
 #include <stdlib.h>
+#include <err.h>
 #include <unistd.h>
 
 #include "caio/caio.h"
@@ -62,7 +64,7 @@ tmrA(struct caio_task *self, struct tmr *state) {
 
     state->fd = maketmr(state->interval);
     if (state->fd == -1) {
-        ERROR("maketmr");
+        warn("maketmr");
         CAIO_RETURN(self);
     }
 
@@ -70,14 +72,14 @@ tmrA(struct caio_task *self, struct tmr *state) {
         CAIO_WAITFD(self, state->fd, EPOLLIN);
         bytes = read(state->fd, &tmp, sizeof(tmp));
         if (bytes == -1) {
-            ERROR("read");
+            warn("read");
             CAIO_RETURN(self);
         }
         state->value += tmp;
         if (state->value > 4) {
             break;
         }
-        INFO("%s(%ds), fd: %d, value: %lu", state->title, state->interval,
+        printf("%s(%ds), fd: %d, value: %lu", state->title, state->interval,
                 state->fd, state->value);
     }
 

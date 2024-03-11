@@ -16,6 +16,7 @@
  *
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
+#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
@@ -23,8 +24,6 @@
 #include <stdbool.h>
 #include <sys/epoll.h>
 #include <sys/timerfd.h>
-
-#include <clog.h>
 
 #include "caio/caio.h"
 #include "caio/taskpool.h"

@@ -24,8 +24,6 @@
 #include <sys/epoll.h>
 #include <sys/timerfd.h>
 
-#include <clog.h>
-
 
 /* Generic stuff */
 #define CAIO_NAME_PASTER(x, y) x ## _ ## y

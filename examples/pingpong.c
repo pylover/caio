@@ -17,6 +17,7 @@
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "caio/caio.h"
 
@@ -38,7 +39,7 @@ typedef struct pingpong {
 static ASYNC
 pongA(struct caio_task *self, struct pingpong *state) {
     CAIO_BEGIN(self);
-    INFO("Table: %s: pong #%d", state->table, state->shoots++);
+    printf("Table: %s: pong #%d", state->table, state->shoots++);
     CAIO_FINALLY(self);
 }
 
