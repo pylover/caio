@@ -79,7 +79,7 @@ consumerA(caiotask_t *self, consumer_t *) {
             break;
         }
         else {
-            warn("Unknowd error: %d", self->eno);
+            warn("Unknowd error: %d\n", self->eno);
             break;
         }
     }

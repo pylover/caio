@@ -39,7 +39,7 @@ typedef struct pingpong {
 static ASYNC
 pongA(struct caio_task *self, struct pingpong *state) {
     CAIO_BEGIN(self);
-    printf("Table: %s: pong #%d", state->table, state->shoots++);
+    printf("Table: %s: pong #%d\n", state->table, state->shoots++);
     CAIO_FINALLY(self);
 }
 

@@ -64,7 +64,7 @@ tmrA(struct caio_task *self, struct tmr *state) {
 
     state->fd = maketmr(state->interval);
     if (state->fd == -1) {
-        warn("maketmr");
+        warn("maketmr\n");
         CAIO_RETURN(self);
     }
 
@@ -72,14 +72,14 @@ tmrA(struct caio_task *self, struct tmr *state) {
         CAIO_WAITFD(self, state->fd, EPOLLIN);
         bytes = read(state->fd, &tmp, sizeof(tmp));
         if (bytes == -1) {
-            warn("read");
+            warn("read\n");
             CAIO_RETURN(self);
         }
         state->value += tmp;
         if (state->value > 4) {
             break;
         }
-        printf("%s(%ds), fd: %d, value: %lu", state->title, state->interval,
+        printf("%s(%ds), fd: %d, value: %lu\n", state->title, state->interval,
                 state->fd, state->value);
     }
 
