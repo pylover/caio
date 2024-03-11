@@ -27,14 +27,16 @@
 #include <clog.h>
 
 #include "caio/caio.h"
-#include "caio/io_epoll.h"
 #include "caio/taskpool.h"
+#include "caio/io_epoll.h"
+#include "caio/io_uring.h"
 
 
+static struct sigaction old_action;
 static bool _killing = false;
 static struct caio_taskpool _taskpool;
 static struct caio_io_epoll _epoll;
-static struct sigaction old_action;
+static struct caio_io_uring _uring;
 
 
 static void
@@ -67,6 +69,11 @@ caio_init(size_t maxtasks, int flags) {
         goto onerror;
     }
 
+    /* Initialize IO uring */
+    if (caio_io_uring_init(&_uring, maxtasks)) {
+        goto onerror;
+    }
+
     /* Initialize task pool */
     if (caio_taskpool_init(&_taskpool, maxtasks)) {
         goto onerror;
@@ -82,6 +89,7 @@ onerror:
 
 void
 caio_deinit() {
+    // TODO: caio_io_uring_deinit(&_uring);
     caio_io_epoll_deinit(&_epoll);
     caio_taskpool_destroy(&_taskpool);
     errno = 0;
