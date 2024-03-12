@@ -49,7 +49,7 @@ pingA(struct caio_task *self, struct pingpong *state) {
     CAIO_BEGIN(self);
 
     while (true) {
-        INFO("Table: %s: ping #%d", state->table, state->shoots++);
+        printf("Table: %s: ping #%d\n", state->table, state->shoots++);
         if (state->shoots > 9) {
             break;
         }
