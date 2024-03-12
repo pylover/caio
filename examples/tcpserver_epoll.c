@@ -96,11 +96,11 @@ echoA(struct caio_task *self, struct tcpconn *conn) {
             }
             if (bytes == -1) {
                 warn("write(%d)\n", conn->fd);
-                CAIO_RETURN(self);
+                CAIO_THROW(self, errno);
             }
             if (bytes == 0) {
                 warn("write(%d) EOF\n", conn->fd);
-                CAIO_RETURN(self);
+                CAIO_THROW(self, errno);
             }
         }
 
@@ -114,11 +114,11 @@ echoA(struct caio_task *self, struct tcpconn *conn) {
             }
             if (bytes == -1) {
                 warn("read(%d)\n", conn->fd);
-                CAIO_RETURN(self);
+                CAIO_THROW(self, errno);
             }
             if (bytes == 0) {
                 warn("read(%d) EOF\n", conn->fd);
-                CAIO_RETURN(self);
+                CAIO_THROW(self, errno);
             }
         }
 
@@ -162,7 +162,7 @@ listenA(struct caio_task *self, struct tcpserver *state,
     res = bind(fd, &bindaddr, sizeof(bindaddr));
     if (res) {
         warn("Cannot bind on: "ADDRFMTS"\n", ADDRFMTV(bindaddr));
-        CAIO_RETURN(self);
+        CAIO_THROW(self, errno);
     }
 
     /* Listen */
@@ -171,7 +171,7 @@ listenA(struct caio_task *self, struct tcpserver *state,
             backlog);
     if (res) {
         warn("Cannot listen on: "ADDRFMTS"\n", ADDRFMTV(bindaddr));
-        CAIO_RETURN(self);
+        CAIO_THROW(self, errno);
     }
 
     while (true) {
@@ -183,7 +183,7 @@ listenA(struct caio_task *self, struct tcpserver *state,
 
         if (connfd == -1) {
             warn("accept4\n");
-            CAIO_RETURN(self);
+            CAIO_THROW(self, errno);
         }
 
         /* New Connection */
@@ -191,7 +191,7 @@ listenA(struct caio_task *self, struct tcpserver *state,
         struct tcpconn *c = malloc(sizeof(struct tcpconn));
         if (c == NULL) {
             warn("Out of memory\n");
-            CAIO_RETURN(self);
+            CAIO_THROW(self, errno);
         }
 
         c->fd = connfd;

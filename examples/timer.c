@@ -65,7 +65,7 @@ tmrA(struct caio_task *self, struct tmr *state) {
     state->fd = maketmr(state->interval);
     if (state->fd == -1) {
         warn("maketmr\n");
-        CAIO_RETURN(self);
+        CAIO_THROW(self, errno);
     }
 
     while (true) {
@@ -73,7 +73,7 @@ tmrA(struct caio_task *self, struct tmr *state) {
         bytes = read(state->fd, &tmp, sizeof(tmp));
         if (bytes == -1) {
             warn("read\n");
-            CAIO_RETURN(self);
+            CAIO_THROW(self, errno);
         }
         state->value += tmp;
         if (state->value > 4) {
