@@ -95,9 +95,12 @@ caio_deinit() {
     if (caio_io_epoll_deinit(&_epoll)) {
         return -1;
     }
-    caio_taskpool_destroy(&_taskpool);
-    errno = 0;
 
+    if (caio_taskpool_destroy(&_taskpool)) {
+        return -1;
+    }
+
+    errno = 0;
     return 0;
 }
 
