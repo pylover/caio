@@ -75,74 +75,6 @@ typedef struct tcpconn {
 #define ADDRFMTV(a) inet_ntoa((a).sin_addr), ntohs((a).sin_port)
 
 
-
-static ASYNC
-echoA(struct caio_task *self, struct tcpconn *conn) {
-    ssize_t bytes;
-    struct mrb *buff = conn->buff;
-    CAIO_BEGIN(self);
-    static int events = 0;
-
-    while (true) {
-        events = CAIO_ET;
-
-        /* tcp write */
-        /* Write as mush as possible until EAGAIN */
-        while (!mrb_isempty(buff)) {
-            bytes = mrb_writeout(buff, conn->fd, mrb_used(buff));
-            DEBUG("writing: %d bytes: %d", conn->fd, bytes);
-            if ((bytes == -1) && CAIO_MUSTWAITFD()) {
-                events |= CAIO_OUT;
-                break;
-            }
-            if (bytes == -1) {
-                ERROR("write(%d)", conn->fd);
-                CAIO_RETURN(self);
-            }
-            if (bytes == 0) {
-                ERROR("write(%d) EOF", conn->fd);
-                CAIO_RETURN(self);
-            }
-        }
-
-        /* tcp read */
-        /* Read as mush as possible until EAGAIN */
-        while (!mrb_isfull(buff)) {
-            bytes = mrb_readin(buff, conn->fd, mrb_available(buff));
-            DEBUG("reading: %d bytes: %d", conn->fd, bytes);
-            if ((bytes == -1) && CAIO_MUSTWAITFD()) {
-                events |= CAIO_IN;
-                break;
-            }
-            if (bytes == -1) {
-                ERROR("read(%d)", conn->fd);
-                CAIO_RETURN(self);
-            }
-            if (bytes == 0) {
-                ERROR("read(%d) EOF", conn->fd);
-                CAIO_RETURN(self);
-            }
-        }
-
-        /* reset errno and rewait events if neccessary */
-        errno = 0;
-        if (mrb_isempty(buff) || (events & CAIO_OUT)) {
-            CAIO_WAITFD(self, conn->fd, events);
-        }
-    }
-
-    CAIO_FINALLY(self);
-    if (conn->fd != -1) {
-        caio_file_forget(conn->fd);
-        close(conn->fd);
-    }
-    if (mrb_destroy(conn->buff)) {
-        ERROR("Cannot dispose buffers.");
-    }
-    free(conn);
-}
-
-
 static ASYNC
 listenA(struct caio_task *self, struct tcpserver *state,
         struct sockaddr_in bindaddr, int backlog) {
@@ -164,7 +96,7 @@ listenA(struct caio_task *self, struct tcpserver *state,
     res = bind(fd, &bindaddr, sizeof(bindaddr));
     if (res) {
         ERROR("Cannot bind on: "ADDRFMTS, ADDRFMTV(bindaddr));
-        CAIO_RETURN(self);
+        CAIO_THROW(self, errno);
     }
 
     /* Listen */
@@ -172,10 +104,18 @@ listenA(struct caio_task *self, struct tcpserver *state,
     INFO("Listening on: "ADDRFMTS" backlog: %d", ADDRFMTV(bindaddr), backlog);
     if (res) {
         ERROR("Cannot listen on: "ADDRFMTS, ADDRFMTV(bindaddr));
-        CAIO_RETURN(self);
+        CAIO_THROW(self, errno);
     }
 
     while (true) {
+        /*
+
+int
+caio_io_uring_submit(struct caio_io_uring *u, struct caio_task *task,
+        struct io_uring_sqe *sqe) {
+        */
+        caio_io_uring_submit(self, fd, &connaddr, &addrlen, SOCK_NONBLOCK)
+        // CAIO_IO_URING_ACCEPT(self, fd, &connaddr, &addrlen, SOCK_NONBLOCK)
         connfd = accept4(fd, &connaddr, &addrlen, SOCK_NONBLOCK);
         if ((connfd == -1) && CAIO_MUSTWAITFD()) {
             CAIO_WAITFD(self, fd, CAIO_IN | CAIO_ET);

@@ -23,6 +23,7 @@
 #include <sys/mman.h>
 #include <linux/io_uring.h>
 
+#include "caio/caio.h"
 #include "caio/io_uring.h"
 
 
@@ -63,8 +64,8 @@ caio_io_uring_init(struct caio_io_uring *u, size_t maxtasks) {
 
     /* See io_uring_setup(2) for io_uring_params.flags you can set */
     memset(p, 0, sizeof(struct io_uring_params));
-    u->ringfd = io_uring_setup(maxtasks, p);
-    if (u->ringfd < 0) {
+    u->fd = io_uring_setup(maxtasks, p);
+    if (u->fd < 0) {
         return -1;
     }
 
@@ -92,7 +93,7 @@ caio_io_uring_init(struct caio_io_uring *u, size_t maxtasks) {
      */
     u->sq_ptr = mmap(0, u->sq_len, PROT_READ | PROT_WRITE,
                   MAP_SHARED | MAP_POPULATE,
-                  u->ringfd, IORING_OFF_SQ_RING);
+                  u->fd, IORING_OFF_SQ_RING);
     if (u->sq_ptr == MAP_FAILED) {
         return -1;
     }
@@ -105,7 +106,7 @@ caio_io_uring_init(struct caio_io_uring *u, size_t maxtasks) {
          * separately */
         u->cq_ptr = mmap(0, u->cq_len, PROT_READ | PROT_WRITE,
                       MAP_SHARED | MAP_POPULATE,
-                      u->ringfd, IORING_OFF_CQ_RING);
+                      u->fd, IORING_OFF_CQ_RING);
         if (u->cq_ptr == MAP_FAILED) {
             return 1;
         }
@@ -119,7 +120,7 @@ caio_io_uring_init(struct caio_io_uring *u, size_t maxtasks) {
     /* Map in the submission queue entries array */
     u->sqes = mmap(0, p->sq_entries * sizeof(struct io_uring_sqe),
                    PROT_READ | PROT_WRITE, MAP_SHARED | MAP_POPULATE,
-                   u->ringfd, IORING_OFF_SQES);
+                   u->fd, IORING_OFF_SQES);
     if (u->sqes == MAP_FAILED) {
         return 1;
     }
@@ -154,28 +155,24 @@ caio_io_uring_deinit(struct caio_io_uring *u) {
         }
     }
 
-    close(u->ringfd);
+    close(u->fd);
     return 0;
 
 failed:
-    close(u->ringfd);
+    close(u->fd);
     return -1;
 }
 
 
-// int ring_fd;
-// unsigned *sring_tail, *sring_mask, *sring_array,
-//             *cring_head, *cring_tail, *cring_mask;
-// struct io_uring_sqe *sqes;
-// struct io_uring_cqe *cqes;
-// char buff[BLOCK_SZ];
-// off_t offset;
-//
+int
+caio_io_uring_submit(struct caio_io_uring *u, struct caio_task *task,
+        struct io_uring_sqe *sqe) {
+
+    return -1;
+}
 
 
-// int app_setup_uring(void) {
-// }
-//
+
 // /*
 // * Read from completion queue.
 // * In this function, we read completion events from the completion queue.

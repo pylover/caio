@@ -82,7 +82,7 @@
             (task)->status = CAIO_TERMINATING; \
         } \
         else { \
-            (task)->status = CAIO_WAITINGIO; \
+            (task)->status = CAIO_WAITINGEPOLL; \
         } \
         return; \
         case __LINE__:; \
@@ -102,7 +102,7 @@ enum caio_flags {
 enum caio_taskstatus {
     CAIO_IDLE = 1,
     CAIO_RUNNING = 2,
-    CAIO_WAITINGIO = 4,
+    CAIO_WAITINGEPOLL = 4,
     CAIO_TERMINATING = 8,
     CAIO_TERMINATED = 16,
 };

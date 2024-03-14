@@ -129,7 +129,7 @@ caio_task_killall() {
     struct caio_task *task = NULL;
 
     while ((task = caio_taskpool_next(&_taskpool, task,
-                    CAIO_RUNNING | CAIO_WAITINGIO))) {
+                    CAIO_RUNNING | CAIO_WAITINGEPOLL))) {
         task->status = CAIO_TERMINATING;
         task++;
     }
@@ -148,7 +148,7 @@ start:
             /* Tell coroutine to jump to the CORO_FINALLY label */
             call->line = -1;
             break;
-        case CAIO_WAITINGIO:
+        case CAIO_WAITINGEPOLL:
             /* Ignore if task is waiting for IO events */
             return false;
         default:
@@ -178,12 +178,12 @@ int
 caio_loop() {
     int epoll_timeout;
     struct caio_task *task = NULL;
-    int iopending = 0;
+    int epolltasks = 0;
 
     while (_taskpool.count) {
-        if (iopending) {
+        if (epolltasks) {
             /* Check whenever all tasks are pending IO operation. */
-            if (iopending == _taskpool.count) {
+            if (epolltasks == _taskpool.count) {
                 /* Wait forever */
                 epoll_timeout = -1;
             }
@@ -202,11 +202,11 @@ caio_loop() {
             }
         }
 
-        iopending = 0;
+        epolltasks = 0;
         while ((task = caio_taskpool_next(&_taskpool, task,
-                    CAIO_RUNNING | CAIO_WAITINGIO | CAIO_TERMINATING))) {
-            if (task->status == CAIO_WAITINGIO) {
-                iopending++;
+                    CAIO_RUNNING | CAIO_WAITINGEPOLL | CAIO_TERMINATING))) {
+            if (task->status == CAIO_WAITINGEPOLL) {
+                epolltasks++;
             }
             else if (caio_task_step(task)) {
                 caio_taskpool_release(&_taskpool, task);
@@ -246,4 +246,10 @@ caio_file_monitor(struct caio_task *task, int fd, int events) {
 int
 caio_file_forget(int fd) {
     return caio_io_epoll_forget(&_epoll, fd);
+}
+
+
+int
+caio_io_task_submit(struct caio_task *task, int fd, struct io_uring_sqe *s) {
+    return -1;
 }
