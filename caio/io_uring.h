@@ -140,4 +140,8 @@ int
 caio_io_uring_deinit(struct caio_io_uring *u);
 
 
+int
+caio_io_uring_wait(struct caio_io_uring *u, int timeout);
+
+
 #endif  // CAIO_IO_URING_H_

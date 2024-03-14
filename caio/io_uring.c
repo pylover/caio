@@ -172,6 +172,11 @@ caio_io_uring_submit(struct caio_io_uring *u, struct caio_task *task,
 }
 
 
+int
+caio_io_uring_wait(struct caio_io_uring *u, int timeout) {
+    return -1;
+}
+
 
 // /*
 // * Read from completion queue.

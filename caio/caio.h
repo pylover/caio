@@ -102,9 +102,10 @@ enum caio_flags {
 enum caio_taskstatus {
     CAIO_IDLE = 1,
     CAIO_RUNNING = 2,
-    CAIO_WAITINGEPOLL = 4,
-    CAIO_TERMINATING = 8,
-    CAIO_TERMINATED = 16,
+    CAIO_TERMINATING = 4,
+    CAIO_TERMINATED = 8,
+    CAIO_WAITINGEPOLL = 16,
+    CAIO_WAITINGURING = 32,
 };
 
 
