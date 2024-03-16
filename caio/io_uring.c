@@ -73,8 +73,7 @@ caio_io_uring_init(struct caio_io_uring *u, size_t maxtasks) {
         return -1;
     }
 
-    /*
-     * io_uring communication happens via 2 shared kernel‐user space ring
+    /* io_uring communication happens via 2 shared kernel‐user space ring
      * buffers, which can be jointly mapped with a single mmap() call in
      * kernels >= 5.4.
      */
@@ -130,7 +129,7 @@ caio_io_uring_init(struct caio_io_uring *u, size_t maxtasks) {
         return 1;
     }
 
-    // /* Save useful fields for later easy reference */
+    /* Save useful fields for later easy reference */
     u->cq.head = u->cq.start + p->cq_off.head;
     u->cq.tail = u->cq.start + p->cq_off.tail;
     u->cq.mask = u->cq.start + p->cq_off.ring_mask;
@@ -182,34 +181,52 @@ caio_io_uring_sqe_get(struct caio_io_uring *u) {
  */
 int
 caio_io_uring_sqe_submit(struct caio_io_uring *u) {
-    unsigned int tail;
+    unsigned int tosubmit = u->sq.tosubmit;;
+    int submitted;
 
-    if (!u->sq.tosubmit) {
+    if (!tosubmit) {
         return 0;
     }
 
     write_barrier();
-    *u->sq.tail = *u->sq.tail + u->sq.tosubmit;
+    *u->sq.tail = *u->sq.tail + tosubmit;
+    u->sq.tosubmit = 0;
     write_barrier();
+
+    /* Tell the kernel we have submitted events with the io_uring_enter()
+     * system call.
+     */
+    submitted = io_uring_enter(u->fd, tosubmit, 0, 0);
+    if (submitted < 0) {
+        return -1;
+    }
+
+    tosubmit -= submitted;
+    if (tosubmit) {
+        return -1;
+    }
+
     return 0;
 }
 
 
 int
-caio_io_uring_wait(struct caio_io_uring *u, int timeout) {
-    // TODO: Implement
-//     /*
-//     * Tell the kernel we have submitted events with the io_uring_enter()
-//     * system call. We also pass in the IOURING_ENTER_GETEVENTS flag which
-//     * causes the io_uring_enter() call to wait until min_complete
-//     * (the 3rd param) events complete.
-//     * */
-//     int ret =  io_uring_enter(ring_fd, 1, 1, IORING_ENTER_GETEVENTS);
-//     if (ret < 0) {
-//         perror("io_uring_enter");
-//         return -1;
-//     }
-//
-//     return ret;
+caio_io_uring_cq_wait(struct caio_io_uring *u) {
+    /* Wait for at least one task to complete by pass in the
+     * IOURING_ENTER_GETEVENTS flag which
+     * causes the io_uring_enter() call to wait until min_complete
+     * (the 3rd param) events complete.
+     */
+    int submitted =  io_uring_enter(u->fd, 0, 1, IORING_ENTER_GETEVENTS);
+    if (submitted < 0) {
+        return -1;
+    }
+
+    return -1;
+}
+
+
+int
+caio_io_uring_cq_check(struct caio_io_uring *u) {
     return -1;
 }

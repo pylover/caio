@@ -173,7 +173,6 @@ start:
 int
 caio_loop() {
     int epolltimeout;
-    int uringtimeout;
     struct caio_task *task = NULL;
     int epolltasks = 0;
     int uringtasks = 0;
@@ -205,22 +204,17 @@ caio_loop() {
         if (uringtasks) {
             /* Check whenever all tasks are pending io_uring */
             if (uringtasks == _taskpool.count) {
-                /* Wait forever */
-                uringtimeout = -1;
-            }
-            else {
-                /* No Wait */
-                uringtimeout = 0;
-            }
-
-            if (caio_io_uring_wait(&_uring, uringtimeout)) {
-                if (_killing) {
-                    errno = 0;
-                }
-                else {
-                    return -1;
+                /* Wait for at least one task */
+                if (caio_io_uring_cq_wait(&_uring)) {
+                    if (_killing) {
+                        errno = 0;
+                    }
+                    else {
+                        return -1;
+                    }
                 }
             }
+            caio_io_uring_cq_check(&_uring);
         }
 
         epolltasks = 0;
