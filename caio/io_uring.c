@@ -51,11 +51,13 @@ io_uring_enter(int ringfd, unsigned int to_submit, unsigned int min_complete,
  * https://gcc.gnu.org/wiki/Atomic/GCCMM/AtomicSync
  */
 /* Macros for barriers needed by io_uring */
-#define _ATOMIC_STORE(p, v) \
-    atomic_store_explicit((_Atomic typeof(*(p)) *)(p), (v), \
-            memory_order_release)
-#define _ATOMIC_LOAD(p) \
-    atomic_load_explicit((_Atomic typeof(*(p)) *)(p), memory_order_acquire)
+#if defined(__x86_64) || defined(__i386__)
+#define read_barrier()  __asm__ __volatile__("":::"memory")
+#define write_barrier() __asm__ __volatile__("":::"memory")
+#else
+#define read_barrier()  __sync_synchronize()
+#define write_barrier() __sync_synchronize()
+#endif
 
 
 int
@@ -115,6 +117,7 @@ caio_io_uring_init(struct caio_io_uring *u, size_t maxtasks) {
     }
 
     /* Save useful fields for later easy reference */
+    u->sq.tosubmit = 0;
     u->sq.tail = u->sq.start + p->sq_off.tail;
     u->sq.head = u->sq.start + p->sq_off.head;
     u->sq.mask = u->sq.start + p->sq_off.ring_mask;
@@ -166,56 +169,35 @@ failed:
 }
 
 
-/*
- *     ht
- * 01234567
- *  h   t
- * 01234567
- *   t  h
- * 01234567
- * */
 struct io_uring_sqe *
 caio_io_uring_sqe_get(struct caio_io_uring *u) {
-    if (CAIO_RING_ISFULL(u->sq)) {
+    if (CAIO_IO_RING_SQ_ISFULL(u->sq)) {
         return NULL;
     }
-    return &u->sq.array[*u->sq.tail & *u->sq.mask];
+    return &u->sq.array[(*u->sq.tail + u->sq.tosubmit++) & *u->sq.mask];
 }
 
 
-/** Add our submission queue entry to the tail of the SQE ring buffer
+/** Add the submission queue entries to the tail of the SQE ring buffer
  */
 int
-caio_io_uring_submit(struct caio_io_uring *u, struct caio_task *task,
-        struct io_uring_sqe *sqe) {
-    // struct io_uring_sqe *sqe = &u->sq.array[index];
+caio_io_uring_sqe_submit(struct caio_io_uring *u) {
+    unsigned int tail;
 
-    /* Fill in the parameters required for the read or write operation */
+    if (!u->sq.tosubmit) {
+        return 0;
+    }
 
-    return -1;
+    write_barrier();
+    *u->sq.tail = *u->sq.tail + u->sq.tosubmit;
+    write_barrier();
+    return 0;
 }
-// int submit_to_sq(int fd, int op) {
-//     unsigned index, tail;
-//
-//     /* Fill in the parameters required for the read or write operation */
-//     sqe->opcode = op;
-//     sqe->fd = fd;
-//     sqe->addr = (unsigned long) buff;
-//     if (op == IORING_OP_READ) {
-//         memset(buff, 0, sizeof(buff));
-//         sqe->len = BLOCK_SZ;
-//     }
-//     else {
-//         sqe->len = strlen(buff);
-//     }
-//     sqe->off = offset;
-//
-//     sring_array[index] = index;
-//     tail++;
-//
-//     /* Update the tail */
-//     io_uring_smp_store_release(sring_tail, tail);
-//
+
+
+int
+caio_io_uring_wait(struct caio_io_uring *u, int timeout) {
+    // TODO: Implement
 //     /*
 //     * Tell the kernel we have submitted events with the io_uring_enter()
 //     * system call. We also pass in the IOURING_ENTER_GETEVENTS flag which
@@ -229,80 +211,5 @@ caio_io_uring_submit(struct caio_io_uring *u, struct caio_task *task,
 //     }
 //
 //     return ret;
-// }
-//
-
-
-int
-caio_io_uring_wait(struct caio_io_uring *u, int timeout) {
     return -1;
 }
-
-
-// /*
-// * Read from completion queue.
-// * In this function, we read completion events from the completion queue.
-// * We dequeue the CQE, update and head and return the result of the operation.
-// * */
-// int read_from_cq() {
-//     struct io_uring_cqe *cqe;
-//     unsigned head;
-//
-//     /* Read barrier */
-//     head = io_uring_smp_load_acquire(cring_head);
-//     /*
-//     * Remember, this is a ring buffer. If head == tail, it means that the
-//     * buffer is empty.
-//     * */
-//     if (head == *cring_tail)
-//         return -1;
-//
-//     /* Get the entry */
-//     cqe = &cqes[head & (*cring_mask)];
-//     if (cqe->res < 0)
-//         fprintf(stderr, "Error: %s\n", strerror(abs(cqe->res)));
-//
-//     head++;
-//
-//     /* Write barrier so that update to the head are made visible */
-//     io_uring_smp_store_release(cring_head, head);
-//
-//     return cqe->res;
-// }
-//
-// int main(int argc, char *argv[]) {
-//     int res;
-//
-//     /* Setup io_uring for use */
-//     if (app_setup_uring()) {
-//         fprintf(stderr, "Unable to setup uring!\n");
-//         return 1;
-//     }
-//
-//     /*
-//     * A while loop that reads from stdin and writes to stdout.
-//     * Breaks on EOF.
-//     */
-//     while (1) {
-//         /* Initiate read from stdin and wait for it to complete */
-//         submit_to_sq(STDIN_FILENO, IORING_OP_READ);
-//         /* Read completion queue entry */
-//         res = read_from_cq();
-//         if (res > 0) {
-//             /* Read successful. Write to stdout. */
-//             submit_to_sq(STDOUT_FILENO, IORING_OP_WRITE);
-//             read_from_cq();
-//         } else if (res == 0) {
-//             /* reached EOF */
-//             break;
-//         }
-//         else if (res < 0) {
-//             /* Error reading file */
-//             fprintf(stderr, "Error: %s\n", strerror(abs(res)));
-//             break;
-//         }
-//         offset += res;
-//     }
-//
-//     return 0;
-// }

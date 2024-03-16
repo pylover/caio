@@ -23,9 +23,11 @@
 #include <linux/io_uring.h>
 
 
-#define CAIO_RING_AVAIL(r) (((*(r).head - *(r).tail - 1) & *(r).mask))
+// #define CAIO_RING_AVAIL(r) (((*(r).head - *(r).tail - 1) & *(r).mask))
+// #define CAIO_RING_ISFULL(r) (CAIO_RING_USED(r) == *(r).mask)
 #define CAIO_RING_USED(r) ((*(r).tail - *(r).head) & *(r).mask)
-#define CAIO_RING_ISFULL(r) (CAIO_RING_USED(r) == *(r).mask)
+#define CAIO_IO_RING_SQ_ISFULL(r) \
+    ((CAIO_RING_USED(r) + (r).tosubmit) == *(r).mask)
 
 
 struct caio_io_uring_mapinfo {
@@ -41,6 +43,7 @@ struct caio_io_uring_mapinfo {
 struct caio_io_uring_sq {
     struct caio_io_uring_mapinfo;
     struct io_uring_sqe *array;
+    unsigned int tosubmit;
 };
 
 
