@@ -228,5 +228,6 @@ caio_io_uring_cq_wait(struct caio_io_uring *u) {
 
 int
 caio_io_uring_cq_check(struct caio_io_uring *u) {
+    // TODO: Implement
     return -1;
 }
