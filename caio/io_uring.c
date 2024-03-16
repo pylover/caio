@@ -181,7 +181,7 @@ caio_io_uring_sqe_get(struct caio_io_uring *u) {
  */
 int
 caio_io_uring_sqe_submit(struct caio_io_uring *u) {
-    unsigned int tosubmit = u->sq.tosubmit;;
+    unsigned int tosubmit = u->sq.tosubmit;
     int submitted;
 
     if (!tosubmit) {
