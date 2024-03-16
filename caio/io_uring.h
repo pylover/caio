@@ -23,24 +23,38 @@
 #include <linux/io_uring.h>
 
 
+#define CAIO_RING_AVAIL(r) (((*(r).head - *(r).tail - 1) & *(r).mask))
+#define CAIO_RING_USED(r) ((*(r).tail - *(r).head) & *(r).mask)
+#define CAIO_RING_ISFULL(r) (CAIO_RING_USED(r) == *(r).mask)
+
+
+struct caio_io_uring_mapinfo {
+    void *start;
+    size_t size;
+
+    unsigned int *tail;
+    unsigned int *head;
+    unsigned int *mask;
+};
+
+
+struct caio_io_uring_sq {
+    struct caio_io_uring_mapinfo;
+    struct io_uring_sqe *array;
+};
+
+
+struct caio_io_uring_cq {
+    struct caio_io_uring_mapinfo;
+    struct io_uring_cqe *array;
+};
+
+
 struct caio_io_uring {
     int fd;
     struct io_uring_params params;
-
-    struct io_uring_sqe *sqes;
-    struct io_uring_cqe *cqes;
-
-    int sq_len;
-    void *sq_ptr;
-    unsigned int *sq_tail;
-    unsigned int *sq_mask;
-    unsigned int *sq_array;
-
-    void *cq_ptr;
-    int cq_len;
-    unsigned int *cq_head;
-    unsigned int *cq_tail;
-    unsigned int *cq_mask;
+    struct caio_io_uring_sq sq;
+    struct caio_io_uring_cq cq;
 };
 
 
