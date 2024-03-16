@@ -222,7 +222,7 @@ caio_io_uring_cq_wait(struct caio_io_uring *u) {
         return -1;
     }
 
-    return -1;
+    return 0;
 }
 
 
