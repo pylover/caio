@@ -28,6 +28,20 @@
 
 
 /*
+ * Thread safe (atmoic) push and pop from ringbuffers
+ * https://gcc.gnu.org/wiki/Atomic/GCCMM/AtomicSync
+ */
+/* Macros for barriers needed by io_uring */
+#if defined(__x86_64) || defined(__i386__)
+#define read_barrier()  __asm__ __volatile__("":::"memory")
+#define write_barrier() __asm__ __volatile__("":::"memory")
+#else
+#define read_barrier()  __sync_synchronize()
+#define write_barrier() __sync_synchronize()
+#endif
+
+
+/*
  * System call wrappers provided since glibc does not yet
  * provide wrappers for io_uring system calls.
  */
@@ -44,20 +58,6 @@ io_uring_enter(int ringfd, unsigned int to_submit, unsigned int min_complete,
     return (int) syscall(__NR_io_uring_enter, ringfd, to_submit,
                     min_complete, flags, NULL, 0);
 }
-
-
-/*
- * Thread safe (atmoic) push and pop from ringbuffers
- * https://gcc.gnu.org/wiki/Atomic/GCCMM/AtomicSync
- */
-/* Macros for barriers needed by io_uring */
-#if defined(__x86_64) || defined(__i386__)
-#define read_barrier()  __asm__ __volatile__("":::"memory")
-#define write_barrier() __asm__ __volatile__("":::"memory")
-#else
-#define read_barrier()  __sync_synchronize()
-#define write_barrier() __sync_synchronize()
-#endif
 
 
 int
@@ -173,6 +173,7 @@ caio_io_uring_sqe_get(struct caio_io_uring *u) {
     if (CAIO_IO_RING_SQ_ISFULL(u->sq)) {
         return NULL;
     }
+    read_barrier();
     return &u->sq.array[(*u->sq.tail + u->sq.tosubmit++) & *u->sq.mask];
 }
 
@@ -188,6 +189,8 @@ caio_io_uring_sqe_submit(struct caio_io_uring *u) {
         return 0;
     }
 
+    /* Update the submission queue's tail with atmoic operation.
+     */
     write_barrier();
     *u->sq.tail = *u->sq.tail + tosubmit;
     u->sq.tosubmit = 0;
@@ -213,21 +216,31 @@ caio_io_uring_sqe_submit(struct caio_io_uring *u) {
 int
 caio_io_uring_cq_wait(struct caio_io_uring *u) {
     /* Wait for at least one task to complete by pass in the
-     * IOURING_ENTER_GETEVENTS flag which
-     * causes the io_uring_enter() call to wait until min_complete
-     * (the 3rd param) events complete.
+     * IOURING_ENTER_GETEVENTS flag which causes the io_uring_enter() call to
+     * wait until min_complete (the 3rd param) events complete.
      */
-    int submitted =  io_uring_enter(u->fd, 0, 1, IORING_ENTER_GETEVENTS);
-    if (submitted < 0) {
-        return -1;
-    }
-
-    return 0;
+    return io_uring_enter(u->fd, 0, 1, IORING_ENTER_GETEVENTS);
 }
 
 
 int
 caio_io_uring_cq_check(struct caio_io_uring *u) {
-    // TODO: Implement
-    return -1;
+    struct caio_io_uring_cq *cq = &u->cq;
+    struct io_uring_cqe *cqe;
+    unsigned int head;
+    unsigned int tail;
+    unsigned int mask = cq->mask;
+
+    read_barrier();
+    head = *cq->head;
+    tail = *cq->tail;
+
+    while (head == tail) {
+        cqe = u->cq.array[head & mask];
+        // TODO: consume cqe
+        *cq->head = ++head;
+        write_barrier();
+    }
+
+    return 0;
 }
