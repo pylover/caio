@@ -23,42 +23,18 @@
 #include <linux/io_uring.h>
 
 
-// #define CAIO_RING_AVAIL(r) (((*(r).head - *(r).tail - 1) & *(r).mask))
-// #define CAIO_RING_ISFULL(r) (CAIO_RING_USED(r) == *(r).mask)
-#define CAIO_RING_USED(r) ((*(r).tail - *(r).head) & *(r).mask)
-#define CAIO_IO_RING_SQ_ISFULL(r) \
-    ((CAIO_RING_USED(r) + (r).tosubmit) == *(r).mask)
-
-
-struct caio_io_uring_mapinfo {
-    void *start;
-    size_t size;
-
-    unsigned int *tail;
-    unsigned int *head;
-    unsigned int *mask;
-};
-
-
-struct caio_io_uring_sq {
-    struct caio_io_uring_mapinfo;
-    struct io_uring_sqe *array;
-    unsigned int tosubmit;
-};
-
-
-struct caio_io_uring_cq {
-    struct caio_io_uring_mapinfo;
-    struct io_uring_cqe *array;
-};
-
-
 struct caio_io_uring {
-    int fd;
-    struct io_uring_params params;
-    struct caio_io_uring_sq sq;
-    struct caio_io_uring_cq cq;
+    struct io_uring *rings[CAIO_URING_MAXRINGS];
+    size_t ringscount;
 };
+
+
+int
+caio_io_uring_init(struct caio_io_uring *u);
+
+
+int
+caio_io_uring_deinit(struct caio_io_uring *u);
 
 
 /*
@@ -147,22 +123,6 @@ struct caio_io_uring {
  *     };
  * };
  */
-
-
-int
-caio_io_uring_init(struct caio_io_uring *u, size_t maxtasks);
-
-
-int
-caio_io_uring_deinit(struct caio_io_uring *u);
-
-
-int
-caio_io_uring_cq_wait(struct caio_io_uring *u);
-
-
-int
-caio_io_uring_cq_check(struct caio_io_uring *u);
 
 
 #endif  // CAIO_IO_URING_H_

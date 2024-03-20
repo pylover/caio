@@ -90,7 +90,7 @@ echoA(struct caio_task *self, struct tcpconn *conn) {
         /* Write as mush as possible until EAGAIN */
         while (!mrb_isempty(buff)) {
             bytes = mrb_writeout(buff, conn->fd, mrb_used(buff));
-            if ((bytes == -1) && CAIO_MUSTWAITFD()) {
+            if ((bytes == -1) && CAIO_EPOLL_MUSTWAIT()) {
                 events |= CAIO_OUT;
                 break;
             }
@@ -108,7 +108,7 @@ echoA(struct caio_task *self, struct tcpconn *conn) {
         /* Read as mush as possible until EAGAIN */
         while (!mrb_isfull(buff)) {
             bytes = mrb_readin(buff, conn->fd, mrb_available(buff));
-            if ((bytes == -1) && CAIO_MUSTWAITFD()) {
+            if ((bytes == -1) && CAIO_EPOLL_MUSTWAIT()) {
                 events |= CAIO_IN;
                 break;
             }
@@ -125,13 +125,13 @@ echoA(struct caio_task *self, struct tcpconn *conn) {
         /* reset errno and rewait events if neccessary */
         errno = 0;
         if (mrb_isempty(buff) || (events & CAIO_OUT)) {
-            CAIO_WAITFD(self, conn->fd, events);
+            CAIO_EPOLL_WAIT(self, conn->fd, events);
         }
     }
 
     CAIO_FINALLY(self);
     if (conn->fd != -1) {
-        caio_file_forget(conn->fd);
+        caio_epoll_unregister(conn->fd);
         close(conn->fd);
     }
     if (mrb_destroy(conn->buff)) {
@@ -176,8 +176,8 @@ listenA(struct caio_task *self, struct tcpserver *state,
 
     while (true) {
         connfd = accept4(fd, &connaddr, &addrlen, SOCK_NONBLOCK);
-        if ((connfd == -1) && CAIO_MUSTWAITFD()) {
-            CAIO_WAITFD(self, fd, CAIO_IN | CAIO_ET);
+        if ((connfd == -1) && CAIO_EPOLL_MUSTWAIT()) {
+            CAIO_EPOLL_WAIT(self, fd, CAIO_IN | CAIO_ET);
             continue;
         }
 
@@ -208,7 +208,7 @@ listenA(struct caio_task *self, struct tcpserver *state,
 
     CAIO_FINALLY(self);
     if (fd != -1) {
-        caio_file_forget(fd);
+        caio_epoll_unregister(fd);
         close(fd);
     }
 }

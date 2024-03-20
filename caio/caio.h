@@ -75,24 +75,6 @@
 #define CAIO_CLEARERROR(task) task->eno = 0
 
 
-#define CAIO_WAITFD(task, fd, events) \
-    do { \
-        (task)->current->line = __LINE__; \
-        if (caio_file_monitor(task, fd, events)) { \
-            (task)->status = CAIO_TERMINATING; \
-        } \
-        else { \
-            (task)->status = CAIO_WAITINGEPOLL; \
-        } \
-        return; \
-        case __LINE__:; \
-    } while (0)
-
-
-#define CAIO_MUSTWAITFD() \
-    ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINPROGRESS))
-
-
 enum caio_flags {
     CAIO_NONE = 0,
     CAIO_SIG = 1,
@@ -104,7 +86,8 @@ enum caio_taskstatus {
     CAIO_RUNNING = 2,
     CAIO_TERMINATING = 4,
     CAIO_TERMINATED = 8,
-    CAIO_WAITINGEPOLL = 16,
+    // TODO: Define inside epoll or io_uring sections
+    CAIO_EPOLL_WAITING = 16,
     CAIO_WAITINGURING = 32,
 };
 
@@ -174,19 +157,67 @@ caio_task_killall();
 
 
 int
-caio_file_monitor(struct caio_task *task, int fd, int events);
-
-
-int
-caio_file_forget(int fd);
-
-
-int
 caio_loop();
 
 
 int
 caio_handover();
+
+
+/* epoll stuff */
+int
+caio_epoll_register(struct caio_task *task, int fd, int events);
+
+
+int
+caio_epoll_unregister(int fd);
+
+
+#define CAIO_EPOLL_WAIT(task, fd, events) \
+    do { \
+        (task)->current->line = __LINE__; \
+        if (caio_epoll_register(task, fd, events)) { \
+            (task)->status = CAIO_TERMINATING; \
+        } \
+        else { \
+            (task)->status = CAIO_EPOLL_WAITING; \
+        } \
+        return; \
+        case __LINE__:; \
+    } while (0)
+
+
+#define CAIO_EPOLL_MUSTWAIT() \
+    ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINPROGRESS))
+
+
+/* IO Uring Stuff */
+#include <liburing.h>
+#ifndef CAIO_URING_MAXRINGS
+#define CAIO_URING_MAXRINGS 8
+#endif  // CAIO_URING_MAXRINGS
+
+
+int
+caio_uring_register(struct io_uring *u);
+
+
+int
+caio_uring_unregister(struct io_uring *u);
+
+
+#define CAIO_URING_WAIT(u, task) \
+    do { \
+        (task)->current->line = __LINE__; \
+        if (caio_file_monitor(task, fd, events)) { \
+            (task)->status = CAIO_TERMINATING; \
+        } \
+        else { \
+            (task)->status = CAIO_URING_WAITING; \
+        } \
+        return; \
+        case __LINE__:; \
+    } while (0)
 
 
 #endif  // CAIO_CAIO_H_

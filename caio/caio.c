@@ -69,7 +69,7 @@ caio_init(size_t maxtasks, int flags) {
     }
 
     /* Initialize IO uring */
-    if (caio_io_uring_init(&_uring, maxtasks)) {
+    if (caio_io_uring_init(&_uring)) {
         goto onerror;
     }
 
@@ -129,7 +129,7 @@ caio_task_killall() {
     struct caio_task *task = NULL;
 
     while ((task = caio_taskpool_next(&_taskpool, task,
-                    CAIO_RUNNING | CAIO_WAITINGEPOLL))) {
+                    CAIO_RUNNING | CAIO_EPOLL_WAITING))) {
         task->status = CAIO_TERMINATING;
         task++;
     }
@@ -200,28 +200,28 @@ caio_loop() {
             }
         }
 
-        /* IO Uring */
-        if (uringtasks) {
-            /* Check whenever all tasks are pending io_uring */
-            if (uringtasks == _taskpool.count) {
-                /* Wait for at least one task */
-                if (caio_io_uring_cq_wait(&_uring)) {
-                    if (_killing) {
-                        errno = 0;
-                    }
-                    else {
-                        return -1;
-                    }
-                }
-            }
-            caio_io_uring_cq_check(&_uring);
-        }
+        // /* IO Uring */
+        // if (uringtasks) {
+        //     /* Check whenever all tasks are pending io_uring */
+        //     if (uringtasks == _taskpool.count) {
+        //         /* Wait for at least one task */
+        //         if (caio_io_uring_cq_wait(&_uring)) {
+        //             if (_killing) {
+        //                 errno = 0;
+        //             }
+        //             else {
+        //                 return -1;
+        //             }
+        //         }
+        //     }
+        //     caio_io_uring_cq_check(&_uring);
+        // }
 
         epolltasks = 0;
         uringtasks = 0;
         while ((task = caio_taskpool_next(&_taskpool, task,
-                    CAIO_RUNNING | CAIO_WAITINGEPOLL | CAIO_TERMINATING))) {
-            if (task->status == CAIO_WAITINGEPOLL) {
+                    CAIO_RUNNING | CAIO_EPOLL_WAITING | CAIO_TERMINATING))) {
+            if (task->status == CAIO_EPOLL_WAITING) {
                 epolltasks++;
             }
             else if (task->status == CAIO_WAITINGURING) {
@@ -230,7 +230,7 @@ caio_loop() {
             else if (caio_task_step(task)) {
                 caio_taskpool_release(&_taskpool, task);
             }
-            else if (task->status == CAIO_WAITINGEPOLL) {
+            else if (task->status == CAIO_EPOLL_WAITING) {
                 epolltasks++;
             }
             else if (task->status == CAIO_WAITINGURING) {
@@ -263,18 +263,12 @@ onerror:
 
 
 int
-caio_file_monitor(struct caio_task *task, int fd, int events) {
+caio_epoll_register(struct caio_task *task, int fd, int events) {
     return caio_io_epoll_monitor(&_epoll, task, fd, events);
 }
 
 
 int
-caio_file_forget(int fd) {
+caio_epoll_unregister(int fd) {
     return caio_io_epoll_forget(&_epoll, fd);
-}
-
-
-int
-caio_io_task_submit(struct caio_task *task, int fd, struct io_uring_sqe *s) {
-    return -1;
 }

@@ -112,7 +112,7 @@ caio_io_epoll_wait(struct caio_io_epoll *e, int timeout) {
 
     for (i = 0; i < nfds; i++) {
         task = (struct caio_task*)e->events[i].data.ptr;
-        if (task->status == CAIO_WAITINGEPOLL) {
+        if (task->status == CAIO_EPOLL_WAITING) {
             task->status = CAIO_RUNNING;
         }
     }

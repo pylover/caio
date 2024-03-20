@@ -51,8 +51,8 @@ caio_sleepA(struct caio_task *self, int *state, time_t seconds) {
         CAIO_THROW(self, eno);
     }
 
-    CAIO_WAITFD(self, fd, EPOLLIN);
+    CAIO_EPOLL_WAIT(self, fd, EPOLLIN);
     CAIO_FINALLY(self);
-    caio_file_forget(fd);
+    caio_epoll_unregister(fd);
     close(fd);
 }
