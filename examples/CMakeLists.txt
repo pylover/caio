@@ -14,7 +14,6 @@ foreach (t IN LISTS examples)
         $<TARGET_OBJECTS:caio>
     )
     target_include_directories(${t} PUBLIC "${PROJECT_BINARY_DIR}")
-    target_link_libraries(${t} PUBLIC mrb)
     add_custom_target(${t}_exec COMMAND ${t})
     add_custom_target(${t}_debug COMMAND gdb 
         --command=${PROJECT_SOURCE_DIR}/examples/${t}.gdb

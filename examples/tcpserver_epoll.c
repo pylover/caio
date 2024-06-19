@@ -28,9 +28,10 @@
 #include <netinet/in.h>
 #include <netinet/ip.h>
 
-#include <mrb.h>
-
 #include "caio/caio.h"
+
+
+#define BUFFSIZE 1024
 
 
 /* TCP server caio state and */
@@ -45,7 +46,8 @@ typedef struct tcpconn {
     int fd;
     struct sockaddr_in localaddr;
     struct sockaddr_in remoteaddr;
-    mrb_t buff;
+    char buff[BUFFSIZE];
+    size_t bufflen;
 } tcpconn_t;
 
 
@@ -67,10 +69,6 @@ typedef struct tcpconn {
 #include "caio/generic.c"  // NOLINT
 
 
-#define PAGESIZE 4096
-#define BUFFSIZE (PAGESIZE * 32768)
-
-
 #define ADDRFMTS "%s:%d"
 #define ADDRFMTV(a) inet_ntoa((a).sin_addr), ntohs((a).sin_port)
 
@@ -79,7 +77,6 @@ typedef struct tcpconn {
 static ASYNC
 echoA(struct caio_task *self, struct tcpconn *conn) {
     ssize_t bytes;
-    struct mrb *buff = conn->buff;
     CAIO_BEGIN(self);
     static int events = 0;
 
@@ -88,8 +85,8 @@ echoA(struct caio_task *self, struct tcpconn *conn) {
 
         /* tcp write */
         /* Write as mush as possible until EAGAIN */
-        while (!mrb_isempty(buff)) {
-            bytes = mrb_writeout(buff, conn->fd, mrb_used(buff));
+        while (conn->bufflen) {
+            bytes = write(conn->fd, conn->buff, conn->bufflen);
             if ((bytes == -1) && CAIO_EPOLL_MUSTWAIT()) {
                 events |= CAIO_OUT;
                 break;
@@ -102,12 +99,13 @@ echoA(struct caio_task *self, struct tcpconn *conn) {
                 warn("write(%d) EOF\n", conn->fd);
                 CAIO_THROW(self, errno);
             }
+            conn->bufflen -= bytes;
         }
 
         /* tcp read */
         /* Read as mush as possible until EAGAIN */
-        while (!mrb_isfull(buff)) {
-            bytes = mrb_readin(buff, conn->fd, mrb_available(buff));
+        while (conn->bufflen < BUFFSIZE) {
+            bytes = read(conn->fd, conn->buff, BUFFSIZE - conn->bufflen);
             if ((bytes == -1) && CAIO_EPOLL_MUSTWAIT()) {
                 events |= CAIO_IN;
                 break;
@@ -124,7 +122,7 @@ echoA(struct caio_task *self, struct tcpconn *conn) {
 
         /* reset errno and rewait events if neccessary */
         errno = 0;
-        if (mrb_isempty(buff) || (events & CAIO_OUT)) {
+        if ((conn->bufflen == 0) || (events & CAIO_OUT)) {
             CAIO_EPOLL_WAIT(self, conn->fd, events);
         }
     }
@@ -133,9 +131,6 @@ echoA(struct caio_task *self, struct tcpconn *conn) {
     if (conn->fd != -1) {
         caio_epoll_unregister(conn->fd);
         close(conn->fd);
-    }
-    if (mrb_destroy(conn->buff)) {
-        warn("Cannot dispose buffers.\n");
     }
     free(conn);
 }
@@ -197,11 +192,9 @@ listenA(struct caio_task *self, struct tcpserver *state,
         c->fd = connfd;
         c->localaddr = bindaddr;
         c->remoteaddr = connaddr;
-        c->buff = mrb_create(BUFFSIZE);
         if (tcpconn_spawn(echoA, c)) {
             warn("Maximum connection exceeded, fd: %d\n", connfd);
             close(connfd);
-            mrb_destroy(c->buff);
             free(c);
         }
     }

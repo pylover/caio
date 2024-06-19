@@ -47,3 +47,12 @@ foo(struct caio_task *self, struct bar* state) {
   self->status = CAIO_TERMINATED
 }
 ```
+
+
+## Contribution
+
+### Setup build environment
+```bash
+sudo apt install cmake
+```
+

@@ -4,8 +4,6 @@
 - Preserve filename, function name and line number on CAIO_THROW
 - Use pre allocated callstack instead of multiple malloc/free
 - Readme
-  - zero dependencies
-  - example dependencies: mrb
 
 - io_uring
   - readme: cmake CAIO_URING_ENABLED
