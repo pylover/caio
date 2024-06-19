@@ -6,6 +6,8 @@
   - example dependencies: mrb
 
 - io_uring
+  - readme: cmake CAIO_URING_ENABLED
+  - readme: install liburing
   - Huge memory allocation instead of mmap
   - Use atomic store and load as the liburing way
   - Fixed files and buffers

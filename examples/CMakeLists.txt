@@ -4,7 +4,7 @@ list(APPEND examples
     timer
     sleep
     tcpserver_epoll
-    # tcpserver_iouring
+    tcpserver_iouring
 )
 
 

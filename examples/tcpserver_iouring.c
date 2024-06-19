@@ -19,150 +19,61 @@
  *
  * An edge-triggered epoll(7) example using caio.
  */
-#include <unistd.h>
 #include <stdio.h>
-#include <err.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
 #include <netinet/in.h>
-#include <netinet/ip.h>
-
-#include <mrb.h>
-
-#include "caio/caio.h"
-
-
-/* TCP server caio state and */
-typedef struct tcpserver {
-    int connections_active;
-    int connections_total;
-} tcpserver_t;
+#include <sys/socket.h>
+// #include <fcntl.h>
+// #include <stdint.h>
+// #include <arpa/inet.h>
+// #include <stdlib.h>
+// #include <string.h>
+// #include <sys/time.h>
+// #include <unistd.h>
 
 
-/* TCP connection state types */
-typedef struct tcpconn {
-    int fd;
-    struct sockaddr_in localaddr;
-    struct sockaddr_in remoteaddr;
-    mrb_t buff;
-} tcpconn_t;
+#define TCP_BACKLOG 1024
 
 
-#undef CAIO_ARG1
-#undef CAIO_ARG2
-#undef CAIO_ENTITY
-#define CAIO_ENTITY tcpserver
-#define CAIO_ARG1 struct sockaddr_in
-#define CAIO_ARG2 int
-#include "caio/generic.h"
-#include "caio/generic.c"
+static int
+setup_listening_socket(int port) {
+	struct sockaddr_in srv_addr = { };
+	int fd;
+    int enable;
+    int ret;
 
+	fd = socket(AF_INET, SOCK_STREAM, 0);
+	if (fd == -1) {
+		perror("socket()");
+		return -1;
+	}
 
-#undef CAIO_ARG1
-#undef CAIO_ARG2
-#undef CAIO_ENTITY
-#define CAIO_ENTITY tcpconn
-#include "caio/generic.h"  // NOLINT
-#include "caio/generic.c"  // NOLINT
+	enable = 1;
+	ret = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
+	if (ret < 0) {
+		perror("setsockopt(SO_REUSEADDR)");
+		return -1;
+	}
 
+	srv_addr.sin_family = AF_INET;
+	srv_addr.sin_port = htons(port);
+	srv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	ret = bind(fd, (const struct sockaddr *)&srv_addr, sizeof(srv_addr));
 
-#define PAGESIZE 4096
-#define BUFFSIZE (PAGESIZE * 32768)
+	if (ret < 0) {
+		perror("bind()");
+		return -1;
+	}
 
+	if (listen(fd, TCP_BACKLOG) < 0) {
+		perror("listen()");
+		return -1;
+	}
 
-#define ADDRFMTS "%s:%d"
-#define ADDRFMTV(a) inet_ntoa((a).sin_addr), ntohs((a).sin_port)
-
-
-static ASYNC
-listenA(struct caio_task *self, struct tcpserver *state,
-        struct sockaddr_in bindaddr, int backlog) {
-    socklen_t addrlen = sizeof(struct sockaddr);
-    struct sockaddr_in connaddr;
-    static int fd;
-    int connfd;
-    int res;
-    int option = 1;
-    CAIO_BEGIN(self);
-
-    /* Create socket */
-    fd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
-
-    /* Allow reuse the address */
-    setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
-
-    /* Bind to tcp port */
-    res = bind(fd, &bindaddr, sizeof(bindaddr));
-    if (res) {
-        ERROR("Cannot bind on: "ADDRFMTS, ADDRFMTV(bindaddr));
-        CAIO_THROW(self, errno);
-    }
-
-    /* Listen */
-    res = listen(fd, backlog);
-    INFO("Listening on: "ADDRFMTS" backlog: %d", ADDRFMTV(bindaddr), backlog);
-    if (res) {
-        ERROR("Cannot listen on: "ADDRFMTS, ADDRFMTV(bindaddr));
-        CAIO_THROW(self, errno);
-    }
-
-    while (true) {
-        /*
-
-int
-caio_io_uring_submit(struct caio_io_uring *u, struct caio_task *task,
-        struct io_uring_sqe *sqe) {
-        */
-        caio_io_uring_submit(self, fd, &connaddr, &addrlen, SOCK_NONBLOCK)
-        // CAIO_IO_URING_ACCEPT(self, fd, &connaddr, &addrlen, SOCK_NONBLOCK)
-        connfd = accept4(fd, &connaddr, &addrlen, SOCK_NONBLOCK);
-        if ((connfd == -1) && CAIO_MUSTWAITFD()) {
-            CAIO_WAITFD(self, fd, CAIO_IN | CAIO_ET);
-            continue;
-        }
-
-        if (connfd == -1) {
-            ERROR("accept4");
-            CAIO_RETURN(self);
-        }
-
-        /* New Connection */
-        INFO("New connection from: "ADDRFMTS, ADDRFMTV(connaddr));
-        struct tcpconn *c = malloc(sizeof(struct tcpconn));
-        if (c == NULL) {
-            ERROR("Out of memory");
-            CAIO_RETURN(self);
-        }
-
-        c->fd = connfd;
-        c->localaddr = bindaddr;
-        c->remoteaddr = connaddr;
-        c->buff = mrb_create(BUFFSIZE);
-        if (tcpconn_spawn(echoA, c)) {
-            ERROR("Maximum connection exceeded, fd: %d", connfd);
-            close(connfd);
-            mrb_destroy(c->buff);
-            free(c);
-        }
-    }
-
-    CAIO_FINALLY(self);
-    if (fd != -1) {
-        caio_file_forget(fd);
-        close(fd);
-    }
+	return fd;
 }
 
 
 int
 main() {
-    int backlog = 2;
-    struct sockaddr_in bindaddr = {
-        .sin_addr = {htons(0)},
-        .sin_port = htons(3030),
-    };
-    struct tcpserver state = {0, 0};
-
-    return tcpserver_forever(listenA, &state, bindaddr, backlog, 5, CAIO_SIG);
+    return 0;
 }
