@@ -191,33 +191,4 @@ caio_epoll_unregister(int fd);
     ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINPROGRESS))
 
 
-/* IO Uring Stuff */
-#include <liburing.h>
-#ifndef CAIO_URING_MAXRINGS
-#define CAIO_URING_MAXRINGS 8
-#endif  // CAIO_URING_MAXRINGS
-
-
-int
-caio_uring_register(struct io_uring *u);
-
-
-int
-caio_uring_unregister(struct io_uring *u);
-
-
-#define CAIO_URING_WAIT(u, task) \
-    do { \
-        (task)->current->line = __LINE__; \
-        if (caio_file_monitor(task, fd, events)) { \
-            (task)->status = CAIO_TERMINATING; \
-        } \
-        else { \
-            (task)->status = CAIO_URING_WAITING; \
-        } \
-        return; \
-        case __LINE__:; \
-    } while (0)
-
-
 #endif  // CAIO_CAIO_H_

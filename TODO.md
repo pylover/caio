@@ -1,3 +1,5 @@
+- fixes callstack allocation per task
+- Dynamic(infinite) stack size option
 - All todos
 - Preserve filename, function name and line number on CAIO_THROW
 - Use pre allocated callstack instead of multiple malloc/free
