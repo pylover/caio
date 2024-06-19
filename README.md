@@ -52,7 +52,20 @@ foo(struct caio_task *self, struct bar* state) {
 ## Contribution
 
 ### Setup build environment
+
+#### Install Dependencies
+##### Build essentials
 ```bash
-sudo apt install cmake
+sudo apt install make cmake build-essential
 ```
 
+##### Linter 
+```bash
+pip3 install prettyc
+```
+Or, in modern way
+```bash
+python3 -m venv ${HOME}/pyenv
+${HOME}/pyenv/bin/pip install prettyc
+cp ${HOME}/pyenv/bin/prettyc ${HOME}/bin
+```
