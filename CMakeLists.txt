@@ -4,6 +4,8 @@ project(caio
     LANGUAGES C
 )
 
+
+set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release)
 set(CMAKE_C_COMPILER gcc)
 set(CMAKE_VERBOSE_MAKEFILE OFF)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fms-extensions")
@@ -11,12 +13,12 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_GNU_SOURCE=1")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
 
 
-if(NOT CMAKE_BUILD_TYPE)
-set(CMAKE_BUILD_TYPE Debug)
-endif()
 if(CMAKE_BUILD_TYPE=Debug)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")
 endif()
+
+
+option(USE_EPOLL "Use epoll(7)" ON)
 
 
 configure_file(caio/manifest.h.in caio/manifest.h)
@@ -24,11 +26,18 @@ include_directories(${PROJECT_SOURCE_DIR})
 
 
 add_library(caio STATIC 
-    caio/taskpool.c caio/taskpool.h
-    caio/io_epoll.c caio/io_epoll.h
-    caio/caio.c caio/caio.h
-    caio/sleep.c
+  caio/taskpool.c caio/taskpool.h
+  caio/caio.c caio/caio.h
 )
+
+
+if(USE_EPOLL)
+  target_sources(caio PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}/caio/io_epoll.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/caio/io_epoll.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/caio/sleep.h
+)
+endif()
 
 
 # Install
