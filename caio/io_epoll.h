@@ -20,6 +20,8 @@
 #define CAIO_IO_EPOLL_H_
 
 
+#include <sys/epoll.h>
+
 #include "caio/caio.h"
 
 

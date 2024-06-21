@@ -56,7 +56,7 @@ foo(struct caio_task *self, struct bar* state) {
 #### Install Dependencies
 ##### Build essentials
 ```bash
-sudo apt install cmake build-essential
+sudo apt install cmake cmake-curses-gui build-essential
 ```
 
 ##### Linter 
@@ -68,4 +68,12 @@ Or, in modern way
 python3 -m venv ${HOME}/pyenv
 ${HOME}/pyenv/bin/pip install prettyc
 cp ${HOME}/pyenv/bin/prettyc ${HOME}/bin
+```
+
+#### Build
+```bash
+mkdir build && cd build
+cmake ..
+cmake menu
+make all
 ```

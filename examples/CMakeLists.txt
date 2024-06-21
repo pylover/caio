@@ -2,10 +2,14 @@ list(APPEND examples
     pingpong
     generator
     timer
+)
+
+if(USE_EPOLL)
+list(APPEND examples
     sleep
     tcpserver_epoll
 )
-
+endif()
 
 foreach (t IN LISTS examples) 
     # Test help

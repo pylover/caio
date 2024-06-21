@@ -22,7 +22,6 @@
 #include <errno.h>
 #include <signal.h>
 #include <stdbool.h>
-#include <sys/epoll.h>
 #include <sys/timerfd.h>
 
 #include "caio/caio.h"
@@ -166,7 +165,7 @@ caio_loop() {
     int epolltasks = 0;
 
     while (_taskpool.count) {
-        /* EPoll */
+        /* epoll */
         if (epolltasks) {
             /* Check whenever all tasks are pending epoll. */
             if (epolltasks == _taskpool.count) {

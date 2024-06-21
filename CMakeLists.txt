@@ -7,7 +7,7 @@ project(caio
 
 set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release)
 set(CMAKE_C_COMPILER gcc)
-set(CMAKE_VERBOSE_MAKEFILE OFF)
+set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fms-extensions")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_GNU_SOURCE=1")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
@@ -19,6 +19,7 @@ endif()
 
 
 option(USE_EPOLL "Use epoll(7)" ON)
+add_custom_target(menu COMMAND ccmake ${PROJECT_BINARY_DIR} )
 
 
 configure_file(caio/manifest.h.in caio/manifest.h)
@@ -32,10 +33,12 @@ add_library(caio STATIC
 
 
 if(USE_EPOLL)
-  target_sources(caio PUBLIC 
-    ${CMAKE_CURRENT_SOURCE_DIR}/caio/io_epoll.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/caio/io_epoll.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/caio/sleep.h
+  target_sources(caio
+    PUBLIC 
+      ${CMAKE_CURRENT_SOURCE_DIR}/caio/io_epoll.c
+      ${CMAKE_CURRENT_SOURCE_DIR}/caio/io_epoll.h
+      ${CMAKE_CURRENT_SOURCE_DIR}/caio/sleep.h
+      ${CMAKE_CURRENT_SOURCE_DIR}/caio/sleep.c
 )
 endif()
 
