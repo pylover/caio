@@ -137,10 +137,10 @@ caio_task_dispose(struct caio_task *task);
 
 // void
 // caio_task_killall();
-//
-//
-// int
-// caio_loop();
+
+
+int
+caio_loop(caio_t c);
 
 
 #endif  // CAIO_CAIO_H_

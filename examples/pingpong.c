@@ -65,19 +65,25 @@ int
 main() {
     struct pingpong foo = {"foo", 0};
     struct pingpong bar = {"bar", 0};
+    int exitstatus = EXIT_SUCCESS;
 
     caio = caio_create(2);
     if (caio == NULL) {
-        return EXIT_FAILURE;
+        exitstatus = EXIT_FAILURE;
+        goto terminate;
     }
 
     pingpong_spawn(caio, pingA, &foo);
     pingpong_spawn(caio, pingA, &bar);
 
-    // TODO: loop
-    if (caio_destroy(caio)) {
-        return EXIT_FAILURE;
+    if (caio_loop(caio)) {
+        exitstatus = EXIT_FAILURE;
     }
 
-    return EXIT_SUCCESS;
+    if (caio_destroy(caio)) {
+        exitstatus = EXIT_FAILURE;
+    }
+
+terminate:
+    return exitstatus;
 }

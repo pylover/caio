@@ -97,99 +97,64 @@ caio_task_dispose(struct caio_task *task) {
 //         task++;
 //     }
 // }
-//
-//
-// static bool
-// caio_task_step(struct caio_task *task) {
-//     struct caio_call *call = task->current;
-//
-// start:
-//     /* Pre execution */
-//     switch (task->status) {
-//         case CAIO_TERMINATING:
-//             /* Tell coroutine to jump to the CORO_FINALLY label */
-//             call->line = -1;
-//             break;
-//         default:
-//     }
-//
-//     call->invoke(task);
-//
-//     /* Post execution */
-//     switch (task->status) {
-//         case CAIO_TERMINATING:
-//             goto start;
-//         case CAIO_TERMINATED:
-//             task->current = call->parent;
-//             free(call);
-//             if (task->current != NULL) {
-//                 task->status = CAIO_RUNNING;
-//             }
-//             break;
-//         default:
-//     }
-//
-//     return task->current == NULL;
-// }
-//
-//
-// int
-// caio_loop() {
-//     struct caio_task *task = NULL;
-//     // int epolltimeout;
-//     // int epolltasks = 0;
-//
-//     while (_taskpool.count) {
-//
-//         while ((task = caio_taskpool_next(&_taskpool, task,
-//                     CAIO_RUNNING | CAIO_TERMINATING))) {
-//             if (caio_task_step(task)) {
-//                 caio_taskpool_release(&_taskpool, task);
-//             }
-//
-//             task++;
-//         }
-//
-//         // /* epoll */
-//         // if (epolltasks) {
-//         //     /* Check whenever all tasks are pending epoll. */
-//         //     if (epolltasks == _taskpool.count) {
-//         //         /* Wait forever */
-//         //         epolltimeout = -1;
-//         //     }
-//         //     else {
-//         //         /* No Wait */
-//         //         epolltimeout = 0;
-//         //     }
-//
-//         //     if (caio_io_epoll_wait(&_epoll, epolltimeout)) {
-//         //         if (_killing) {
-//         //             errno = 0;
-//         //         }
-//         //         else {
-//         //             return -1;
-//         //         }
-//         //     }
-//         // }
-//
-//         // epolltasks = 0;
-//         // while ((task = caio_taskpool_next(&_taskpool, task,
-//         //             CAIO_RUNNING | CAIO_WAITING | CAIO_TERMINATING))) {
-//         //     if (task->status == CAIO_EPOLL_WAITING) {
-//         //         epolltasks++;
-//         //     }
-//         //     else if (caio_task_step(task)) {
-//         //         caio_taskpool_release(&_taskpool, task);
-//         //     }
-//         //     else if (task->status == CAIO_EPOLL_WAITING) {
-//         //         epolltasks++;
-//         //     }
-//         //     task++;
-//         // }
-//     }
-//
-//     return 0;
-// }
+
+
+static bool
+_step(struct caio_task *task) {
+    struct caio_call *call = task->current;
+
+start:
+    /* Pre execution */
+    switch (task->status) {
+        case CAIO_TERMINATING:
+            /* Tell coroutine to jump to the CORO_FINALLY label */
+            call->line = -1;
+            break;
+        default:
+    }
+
+    call->invoke(task);
+
+    /* Post execution */
+    switch (task->status) {
+        case CAIO_TERMINATING:
+            goto start;
+        case CAIO_TERMINATED:
+            task->current = call->parent;
+            free(call);
+            if (task->current != NULL) {
+                task->status = CAIO_RUNNING;
+            }
+            break;
+        default:
+    }
+
+    return task->current == NULL;
+}
+
+
+int
+caio_loop(struct caio *c) {
+    struct caio_task *task = NULL;
+    struct caio_taskpool *taskpool = &c->taskpool;
+
+    // TODO: modules hook
+
+    while (taskpool->count) {
+        // TODO: modules hook
+
+        while ((task = caio_taskpool_next(taskpool, task,
+                    CAIO_RUNNING | CAIO_TERMINATING))) {
+            if (_step(task)) {
+                caio_taskpool_release(taskpool, task);
+            }
+        }
+
+        // TODO: modules hook
+    }
+
+    return 0;
+}
 // //
 // //
 // // int
