@@ -85,6 +85,6 @@ CAIO_NAME(forever) (CAIO_NAME(coro) coro, CAIO_NAME(t) *state
             , CAIO_ARG2 arg2
     #endif  // CAIO_ARG2
 #endif  // CAIO_ARG1
-        , size_t maxtasks, int flags);
+        , size_t maxtasks);
 
 #endif  // CAIO_H_

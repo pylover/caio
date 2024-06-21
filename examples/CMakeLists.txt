@@ -1,6 +1,6 @@
 list(APPEND examples
   pingpong
-  # generator
+  generator
 )
 
 # if(USE_EPOLL)

@@ -17,7 +17,9 @@
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
 #include <stdio.h>
+#include <stdbool.h>
 #include <err.h>
+#include <errno.h>
 
 #include "caio/caio.h"
 
@@ -91,5 +93,5 @@ consumerA(caiotask_t *self, consumer_t *) {
 
 int
 main() {
-    return consumer_forever(consumerA, NULL, 1, CAIO_SIG);
+    return consumer_forever(consumerA, NULL, 1);
 }

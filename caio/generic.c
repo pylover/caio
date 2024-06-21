@@ -77,7 +77,7 @@ CAIO_NAME(call_new)(struct caio_task *task, CAIO_NAME(coro) coro,
 
 
 int
-CAIO_NAME(spawn) (struct caio *c, CAIO_NAME(coro) coro, CAIO_NAME(t) *state
+CAIO_NAME(spawn) (caio_t c, CAIO_NAME(coro) coro, CAIO_NAME(t) *state
 #ifdef CAIO_ARG1
         , CAIO_ARG1 arg1
     #ifdef CAIO_ARG2
@@ -111,38 +111,39 @@ failure:
 }
 
 
-// int
-// CAIO_NAME(forever) (CAIO_NAME(coro) coro, CAIO_NAME(t) *state
-// #ifdef CAIO_ARG1
-//         , CAIO_ARG1 arg1
-//     #ifdef CAIO_ARG2
-//             , CAIO_ARG2 arg2
-//     #endif  // CAIO_ARG2
-// #endif  // CAIO_ARG1
-//         , size_t maxtasks, int flags) {
-//     if (caio_init(maxtasks, flags)) {
-//         return -1;
-//     }
-//
-//     if (CAIO_NAME(spawn)(coro, state
-// #ifdef CAIO_ARG1
-//         , arg1
-//     #ifdef CAIO_ARG2
-//             , arg2
-//     #endif  // CAIO_ARG2
-// #endif  // CAIO_ARG1
-//         )) {  // NOLINT
-//         goto failure;
-//     }
-//
-//     if (caio_loop()) {
-//         goto failure;
-//     }
-//
-//     caio_deinit();
-//     return 0;
-//
-// failure:
-//     caio_deinit();
-//     return -1;
-// }
+int
+CAIO_NAME(forever) (CAIO_NAME(coro) coro, CAIO_NAME(t) *state
+#ifdef CAIO_ARG1
+        , CAIO_ARG1 arg1
+    #ifdef CAIO_ARG2
+            , CAIO_ARG2 arg2
+    #endif  // CAIO_ARG2
+#endif  // CAIO_ARG1
+        , size_t maxtasks) {
+    caio_t c = caio_create(maxtasks);
+    if (c == NULL) {
+        return -1;
+    }
+
+    if (CAIO_NAME(spawn)(c, coro, state
+#ifdef CAIO_ARG1
+        , arg1
+    #ifdef CAIO_ARG2
+            , arg2
+    #endif  // CAIO_ARG2
+#endif  // CAIO_ARG1
+        )) {  // NOLINT
+        goto failure;
+    }
+
+    if (caio_loop(c)) {
+        goto failure;
+    }
+
+    caio_destroy(c);
+    return 0;
+
+failure:
+    caio_destroy(c);
+    return -1;
+}
