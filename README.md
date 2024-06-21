@@ -56,7 +56,7 @@ foo(struct caio_task *self, struct bar* state) {
 #### Install Dependencies
 ##### Build essentials
 ```bash
-sudo apt install cmake cmake-curses-gui build-essential
+sudo apt install cmake cmake-curses-gui build-essential valgrind
 ```
 
 ##### Linter 
