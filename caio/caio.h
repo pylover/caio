@@ -135,8 +135,8 @@ int
 caio_task_dispose(struct caio_task *task);
 
 
-// void
-// caio_task_killall();
+void
+caio_task_killall(caio_t c);
 
 
 int

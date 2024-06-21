@@ -31,7 +31,6 @@ struct caio {
 
 struct caio*
 caio_create(size_t maxtasks) {
-
     struct caio *c = malloc(sizeof(struct caio));
     if (c == NULL) {
         return NULL;
@@ -87,19 +86,18 @@ caio_task_dispose(struct caio_task *task) {
 }
 
 
-// void
-// caio_task_killall() {
-//     struct caio_task *task = NULL;
-//
-//     while ((task = caio_taskpool_next(&_taskpool, task,
-//                     CAIO_RUNNING | CAIO_WAITING))) {
-//         task->status = CAIO_TERMINATING;
-//         task++;
-//     }
-// }
+void
+caio_task_killall(struct caio *c) {
+    struct caio_task *task = NULL;
+
+    while ((task = caio_taskpool_next(&c->taskpool, task,
+                    CAIO_RUNNING | CAIO_WAITING))) {
+        task->status = CAIO_TERMINATING;
+    }
+}
 
 
-static bool
+static inline bool
 _step(struct caio_task *task) {
     struct caio_call *call = task->current;
 
