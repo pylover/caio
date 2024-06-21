@@ -35,11 +35,11 @@ struct caio_taskpool {
 
 
 int
-caio_taskpool_init(struct caio_taskpool *pool, size_t size);
+caio_taskpool_init(struct caio_taskpool *p, size_t size);
 
 
 int
-caio_taskpool_destroy(struct caio_taskpool *pool);
+caio_taskpool_deinit(struct caio_taskpool *pool);
 
 
 struct caio_task *

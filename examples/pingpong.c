@@ -16,12 +16,13 @@
  *
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 #include "caio/caio.h"
 
 
+static caio_t caio;
 typedef struct pingpong {
     const char *table;
     int shoots;
@@ -65,11 +66,18 @@ main() {
     struct pingpong foo = {"foo", 0};
     struct pingpong bar = {"bar", 0};
 
-    if (caio_init(2, CAIO_NONE)) {
+    caio = caio_create(2);
+    if (caio == NULL) {
         return EXIT_FAILURE;
     }
-    pingpong_spawn(pingA, &foo);
-    pingpong_spawn(pingA, &bar);
 
-    return caio_handover();
+    pingpong_spawn(caio, pingA, &foo);
+    pingpong_spawn(caio, pingA, &bar);
+
+    // TODO: loop
+    if (caio_destroy(caio)) {
+        return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
 }

@@ -24,9 +24,6 @@
 #else
 
 
-#include <stdbool.h>
-
-
 typedef void (*CAIO_NAME(coro)) (struct caio_task *self, CAIO_NAME(t) *state
 #ifdef CAIO_ARG1
         , CAIO_ARG1 arg1
@@ -70,7 +67,7 @@ CAIO_NAME(call_new)(struct caio_task *task, CAIO_NAME(coro) coro,
 
 
 int
-CAIO_NAME(spawn) (CAIO_NAME(coro) coro, CAIO_NAME(t) *state
+CAIO_NAME(spawn) (caio_t c, CAIO_NAME(coro) coro, CAIO_NAME(t) *state
 #ifdef CAIO_ARG1
         , CAIO_ARG1 arg1
     #ifdef CAIO_ARG2

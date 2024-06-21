@@ -18,12 +18,14 @@
  */
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 #include "taskpool.h"
 
 
 #define TASK_RESET(t, s) \
     (t)->status = s; \
+    (t)->caio = NULL; \
     (t)->eno = 0; \
     (t)->current = NULL
 
@@ -49,6 +51,9 @@ caio_taskpool_next(struct caio_taskpool *pool, struct caio_task *task,
         enum caio_taskstatus statuses) {
     if (task == NULL) {
         task = pool->tasks;
+    }
+    else {
+        task++;
     }
 
     while (task <= pool->last) {
@@ -110,7 +115,7 @@ caio_taskpool_init(struct caio_taskpool *pool, size_t size) {
 
 
 int
-caio_taskpool_destroy(struct caio_taskpool *pool) {
+caio_taskpool_deinit(struct caio_taskpool *pool) {
     if (pool == NULL) {
         return -1;
     }

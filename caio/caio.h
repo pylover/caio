@@ -20,10 +20,6 @@
 #define CAIO_CAIO_H_
 
 
-#include <errno.h>
-#include <sys/timerfd.h>
-
-
 /* Generic stuff */
 #define CAIO_NAME_PASTER(x, y) x ## _ ## y
 #define CAIO_NAME_EVALUATOR(x, y)  CAIO_NAME_PASTER(x, y)
@@ -108,7 +104,11 @@ struct caio_call {
 };
 
 
+typedef struct caio *caio_t;
+
+
 struct caio_task {
+    struct caio* caio;
     enum caio_taskstatus status;
     int eno;
     struct caio_call *current;
@@ -119,32 +119,28 @@ void
 caio_invoker_default(struct caio_task *task);
 
 
-int
-caio_init(size_t maxtasks, int flags);
+caio_t
+caio_create(size_t maxtasks);
 
 
 int
-caio_deinit();
+caio_destroy(caio_t c);
 
 
 struct caio_task *
-caio_task_new();
+caio_task_new(caio_t c);
 
 
 int
 caio_task_dispose(struct caio_task *task);
 
 
-void
-caio_task_killall();
-
-
-int
-caio_loop();
-
-
-int
-caio_handover();
+// void
+// caio_task_killall();
+//
+//
+// int
+// caio_loop();
 
 
 #endif  // CAIO_CAIO_H_

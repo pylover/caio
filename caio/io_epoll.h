@@ -53,7 +53,7 @@ caio_epoll_unregister(int fd);
 #include "caio/caio.h"
 
 
-struct caio_io_epoll {
+struct caio_epoll {
     int fd;
     struct epoll_event *events;
     size_t maxevents;

@@ -22,6 +22,7 @@
 #include <unistd.h>
 
 #include "caio/caio.h"
+#include "caio/epoll.h"
 
 
 typedef struct tmr {
@@ -38,6 +39,10 @@ typedef struct tmr {
 #define CAIO_ENTITY tmr
 #include "caio/generic.h"
 #include "caio/generic.c"
+
+
+static struct caio caio;
+static struct caio_epoll epoll;
 
 
 static int
@@ -110,8 +115,24 @@ main() {
         return EXIT_FAILURE;
     }
 
+    if (caio_epoll_init(&_epoll, 2)) {
+        goto failed;
+    }
+
     tmr_spawn(tmrA, &foo);
     tmr_spawn(tmrA, &bar);
 
-    return caio_handover();
+    if (caio_loop()) {
+        goto onerror;
+    }
+
+    status = EXIT_SUCCESS;
+    goto terminate;
+
+failed:
+    status = EXIT_FAILURE;
+
+terminate:
+    caio_deinit();
+    return status;
 }
