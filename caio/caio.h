@@ -21,7 +21,6 @@
 
 
 #include <errno.h>
-#include <sys/epoll.h>
 #include <sys/timerfd.h>
 
 
@@ -84,25 +83,9 @@ enum caio_flags {
 enum caio_taskstatus {
     CAIO_IDLE = 1,
     CAIO_RUNNING = 2,
-    CAIO_TERMINATING = 4,
-    CAIO_TERMINATED = 8,
-    // TODO: Define inside epoll or io_uring sections
-    CAIO_EPOLL_WAITING = 16,
-    CAIO_WAITINGURING = 32,
-};
-
-
-enum caio_fdflags {
-    CAIO_IN = EPOLLIN,
-    CAIO_OUT = EPOLLOUT,
-    CAIO_RDHUP = EPOLLRDHUP,
-    CAIO_PRI = EPOLLPRI,
-    CAIO_ERR = EPOLLERR,
-    CAIO_HUP = EPOLLHUP,
-    CAIO_ET = EPOLLET,
-    CAIO_ONESHOT = EPOLLONESHOT,
-    CAIO_WAKEUP = EPOLLWAKEUP,
-    CAIO_EXCLUSIVE = EPOLLEXCLUSIVE,
+    CAIO_WAITING = 4,
+    CAIO_TERMINATING = 8,
+    CAIO_TERMINATED = 16,
 };
 
 
@@ -162,33 +145,6 @@ caio_loop();
 
 int
 caio_handover();
-
-
-/* epoll stuff */
-int
-caio_epoll_register(struct caio_task *task, int fd, int events);
-
-
-int
-caio_epoll_unregister(int fd);
-
-
-#define CAIO_EPOLL_WAIT(task, fd, events) \
-    do { \
-        (task)->current->line = __LINE__; \
-        if (caio_epoll_register(task, fd, events)) { \
-            (task)->status = CAIO_TERMINATING; \
-        } \
-        else { \
-            (task)->status = CAIO_EPOLL_WAITING; \
-        } \
-        return; \
-        case __LINE__:; \
-    } while (0)
-
-
-#define CAIO_EPOLL_MUSTWAIT() \
-    ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINPROGRESS))
 
 
 #endif  // CAIO_CAIO_H_

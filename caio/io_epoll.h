@@ -20,6 +20,34 @@
 #define CAIO_IO_EPOLL_H_
 
 
+/* epoll stuff */
+int
+caio_epoll_register(struct caio_task *task, int fd, int events);
+
+
+int
+caio_epoll_unregister(int fd);
+
+
+#define CAIO_EPOLL_WAIT(task, fd, events) \
+    do { \
+        (task)->current->line = __LINE__; \
+        if (caio_epoll_register(task, fd, events)) { \
+            (task)->status = CAIO_TERMINATING; \
+        } \
+        else { \
+            (task)->status = CAIO_EPOLL_WAITING; \
+        } \
+        return; \
+        case __LINE__:; \
+    } while (0)
+
+
+#define CAIO_EPOLL_MUSTWAIT() \
+    ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINPROGRESS))
+
+
+
 #include <sys/epoll.h>
 
 #include "caio/caio.h"
