@@ -85,38 +85,24 @@ enum caio_taskstatus {
 };
 
 
-typedef struct caio_task caiotask_t;
-typedef void (*caio_coro) (struct caio_task *self, void *state);
+typedef struct caio *caio_t;
+struct caio_task;
 typedef void (*caio_invoker) (struct caio_task *self);
 
 
 struct caio_basecall {
-    struct caio_call *parent;
+    struct caio_basecall *parent;
     int line;
     caio_invoker invoke;
 };
-
-
-struct caio_call {
-    struct caio_basecall;
-    caio_coro coro;
-    void *state;
-};
-
-
-typedef struct caio *caio_t;
 
 
 struct caio_task {
     struct caio* caio;
     enum caio_taskstatus status;
     int eno;
-    struct caio_call *current;
+    struct caio_basecall *current;
 };
-
-
-void
-caio_invoker_default(struct caio_task *task);
 
 
 caio_t

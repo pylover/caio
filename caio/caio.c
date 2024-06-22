@@ -99,7 +99,7 @@ caio_task_killall(struct caio *c) {
 
 static inline bool
 _step(struct caio_task *task) {
-    struct caio_call *call = task->current;
+    struct caio_basecall *call = task->current;
 
 start:
     /* Pre execution */

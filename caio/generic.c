@@ -19,7 +19,6 @@
 #include <stdlib.h>  // NOLINT
 #include <unistd.h>
 
-
 #include "caio.h"
 
 
@@ -36,7 +35,6 @@ CAIO_NAME(invoker)(struct caio_task *task) {
 #endif  // CAIO_ARG1
     );  // NOLINT
 }
-
 
 
 int
@@ -63,7 +61,7 @@ CAIO_NAME(call_new)(struct caio_task *task, CAIO_NAME(coro) coro,
     call->invoke = CAIO_NAME(invoker);
 
     task->status = CAIO_RUNNING;
-    task->current = (struct caio_call*) call;
+    task->current = (struct caio_basecall*) call;
 
     /* arguments */
 #ifdef CAIO_ARG1
