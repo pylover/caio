@@ -20,6 +20,69 @@
 #define CAIO_CAIO_H_
 
 
+enum caio_taskstatus {
+    CAIO_IDLE = 1,
+    CAIO_RUNNING = 2,
+    CAIO_WAITING = 4,
+    CAIO_TERMINATING = 8,
+    CAIO_TERMINATED = 16,
+};
+
+
+typedef struct caio *caio_t;
+struct caio_task;
+typedef void (*caio_invoker) (struct caio_task *self);
+
+
+struct caio_basecall {
+    struct caio_basecall *parent;
+    int line;
+    caio_invoker invoke;
+};
+
+
+struct caio_task {
+    struct caio* caio;
+    struct caio_basecall *current;
+    enum caio_taskstatus status;
+    int eno;
+};
+
+
+/* Modules */
+struct caio_module;
+typedef void (*caio_hook) (struct caio_module *m, caio_t c);
+struct caio_module {
+    caio_hook loopstart;
+    caio_hook tick;
+    caio_hook loopend;
+};
+
+
+caio_t
+caio_create(size_t maxtasks);
+
+
+int
+caio_destroy(caio_t c);
+
+
+struct caio_task *
+caio_task_new(caio_t c);
+
+
+int
+caio_task_dispose(struct caio_task *task);
+
+
+void
+caio_task_killall(caio_t c);
+
+
+int
+caio_loop(caio_t c);
+
+
 /* Generic stuff */
 #define CAIO_NAME_PASTER(x, y) x ## _ ## y
 #define CAIO_NAME_EVALUATOR(x, y)  CAIO_NAME_PASTER(x, y)
@@ -68,65 +131,6 @@
 #define CAIO_HASERROR(task) (task->eno != 0)
 #define CAIO_ISERROR(task, e) (CAIO_HASERROR(task) && (task->eno == e))
 #define CAIO_CLEARERROR(task) task->eno = 0
-
-
-enum caio_flags {
-    CAIO_NONE = 0,
-    CAIO_SIG = 1,
-};
-
-
-enum caio_taskstatus {
-    CAIO_IDLE = 1,
-    CAIO_RUNNING = 2,
-    CAIO_WAITING = 4,
-    CAIO_TERMINATING = 8,
-    CAIO_TERMINATED = 16,
-};
-
-
-typedef struct caio *caio_t;
-struct caio_task;
-typedef void (*caio_invoker) (struct caio_task *self);
-
-
-struct caio_basecall {
-    struct caio_basecall *parent;
-    int line;
-    caio_invoker invoke;
-};
-
-
-struct caio_task {
-    struct caio* caio;
-    struct caio_basecall *current;
-    enum caio_taskstatus status;
-    int eno;
-};
-
-
-caio_t
-caio_create(size_t maxtasks);
-
-
-int
-caio_destroy(caio_t c);
-
-
-struct caio_task *
-caio_task_new(caio_t c);
-
-
-int
-caio_task_dispose(struct caio_task *task);
-
-
-void
-caio_task_killall(caio_t c);
-
-
-int
-caio_loop(caio_t c);
 
 
 #endif  // CAIO_CAIO_H_

@@ -18,12 +18,17 @@ if(CMAKE_BUILD_TYPE=Debug)
 endif()
 
 
-option(USE_EPOLL "Use epoll(7)" ON)
+option(CAIO_USE_EPOLL "Use epoll(7)" ON)
+
+set(CAIO_MODULES_MAX 8 CACHE STRING "Maximum allowed modules.")
+set_property(CACHE CAIO_MODULES_MAX PROPERTY STRINGS 4 8 32 64 128 256)
+
 add_custom_target(menu COMMAND ccmake ${PROJECT_BINARY_DIR} )
 
 
 configure_file(caio/manifest.h.in caio/manifest.h)
-include_directories(${PROJECT_SOURCE_DIR})
+configure_file(caio/options.h.in caio/options.h)
+include_directories(${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR})
 
 
 add_library(caio STATIC 
@@ -32,7 +37,7 @@ add_library(caio STATIC
 )
 
 
-if(USE_EPOLL)
+if(CAIO_USE_EPOLL)
   target_sources(caio
     PUBLIC 
       ${CMAKE_CURRENT_SOURCE_DIR}/caio/epoll.c

@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <errno.h>
 
+#include "caio/options.h"
 #include "caio/caio.h"
 #include "caio/taskpool.h"
 
@@ -26,6 +27,8 @@
 struct caio {
     struct caio_taskpool taskpool;
     bool killing;
+    struct caio_module *modules[CAIO_MODULES_MAX];
+    size_t modulescount;
 };
 
 
@@ -35,6 +38,8 @@ caio_create(size_t maxtasks) {
     if (c == NULL) {
         return NULL;
     }
+
+    c->modulescount = 0;
 
     /* Initialize task pool */
     if (caio_taskpool_init(&c->taskpool, maxtasks)) {
@@ -135,11 +140,23 @@ int
 caio_loop(struct caio *c) {
     struct caio_task *task = NULL;
     struct caio_taskpool *taskpool = &c->taskpool;
+    struct caio_module *module;
+    int i;
 
-    // TODO: modules hook
+    for (i = 0; i < c->modulescount; i++) {
+        module = c->modules[i];
+        if (module->loopstart) {
+            module->loopstart(module, c);
+        }
+    }
 
     while (taskpool->count) {
-        // TODO: modules hook
+        for (i = 0; i < c->modulescount; i++) {
+            module = c->modules[i];
+            if (module->tick) {
+                module->tick(module, c);
+            }
+        }
 
         while ((task = caio_taskpool_next(taskpool, task,
                     CAIO_RUNNING | CAIO_TERMINATING))) {
@@ -149,6 +166,13 @@ caio_loop(struct caio *c) {
         }
 
         // TODO: modules hook
+    }
+
+    for (i = 0; i < c->modulescount; i++) {
+        module = c->modules[i];
+        if (module->loopend) {
+            module->loopend(module, c);
+        }
     }
 
     return 0;
