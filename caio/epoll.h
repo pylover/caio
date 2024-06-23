@@ -25,29 +25,23 @@
 #include <caio/caio.h>
 
 
-struct caio_epoll {
-    struct caio_module;
-    int fd;
-    size_t maxevents;
-    struct epoll_event *events;
-};
+typedef struct caio_epoll *caio_epoll_t;
+
+
+caio_epoll_t
+caio_epoll_create(caio_t c, size_t maxevents, unsigned int timeout);
 
 
 int
-caio_epoll_init(struct caio_epoll *e);
+caio_epoll_destroy(caio_t c, caio_epoll_t e);
 
 
 int
-caio_epoll_deinit(struct caio_epoll *e);
+caio_epoll_monitor(caio_epoll_t e, struct caio_task *task, int fd, int events);
 
 
 int
-caio_epoll_monitor(struct caio_epoll *e, struct caio_task *task, int fd,
-        int events);
-
-
-int
-caio_epoll_forget(struct caio_epoll *e, int fd);
+caio_epoll_forget(caio_epoll_t e, int fd);
 
 
 #define CAIO_EPOLL_WAIT(e, task, fd, events) \
@@ -62,34 +56,6 @@ caio_epoll_forget(struct caio_epoll *e, int fd);
         return; \
         case __LINE__:; \
     } while (0)
-
-
-/* epoll stuff
-int
-caio_epoll_register(struct caio_task *task, int fd, int events);
-
-
-int
-caio_epoll_unregister(int fd);
-
-
-#define CAIO_EPOLL_MUSTWAIT() \
-    ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINPROGRESS))
-*/
-
-
-
-// int
-// caio_io_epoll_monitor(struct caio_epoll *e, struct caio_task *task, int fd,
-//         int events);
-//
-//
-// int
-// caio_io_epoll_forget(struct caio_epoll *e, int fd);
-//
-//
-// int
-// caio_io_epoll_wait(struct caio_epoll *e, int timeout);
 
 
 #endif  // CAIO_EPOLL_H_

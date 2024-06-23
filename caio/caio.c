@@ -189,20 +189,28 @@ caio_loop(struct caio *c) {
     struct caio_taskpool *taskpool = &c->taskpool;
     struct caio_module *module;
     int i;
+    int ret = 0;
 
     for (i = 0; i < c->modulescount; i++) {
         module = c->modules[i];
         if (module->loopstart) {
-            module->loopstart(module, c);
+            ret |= module->loopstart(module, c);
         }
+    }
+    if (ret) {
+        return -1;
     }
 
     while (taskpool->count) {
+        ret = 0;
         for (i = 0; i < c->modulescount; i++) {
             module = c->modules[i];
             if (module->tick) {
-                module->tick(module, c);
+                ret |= module->tick(module, c);
             }
+        }
+        if (ret) {
+            return -1;
         }
 
         while ((task = caio_taskpool_next(taskpool, task,
@@ -211,15 +219,17 @@ caio_loop(struct caio *c) {
                 caio_taskpool_release(taskpool, task);
             }
         }
-
-        // TODO: modules hook
     }
 
+    ret = 0;
     for (i = 0; i < c->modulescount; i++) {
         module = c->modules[i];
         if (module->loopend) {
-            module->loopend(module, c);
+            ret |= module->loopend(module, c);
         }
+    }
+    if (ret) {
+        return -1;
     }
 
     return 0;

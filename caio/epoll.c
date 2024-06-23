@@ -18,53 +18,119 @@
  */
 #include <sys/epoll.h>
 #include <unistd.h>
-#include <errno.h>
 #include <stdlib.h>
+#include <errno.h>
+#include <string.h>
 
 #include "caio/epoll.h"
 
 
-int
-caio_epoll_init(struct caio_epoll *e) {
-    if (e == NULL) {
+struct caio_epoll {
+    struct caio_module;
+    int fd;
+    int timeout;
+    size_t maxevents;
+    size_t waitingfiles;
+    struct epoll_event *events;
+};
+
+
+static int
+_tick(struct caio_epoll *e, caio_t c) {
+    int i;
+    int nfds;
+    struct caio_task *task;
+
+    if (e->waitingfiles == 0) {
+        return 0;
+    }
+
+    nfds = epoll_wait(e->fd, e->events, e->maxevents, e->timeout);
+    if (nfds < 0) {
         return -1;
     }
 
-    if (e->maxevents == 0) {
-        return -1;
+    if (nfds == 0) {
+        return 0;
     }
 
-    e->events = calloc(e->maxevents, sizeof(struct epoll_event));
-    if (e->events == NULL) {
-        return -1;
-    }
-
-    /* Create e instance */
-    e->fd = epoll_create1(0);
-    if (e->fd < 0) {
-        free(e->events);
-        return -1;
+    for (i = 0; i < nfds; i++) {
+        task = (struct caio_task*)e->events[i].data.ptr;
+        if (task->status == CAIO_WAITING) {
+            task->status = CAIO_RUNNING;
+            e->waitingfiles--;
+        }
     }
 
     return 0;
 }
 
 
+struct caio_epoll *
+caio_epoll_create(caio_t c, size_t maxevents, unsigned int timeout) {
+    struct caio_epoll *e;
+
+    if (maxevents == 0) {
+        return NULL;
+    }
+
+    /* Create epoll instance */
+    e = malloc(sizeof(struct caio_epoll));
+    if (e == NULL) {
+        return NULL;
+    }
+    memset(e, 0, sizeof(struct caio_epoll));
+
+    e->timeout = timeout;
+    e->waitingfiles = 0;
+    e->maxevents = maxevents;
+    e->fd = epoll_create1(0);
+    if (e->fd < 0) {
+        goto failed;
+    }
+
+    e->events = calloc(e->maxevents, sizeof(struct epoll_event));
+    if (e->events == NULL) {
+        goto failed;
+    }
+
+    e->tick = (caio_hook) _tick;
+
+    if (caio_module_install(c, (struct caio_module*)e)) {
+        goto failed;
+    }
+
+    return e;
+
+failed:
+    if (e->events) {
+        free(e->events);
+    }
+
+    free(e);
+    return NULL;
+}
+
+
 int
-caio_epoll_deinit(struct caio_epoll *e) {
+caio_epoll_destroy(caio_t c, struct caio_epoll *e) {
+    int ret = 0;
+
     if (e == NULL) {
         return -1;
     }
 
+    ret |= caio_module_uninstall(c, (struct caio_module*)e);
+
     if (e->fd != -1) {
         close(e->fd);
-        e->fd = -1;
     }
 
     if (e->events) {
         free(e->events);
     }
 
+    free(e);
     return 0;
 }
 
@@ -83,6 +149,7 @@ caio_epoll_monitor(struct caio_epoll *e, struct caio_task *task, int fd,
         errno = 0;
     }
 
+    e->waitingfiles++;
     return 0;
 }
 
@@ -95,30 +162,3 @@ caio_epoll_forget(struct caio_epoll *e, int fd) {
 
     return 0;
 }
-
-
-// int
-// caio_io_epoll_wait(struct caio_epoll *e, int timeout) {
-//     int nfds;
-//     int i;
-//     struct caio_task *task;
-//
-//     /* TODO: Increase e->maxevents if it's smaller than count. */
-//     nfds = epoll_wait(e->fd, e->events, e->maxevents, timeout);
-//     if (nfds < 0) {
-//         return -1;
-//     }
-//
-//     if (nfds == 0) {
-//         return 0;
-//     }
-//
-//     for (i = 0; i < nfds; i++) {
-//         task = (struct caio_task*)e->events[i].data.ptr;
-//         if (task->status == CAIO_EPOLL_WAITING) {
-//             task->status = CAIO_RUNNING;
-//         }
-//     }
-//
-//     return 0;
-// }

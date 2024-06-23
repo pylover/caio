@@ -45,7 +45,7 @@ typedef struct tmr {
 
 
 static caio_t _caio;
-static struct caio_epoll _epoll;
+static caio_epoll_t _epoll;
 
 
 static int
@@ -77,7 +77,7 @@ tmrA(struct caio_task *self, struct tmr *state) {
     }
 
     while (true) {
-        CAIO_EPOLL_WAIT(&_epoll, self, state->fd, EPOLLIN);
+        CAIO_EPOLL_WAIT(_epoll, self, state->fd, EPOLLIN);
         bytes = read(state->fd, &tmp, sizeof(tmp));
         if (bytes == -1) {
             warn("read\n");
@@ -92,7 +92,7 @@ tmrA(struct caio_task *self, struct tmr *state) {
     }
 
     CAIO_FINALLY(self);
-    caio_epoll_forget(&_epoll, state->fd);
+    caio_epoll_forget(_epoll, state->fd);
     if (state->fd != -1) {
         close(state->fd);
     }
@@ -123,14 +123,8 @@ main() {
         goto terminate;
     }
 
-    _epoll.fd = -1;
-    _epoll.maxevents = 2;
-    if (caio_epoll_init(&_epoll)) {
-        exitstatus = EXIT_FAILURE;
-        goto terminate;
-    }
-
-    if (caio_module_install(_caio, (struct caio_module*)&_epoll)) {
+    _epoll = caio_epoll_create(_caio, 2, 1);
+    if (_epoll == NULL) {
         exitstatus = EXIT_FAILURE;
         goto terminate;
     }
@@ -143,11 +137,7 @@ main() {
     }
 
 terminate:
-    if (caio_module_uninstall(_caio, (struct caio_module*)&_epoll)) {
-        exitstatus = EXIT_FAILURE;
-    }
-
-    if (caio_epoll_deinit(&_epoll)) {
+    if (caio_epoll_destroy(_caio, _epoll)) {
         exitstatus = EXIT_FAILURE;
     }
 

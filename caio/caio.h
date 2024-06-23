@@ -51,7 +51,7 @@ struct caio_task {
 
 /* Modules */
 struct caio_module;
-typedef void (*caio_hook) (struct caio_module *m, caio_t c);
+typedef int (*caio_hook) (struct caio_module *m, caio_t c);
 struct caio_module {
     caio_hook loopstart;
     caio_hook tick;
@@ -139,6 +139,11 @@ caio_module_uninstall(struct caio *c, struct caio_module *m);
 #define CAIO_HASERROR(task) (task->eno != 0)
 #define CAIO_ISERROR(task, e) (CAIO_HASERROR(task) && (task->eno == e))
 #define CAIO_CLEARERROR(task) task->eno = 0
+
+
+/* IO helper macros */
+#define FILE_MUSTWAIT(e) \
+    (((e) == EAGAIN) || ((e) == EWOULDBLOCK) || ((e) == EINPROGRESS))
 
 
 #endif  // CAIO_CAIO_H_
