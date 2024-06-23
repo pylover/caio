@@ -92,6 +92,8 @@ tmrA(struct caio_task *self, struct tmr *state) {
     }
 
     CAIO_FINALLY(self);
+    printf("%s(%ds), fd: %d, terminated\n", state->title, state->interval,
+                state->fd);
     caio_epoll_forget(_epoll, state->fd);
     if (state->fd != -1) {
         close(state->fd);
