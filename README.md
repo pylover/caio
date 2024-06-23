@@ -74,6 +74,12 @@ cp ${HOME}/pyenv/bin/prettyc ${HOME}/bin
 ```bash
 mkdir build && cd build
 cmake ..
-cmake menu
+make menu
 make all
+```
+
+To delete CMake cache to reset options to thei'r default values:
+```bash
+make fresh
+make menu
 ```

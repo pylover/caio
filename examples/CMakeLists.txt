@@ -3,7 +3,7 @@ list(APPEND examples
   generator
 )
 
-if(USE_EPOLL)
+if(CAIO_USE_EPOLL)
   list(APPEND examples
       timer_epoll
   #     sleep

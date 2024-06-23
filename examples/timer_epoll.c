@@ -130,6 +130,11 @@ main() {
         goto terminate;
     }
 
+    if (caio_module_install(_caio, (struct caio_module*)&_epoll)) {
+        exitstatus = EXIT_FAILURE;
+        goto terminate;
+    }
+
     tmr_spawn(_caio, tmrA, &foo);
     tmr_spawn(_caio, tmrA, &bar);
 
@@ -138,6 +143,10 @@ main() {
     }
 
 terminate:
+    if (caio_module_uninstall(_caio, (struct caio_module*)&_epoll)) {
+        exitstatus = EXIT_FAILURE;
+    }
+
     if (caio_epoll_deinit(&_epoll)) {
         exitstatus = EXIT_FAILURE;
     }

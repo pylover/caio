@@ -26,6 +26,7 @@
 
 
 struct caio_epoll {
+    struct caio_module;
     int fd;
     size_t maxevents;
     struct epoll_event *events;

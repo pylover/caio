@@ -102,6 +102,53 @@ caio_task_killall(struct caio *c) {
 }
 
 
+int
+caio_module_install(struct caio *c, struct caio_module *m) {
+    if (c->modulescount == CAIO_MODULES_MAX) {
+        return -1;
+    }
+
+    if ((c == NULL) || (m == NULL)) {
+        return -1;
+    }
+
+    c->modules[c->modulescount++] = m;
+    return 0;
+}
+
+
+int
+caio_module_uninstall(struct caio *c, struct caio_module *m) {
+    if (c->modulescount == 0) {
+        return -1;
+    }
+
+    if ((c == NULL) || (m == NULL)) {
+        return -1;
+    }
+
+    int i;
+    int shift = 0;
+
+    for (i = 0; i < c->modulescount; i++) {
+        if (c->modules[i] == m) {
+            shift++;
+            continue;
+        }
+
+        if (!shift) {
+            continue;
+        }
+
+        c->modules[i - shift] = c->modules[i];
+        c->modules[i] = NULL;
+    }
+
+    c->modulescount -= shift;
+    return 0;
+}
+
+
 static inline bool
 _step(struct caio_task *task) {
     struct caio_basecall *call = task->current;

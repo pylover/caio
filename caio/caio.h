@@ -83,6 +83,14 @@ int
 caio_loop(caio_t c);
 
 
+int
+caio_module_install(struct caio *c, struct caio_module *m);
+
+
+int
+caio_module_uninstall(struct caio *c, struct caio_module *m);
+
+
 /* Generic stuff */
 #define CAIO_NAME_PASTER(x, y) x ## _ ## y
 #define CAIO_NAME_EVALUATOR(x, y)  CAIO_NAME_PASTER(x, y)
