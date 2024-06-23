@@ -1,3 +1,4 @@
+- Prevent compile on kernel <= 2.6.9
 - fixes callstack allocation per task
 - Dynamic(infinite) stack size option
 - All todos

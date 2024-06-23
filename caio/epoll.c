@@ -21,17 +21,20 @@
 #include <errno.h>
 #include <stdlib.h>
 
-#include "caio/io_epoll.h"
+#include "caio/epoll.h"
 
 
 int
-caio_io_epoll_init(struct caio_io_epoll *e, size_t maxevents) {
+caio_epoll_init(struct caio_epoll *e) {
     if (e == NULL) {
         return -1;
     }
 
-    e->maxevents = maxevents;
-    e->events = calloc(maxevents, sizeof(struct epoll_event));
+    if (e->maxevents == 0) {
+        return -1;
+    }
+
+    e->events = calloc(e->maxevents, sizeof(struct epoll_event));
     if (e->events == NULL) {
         return -1;
     }
@@ -48,7 +51,7 @@ caio_io_epoll_init(struct caio_io_epoll *e, size_t maxevents) {
 
 
 int
-caio_io_epoll_deinit(struct caio_io_epoll *e) {
+caio_epoll_deinit(struct caio_epoll *e) {
     if (e == NULL) {
         return -1;
     }
@@ -67,7 +70,7 @@ caio_io_epoll_deinit(struct caio_io_epoll *e) {
 
 
 int
-caio_io_epoll_monitor(struct caio_io_epoll *e, struct caio_task *task, int fd,
+caio_epoll_monitor(struct caio_epoll *e, struct caio_task *task, int fd,
         int events) {
     struct epoll_event ee;
 
@@ -85,7 +88,7 @@ caio_io_epoll_monitor(struct caio_io_epoll *e, struct caio_task *task, int fd,
 
 
 int
-caio_io_epoll_forget(struct caio_io_epoll *e, int fd) {
+caio_epoll_forget(struct caio_epoll *e, int fd) {
     if (epoll_ctl(e->fd, EPOLL_CTL_DEL, fd, NULL)) {
         return -1;
     }
@@ -94,28 +97,28 @@ caio_io_epoll_forget(struct caio_io_epoll *e, int fd) {
 }
 
 
-int
-caio_io_epoll_wait(struct caio_io_epoll *e, int timeout) {
-    int nfds;
-    int i;
-    struct caio_task *task;
-
-    /* TODO: Increase e->maxevents if it's smaller than count. */
-    nfds = epoll_wait(e->fd, e->events, e->maxevents, timeout);
-    if (nfds < 0) {
-        return -1;
-    }
-
-    if (nfds == 0) {
-        return 0;
-    }
-
-    for (i = 0; i < nfds; i++) {
-        task = (struct caio_task*)e->events[i].data.ptr;
-        if (task->status == CAIO_EPOLL_WAITING) {
-            task->status = CAIO_RUNNING;
-        }
-    }
-
-    return 0;
-}
+// int
+// caio_io_epoll_wait(struct caio_epoll *e, int timeout) {
+//     int nfds;
+//     int i;
+//     struct caio_task *task;
+//
+//     /* TODO: Increase e->maxevents if it's smaller than count. */
+//     nfds = epoll_wait(e->fd, e->events, e->maxevents, timeout);
+//     if (nfds < 0) {
+//         return -1;
+//     }
+//
+//     if (nfds == 0) {
+//         return 0;
+//     }
+//
+//     for (i = 0; i < nfds; i++) {
+//         task = (struct caio_task*)e->events[i].data.ptr;
+//         if (task->status == CAIO_EPOLL_WAITING) {
+//             task->status = CAIO_RUNNING;
+//         }
+//     }
+//
+//     return 0;
+// }

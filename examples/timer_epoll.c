@@ -18,8 +18,11 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
-#include <err.h>
+#include <stdbool.h>
 #include <unistd.h>
+#include <err.h>
+#include <errno.h>
+#include <sys/timerfd.h>
 
 #include "caio/caio.h"
 #include "caio/epoll.h"
@@ -41,8 +44,8 @@ typedef struct tmr {
 #include "caio/generic.c"
 
 
-static struct caio caio;
-static struct caio_epoll epoll;
+static caio_t _caio;
+static struct caio_epoll _epoll;
 
 
 static int
@@ -74,7 +77,7 @@ tmrA(struct caio_task *self, struct tmr *state) {
     }
 
     while (true) {
-        CAIO_EPOLL_WAIT(self, state->fd, EPOLLIN);
+        CAIO_EPOLL_WAIT(&_epoll, self, state->fd, EPOLLIN);
         bytes = read(state->fd, &tmp, sizeof(tmp));
         if (bytes == -1) {
             warn("read\n");
@@ -89,6 +92,7 @@ tmrA(struct caio_task *self, struct tmr *state) {
     }
 
     CAIO_FINALLY(self);
+    caio_epoll_forget(&_epoll, state->fd);
     if (state->fd != -1) {
         close(state->fd);
     }
@@ -97,6 +101,8 @@ tmrA(struct caio_task *self, struct tmr *state) {
 
 int
 main() {
+    int exitstatus = EXIT_SUCCESS;
+
     struct tmr foo = {
         .fd = -1,
         .title = "Foo",
@@ -111,28 +117,34 @@ main() {
         .value = 0,
     };
 
-    if (caio_init(2, CAIO_SIG)) {
-        return EXIT_FAILURE;
+    _caio = caio_create(2);
+    if (_caio == NULL) {
+        exitstatus = EXIT_FAILURE;
+        goto terminate;
     }
 
-    if (caio_epoll_init(&_epoll, 2)) {
-        goto failed;
+    _epoll.fd = -1;
+    _epoll.maxevents = 2;
+    if (caio_epoll_init(&_epoll)) {
+        exitstatus = EXIT_FAILURE;
+        goto terminate;
     }
 
-    tmr_spawn(tmrA, &foo);
-    tmr_spawn(tmrA, &bar);
+    tmr_spawn(_caio, tmrA, &foo);
+    tmr_spawn(_caio, tmrA, &bar);
 
-    if (caio_loop()) {
-        goto onerror;
+    if (caio_loop(_caio)) {
+        exitstatus = EXIT_FAILURE;
     }
-
-    status = EXIT_SUCCESS;
-    goto terminate;
-
-failed:
-    status = EXIT_FAILURE;
 
 terminate:
-    caio_deinit();
-    return status;
+    if (caio_epoll_deinit(&_epoll)) {
+        exitstatus = EXIT_FAILURE;
+    }
+
+    if (caio_destroy(_caio)) {
+        exitstatus = EXIT_FAILURE;
+    }
+
+    return exitstatus;
 }

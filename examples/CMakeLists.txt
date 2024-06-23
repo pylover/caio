@@ -3,13 +3,13 @@ list(APPEND examples
   generator
 )
 
-# if(USE_EPOLL)
-#   list(APPEND examples
-#       timer_epoll
-#   #     sleep
-#   #     tcpserver_epoll
-#   )
-# endif()
+if(USE_EPOLL)
+  list(APPEND examples
+      timer_epoll
+  #     sleep
+  #     tcpserver_epoll
+  )
+endif()
 
 foreach (t IN LISTS examples) 
   # Test help

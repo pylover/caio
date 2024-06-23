@@ -99,9 +99,9 @@ struct caio_basecall {
 
 struct caio_task {
     struct caio* caio;
+    struct caio_basecall *current;
     enum caio_taskstatus status;
     int eno;
-    struct caio_basecall *current;
 };
 
 

@@ -22,7 +22,7 @@
 #include "caio/caio.h"
 
 
-static caio_t caio;
+static caio_t _caio;
 typedef struct pingpong {
     const char *table;
     int shoots;
@@ -67,20 +67,20 @@ main() {
     struct pingpong bar = {"bar", 0};
     int exitstatus = EXIT_SUCCESS;
 
-    caio = caio_create(2);
-    if (caio == NULL) {
+    _caio = caio_create(2);
+    if (_caio == NULL) {
         exitstatus = EXIT_FAILURE;
         goto terminate;
     }
 
-    pingpong_spawn(caio, pingA, &foo);
-    pingpong_spawn(caio, pingA, &bar);
+    pingpong_spawn(_caio, pingA, &foo);
+    pingpong_spawn(_caio, pingA, &bar);
 
-    if (caio_loop(caio)) {
+    if (caio_loop(_caio)) {
         exitstatus = EXIT_FAILURE;
     }
 
-    if (caio_destroy(caio)) {
+    if (caio_destroy(_caio)) {
         exitstatus = EXIT_FAILURE;
     }
 

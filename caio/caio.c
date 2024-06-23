@@ -153,15 +153,3 @@ caio_loop(struct caio *c) {
 
     return 0;
 }
-// //
-// //
-// // int
-// // caio_epoll_register(struct caio_task *task, int fd, int events) {
-// //     return caio_io_epoll_monitor(&_epoll, task, fd, events);
-// // }
-// //
-// //
-// // int
-// // caio_epoll_unregister(int fd) {
-// //     return caio_io_epoll_forget(&_epoll, fd);
-// // }
