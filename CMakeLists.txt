@@ -3,8 +3,8 @@ project(caio
     VERSION 3.1.0
     LANGUAGES C
 )
-#include(CMakeDependentOption)
-#cmake_dependent_option(CAIO_USE_EPOLL "Use epoll(7)" ON "CAIO_USE_MODULES" OFF)
+include(CMakeDependentOption)
+
 
 set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release)
 set(CMAKE_C_COMPILER gcc)
@@ -19,18 +19,19 @@ if(CMAKE_BUILD_TYPE!=Release)
 endif()
 
 
-# Menu config
-
-# Modules
-# option(CAIO_USE_MODULES "Use caio modules system." ON)
-
-# max modules
+# Max modules
 set(CAIO_MODULES_MAX 8 CACHE STRING "Maximum allowed modules.")
 set_property(CACHE CAIO_MODULES_MAX PROPERTY STRINGS 4 8 32 64 128 256)
 
-# epoll
-option(CAIO_USE_EPOLL "Use epoll(7)" ON)
+# Builtin modules 
+option(CAIO_BUILTIN_MODULES "Build caio built-in modules." ON)
+cmake_dependent_option(CAIO_EPOLL "Build and link epoll(7) caio module." 
+	ON "CAIO_BUILTIN_MODULES" OFF)
+cmake_dependent_option(CAIO_SELECT "Build and link select(2) caio module."
+	ON "CAIO_BUILTIN_MODULES" OFF)
 
+
+# Menu config
 add_custom_target(menu COMMAND ccmake ${PROJECT_BINARY_DIR} )
 add_custom_target(fresh COMMAND cmake ${PROJECT_SOURCE_DIR} --fresh)
 
@@ -46,7 +47,7 @@ add_library(caio STATIC
 )
 
 
-if(CAIO_USE_EPOLL)
+if(CAIO_EPOLL)
   target_sources(caio
     PUBLIC 
       ${CMAKE_CURRENT_SOURCE_DIR}/caio/epoll.c
@@ -56,6 +57,16 @@ if(CAIO_USE_EPOLL)
   )
   install(FILES caio/epoll.h DESTINATION "include/caio")
   # install(FILES caio/sleep.h DESTINATION "include/caio")
+endif()
+
+
+if(CAIO_SELECT)
+  target_sources(caio
+    PUBLIC 
+      ${CMAKE_CURRENT_SOURCE_DIR}/caio/select.c
+      ${CMAKE_CURRENT_SOURCE_DIR}/caio/select.h
+  )
+  install(FILES caio/select.h DESTINATION "include/caio")
 endif()
 
 

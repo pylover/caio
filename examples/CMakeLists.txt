@@ -3,13 +3,20 @@ list(APPEND examples
   generator
 )
 
-if(CAIO_USE_EPOLL)
+if(CAIO_EPOLL)
   list(APPEND examples
-      timer_epoll
+      epoll_timer
   #     sleep
   #     tcpserver_epoll
   )
 endif()
+
+if(CAIO_SELECT)
+  list(APPEND examples
+      select_timer
+  )
+endif()
+
 
 foreach (t IN LISTS examples) 
   # Test help
