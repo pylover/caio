@@ -6,7 +6,7 @@ project(caio
 include(CMakeDependentOption)
 
 
-set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release)
+# GCC and it's flags
 set(CMAKE_C_COMPILER gcc)
 set(CMAKE_VERBOSE_MAKEFILE OFF)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fms-extensions")
@@ -14,14 +14,20 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_GNU_SOURCE=1")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
 
 
+# Build type and debug symbols
+set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release)
+if(NOT CMAKE_BUILD_TYPE)
+	set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Include debug symbols" FORCE)
+endif()
 if(CMAKE_BUILD_TYPE!=Release)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")
 endif()
 
 
-# Max modules
+# Maximum allowed modules
 set(CAIO_MODULES_MAX 8 CACHE STRING "Maximum allowed modules.")
 set_property(CACHE CAIO_MODULES_MAX PROPERTY STRINGS 4 8 32 64 128 256)
+
 
 # Builtin modules 
 option(CAIO_BUILTIN_MODULES "Build caio built-in modules." ON)
