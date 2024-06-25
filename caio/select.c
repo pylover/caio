@@ -17,50 +17,123 @@
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
 #include <sys/select.h>
+#include <sys/resource.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "caio/select.h"
 
 
+#define FILEEVENT_RESET(fe) \
+            (fe)->task = NULL; \
+            (fe)->fd = -1; \
+            (fe)->events = 0
+
+
+struct caio_fileevent {
+    int fd;
+    int events;
+    struct caio_task *task;
+};
+
+
 struct caio_select {
     struct caio_module;
-    int timeout;
+    unsigned long timeout;
+    unsigned int maxfileno;
     size_t waitingfiles;
-    fd_set rfds;
-    fd_set wfds;
-    fd_set efds;
-    struct caio_task *tasks[FD_SETSIZE];
+    struct caio_fileevent *events;
+    size_t eventscount;
 };
 
 
 static int
 _tick(struct caio_select *s, caio_t c) {
-    // int i;
-    // int nfds;
-    // struct caio_task *task;
+    int i;
+    int fd;
+    int nfds;
+    int shift;
+    struct caio_fileevent *fe;
+    struct timeval tv;
+    fd_set rfds;
+    fd_set wfds;
+    fd_set efds;
 
     if (s->waitingfiles == 0) {
         return 0;
     }
 
-    // nfds = epoll_wait(s->fd, s->events, s->maxevents, s->timeout);
-    // if (nfds < 0) {
-    //     return -1;
-    // }
+    tv.tv_usec = (s->timeout % 1000) * 1000;
+    tv.tv_sec = s->timeout / 1000;
 
-    // if (nfds == 0) {
-    //     return 0;
-    // }
+    for (i = 0; i < s->waitingfiles; i++) {
+        fe = &s->events[i];
+        fd = fe->fd;
 
-    // for (i = 0; i < nfds; i++) {
-    //     task = (struct caio_task*)s->events[i].data.ptr;
-    //     if (task->status == CAIO_WAITING) {
-    //         task->status = CAIO_RUNNING;
-    //         s->waitingfiles--;
-    //     }
-    // }
+        if (fe->events == 0) {
+            s->waitingfiles--;
+            continue;
+        }
 
+        if (fe->events & CAIO_READ) {
+            FD_SET(fd, &rfds);
+        }
+
+        if (fe->events & CAIO_WRITE) {
+            FD_SET(fd, &wfds);
+        }
+
+        if (fe->events & CAIO_ERR) {
+            FD_SET(fd, &efds);
+        }
+    }
+
+    nfds = select(s->waitingfiles + 1, &rfds, &wfds, &efds, &tv);
+    if (nfds == -1) {
+        return -1;
+    }
+
+    if (nfds == 0) {
+        return 0;
+    }
+
+    /*
+     * 0123456...
+     * 0123.56...
+     *
+     * 0125
+     *
+     * 0123456789
+     * 36........
+     * wf: 2
+     * sh: 5
+     */
+    shift = 0;
+    for (i = 0; i < s->eventscount; i++) {
+        fe = &s->events[i];
+        fd = fe->fd;
+
+        if ((fd == -1)
+                || FD_ISSET(fd, &rfds)
+                || FD_ISSET(fd, &wfds)
+                || FD_ISSET(fd, &efds)) {
+            if (fe->task && (fe->task->status == CAIO_WAITING)) {
+                fe->task->status = CAIO_RUNNING;
+                s->waitingfiles--;
+                FILEEVENT_RESET(fe);
+            }
+            shift++;
+            continue;
+        }
+
+        if (!shift) {
+            continue;
+        }
+
+        s->events[i - shift] = *fe;
+        FILEEVENT_RESET(fe);
+    }
+    s->eventscount = s->waitingfiles;
     return 0;
 }
 
@@ -76,19 +149,28 @@ caio_select_create(caio_t c, unsigned int timeout) {
     }
     memset(s, 0, sizeof(struct caio_select));
 
-    s->timeout = timeout;
     s->waitingfiles = 0;
-
-    FD_ZERO(&s->rfds);
-    FD_ZERO(&s->wfds);
-    FD_ZERO(&s->efds);
-
+    s->timeout = timeout;
     s->tick = (caio_hook) _tick;
 
     if (caio_module_install(c, (struct caio_module*)s)) {
         goto failed;
     }
 
+    /* Find maximum allowed file descriptors for this process and allocate
+     * as much as needed for task repository
+     */
+    struct rlimit limits;
+    if (getrlimit(RLIMIT_NOFILE, &limits)) {
+        goto failed;
+    }
+
+    s->maxfileno = limits.rlim_max;
+    s->events = calloc(s->maxfileno, sizeof(struct caio_fileevent));
+    s->eventscount = 0;
+    if (s->events == NULL) {
+        goto failed;
+    }
     return s;
 
 failed:
@@ -107,6 +189,10 @@ caio_select_destroy(caio_t c, caio_select_t s) {
 
     ret |= caio_module_uninstall(c, (struct caio_module*)s);
 
+    if (s->events) {
+        free(s->events);
+    }
+
     free(s);
     return 0;
 }
@@ -115,38 +201,33 @@ caio_select_destroy(caio_t c, caio_select_t s) {
 int
 caio_select_monitor(struct caio_select *s, struct caio_task *task, int fd,
         int events) {
-    if ((fd < 0) || (fd > 1023)) {
+    struct caio_fileevent *fe;
+    if ((fd < 0) || (fd > s->maxfileno) || (s->eventscount == s->maxfileno)) {
         return -1;
     }
 
-    s->tasks[fd] = task;
-    if (events & CAIO_READ) {
-        FD_SET(fd, &s->rfds);
-    }
-    if (events & CAIO_WRITE) {
-        FD_SET(fd, &s->wfds);
-    }
-    if (events & CAIO_ERR) {
-        FD_SET(fd, &s->efds);
-    }
-
+    fe = &s->events[s->eventscount++];
     s->waitingfiles++;
+    fe->events = events;
+    fe->task = task;
+    fe->fd = fd;
     return 0;
 }
 
 
 int
 caio_select_forget(struct caio_select *s, int fd) {
-    if (FD_ISSET(fd, &s->rfds)) {
-        FD_CLR(fd, &s->rfds);
+    int i;
+    struct caio_fileevent *fe;
+
+    for (i = 0; i < s->eventscount; i++) {
+        fe = &s->events[i];
+        if (fe->fd == fd) {
+            FILEEVENT_RESET(fe);
+            s->waitingfiles--;
+            return 0;
+        }
     }
 
-    if (FD_ISSET(fd, &s->wfds)) {
-        FD_CLR(fd, &s->wfds);
-    }
-
-    if (FD_ISSET(fd, &s->efds)) {
-        FD_CLR(fd, &s->efds);
-    }
-    return 0;
+    return -1;
 }
