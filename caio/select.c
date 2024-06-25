@@ -66,7 +66,10 @@ _tick(struct caio_select *s, caio_t c) {
     tv.tv_usec = (s->timeout % 1000) * 1000;
     tv.tv_sec = s->timeout / 1000;
 
-    for (i = 0; i < s->waitingfiles; i++) {
+    FD_ZERO(&rfds);
+    FD_ZERO(&wfds);
+    FD_ZERO(&efds);
+    for (i = 0; i < s->eventscount; i++) {
         fe = &s->events[i];
         fd = fe->fd;
 
@@ -88,7 +91,7 @@ _tick(struct caio_select *s, caio_t c) {
         }
     }
 
-    nfds = select(s->waitingfiles + 1, &rfds, &wfds, &efds, &tv);
+    nfds = select(s->maxfileno + 1, &rfds, &wfds, &efds, &tv);
     if (nfds == -1) {
         return -1;
     }
