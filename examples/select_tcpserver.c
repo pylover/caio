@@ -19,6 +19,7 @@
  */
 #include <stdio.h>
 #include <stdbool.h>
+#include <signal.h>
 #include <errno.h>
 #include <err.h>
 #include <sys/socket.h>
@@ -34,6 +35,7 @@
 
 static caio_t _caio;
 static caio_select_t _select;
+static struct sigaction oldaction;
 
 
 /* TCP server caio state and */
@@ -73,6 +75,25 @@ typedef struct tcpconn {
 
 #define ADDRFMTS "%s:%d"
 #define ADDRFMTV(a) inet_ntoa((a).sin_addr), ntohs((a).sin_port)
+
+
+static void
+_sighandler(int s) {
+    printf("\nsignal: %d\n", s);
+    caio_task_killall(_caio);
+    printf("\n");
+}
+
+
+static int
+_handlesignals() {
+    struct sigaction new_action = {{_sighandler}, {{0, 0, 0, 0}}};
+    if (sigaction(SIGINT, &new_action, &oldaction) != 0) {
+        return -1;
+    }
+
+    return 0;
+}
 
 
 static ASYNC
@@ -203,6 +224,10 @@ main() {
         .sin_addr = {htons(0)},
         .sin_port = htons(3030),
     };
+
+    if (_handlesignals()) {
+        return EXIT_FAILURE;;
+    }
 
     _caio = caio_create(MAXCONN + 1);
     if (_caio == NULL) {

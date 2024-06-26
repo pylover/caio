@@ -16,6 +16,7 @@
  *
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
+#include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
 
@@ -25,7 +26,6 @@
 
 struct caio {
     struct caio_taskpool taskpool;
-    bool killing;
     struct caio_module *modules[CAIO_MODULES_MAX];
     size_t modulescount;
 };
@@ -188,28 +188,22 @@ caio_loop(struct caio *c) {
     struct caio_taskpool *taskpool = &c->taskpool;
     struct caio_module *module;
     int i;
-    int ret = 0;
+    int ret;
 
     for (i = 0; i < c->modulescount; i++) {
         module = c->modules[i];
-        if (module->loopstart) {
-            ret |= module->loopstart(module, c);
+        if (module->loopstart && module->loopstart(module, c)) {
+            goto interrupt;
         }
-    }
-    if (ret) {
-        return -1;
     }
 
+loop:
     while (taskpool->count) {
-        ret = 0;
         for (i = 0; i < c->modulescount; i++) {
             module = c->modules[i];
-            if (module->tick) {
-                ret |= module->tick(module, c);
+            if (module->tick && module->tick(module, c)) {
+                goto interrupt;
             }
-        }
-        if (ret) {
-            return -1;
         }
 
         while ((task = caio_taskpool_next(taskpool, task,
@@ -223,13 +217,20 @@ caio_loop(struct caio *c) {
     ret = 0;
     for (i = 0; i < c->modulescount; i++) {
         module = c->modules[i];
-        if (module->loopend) {
-            ret |= module->loopend(module, c);
+        if (module->loopend && module->loopend(module, c)) {
+            goto interrupt;
         }
     }
     if (ret) {
+        if (errno == EINTR) {
+            goto interrupt;
+        }
         return -1;
     }
 
     return 0;
+
+interrupt:
+    caio_task_killall(c);
+    goto loop;
 }
