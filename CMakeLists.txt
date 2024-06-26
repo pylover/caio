@@ -50,6 +50,7 @@ include_directories(${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR})
 add_library(caio STATIC 
   caio/taskpool.c caio/taskpool.h
   caio/caio.c caio/caio.h
+  caio/sleep.c caio/sleep.h
 )
 
 
@@ -58,11 +59,8 @@ if(CAIO_EPOLL)
     PUBLIC 
       ${CMAKE_CURRENT_SOURCE_DIR}/caio/epoll.c
       ${CMAKE_CURRENT_SOURCE_DIR}/caio/epoll.h
-	  # ${CMAKE_CURRENT_SOURCE_DIR}/caio/sleep.h
-      # ${CMAKE_CURRENT_SOURCE_DIR}/caio/sleep.c
   )
   install(FILES caio/epoll.h DESTINATION "include/caio")
-  # install(FILES caio/sleep.h DESTINATION "include/caio")
 endif()
 
 
@@ -79,6 +77,7 @@ endif()
 # Install
 install(TARGETS caio DESTINATION "lib")
 install(FILES caio/caio.h DESTINATION "include/caio")
+install(FILES caio/sleep.h DESTINATION "include/caio")
 install(FILES caio/generic.h DESTINATION "include/caio")
 install(FILES caio/generic.c DESTINATION "include/caio")
 

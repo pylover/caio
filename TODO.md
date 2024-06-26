@@ -1,5 +1,5 @@
 - Prevent compile on kernel <= 2.6.9
-- fixes callstack allocation per task
+- fixed callstack allocation per task
 - Dynamic(infinite) stack size option
 - All todos
 - Preserve filename, function name and line number on CAIO_THROW

@@ -20,26 +20,46 @@
 #define CAIO_SLEEP_H_
 
 
-#include "caio.h"
+#include <sys/timerfd.h>
+#include "caio/caio.h"
 
 
-typedef int sleep_t;
+typedef int caio_sleep_t;
 
 
 #undef CAIO_ARG1
 #undef CAIO_ARG2
 #undef CAIO_ENTITY
-#define CAIO_ENTITY sleep
+#define CAIO_ENTITY caio_sleep
 #define CAIO_ARG1 time_t
-#include "generic.h"
+#include "caio/generic.h"
 
 
+int
+caio_sleep_create(caio_sleep_t *sleep);
+
+
+int
+caio_sleep_destroy(caio_sleep_t *sleep);
+
+
+#ifdef CAIO_SELECT
+
+#include "caio/select.h"
+
+#define CAIO_SLEEP_SELECT(select, self, sleep, seconds) \
+    CAIO_AWAIT(self, caio_sleep, caio_sleepA, seconds, select)
+
+#endif
+
+/*
 #define CAIO_SLEEP(self, state, ...) \
     CAIO_AWAIT(self, sleep, caio_sleepA, state, __VA_ARGS__)
-
-
-ASYNC
-caio_sleepA(struct caio_task *self, int *state, time_t seconds);
+*/
+//
+//
+// ASYNC
+// caio_sleepA(struct caio_task *self, int *state, time_t seconds);
 
 
 #endif  // CAIO_SLEEP_H_

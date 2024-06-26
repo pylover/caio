@@ -100,17 +100,6 @@ _tick(struct caio_select *s, caio_t c) {
         return 0;
     }
 
-    /*
-     * 0123456...
-     * 0123.56...
-     *
-     * 0125
-     *
-     * 0123456789
-     * 36........
-     * wf: 2
-     * sh: 5
-     */
     shift = 0;
     for (i = 0; i < s->eventscount; i++) {
         fe = &s->events[i];
