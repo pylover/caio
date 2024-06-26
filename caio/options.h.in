@@ -20,6 +20,8 @@
 #define CAIO_OPTIONS_H_IN_
 
 #cmakedefine CAIO_MODULES_MAX @CAIO_MODULES_MAX@
+#cmakedefine CAIO_SELECT @CAIO_SELECT@
+#cmakedefine CAIO_EPOLL @CAIO_EPOLL@
 
 
 #endif  // CAIO_OPTIONS_H_IN_

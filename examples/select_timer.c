@@ -77,7 +77,7 @@ tmrA(struct caio_task *self, struct tmr *state) {
     }
 
     while (true) {
-        CAIO_SELECT_WAIT(_select, self, state->fd, CAIO_READ);
+        CAIO_AWAIT_SELECT(_select, self, state->fd, CAIO_READ);
         bytes = read(state->fd, &tmp, sizeof(tmp));
         if (bytes == -1) {
             warn("read\n");

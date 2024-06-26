@@ -44,11 +44,12 @@ static caio_select_t _select;
 static ASYNC
 fooA(struct caio_task *self, foo_t *state) {
     CAIO_BEGIN(self);
-    // printf("Waiting %ld seconds\n", state->first);
-    // CAIO_SLEEP_SELECT(self, &state->sleep, state->first);
 
-    // printf("Waiting %ld seconds\n", state->second);
-    // CAIO_SLEEP_SELECT(self, &state->sleep, state->second);
+    printf("Waiting %ld miliseconds\n", state->first);
+    CAIO_SLEEP_SELECT(_select, self, &state->sleep, state->first);
+
+    printf("Waiting %ld miliseconds\n", state->second);
+    CAIO_SLEEP_SELECT(_select, self, &state->sleep, state->second);
 
     CAIO_FINALLY(self);
 }
@@ -59,8 +60,8 @@ main() {
     int exitstatus = EXIT_SUCCESS;
 
     struct foo foo = {
-        .first = 1,
-        .second = 2,
+        .first = 1000,
+        .second = 2000,
     };
 
     _caio = caio_create(2);

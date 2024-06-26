@@ -27,7 +27,8 @@
 #undef CAIO_ARG2
 #undef CAIO_ENTITY
 #define CAIO_ENTITY caio_sleep
-#define CAIO_ARG1 time_t
+#define CAIO_ARG1 caio_module_t
+#define CAIO_ARG2 time_t
 #include "caio/generic.c"
 
 
@@ -60,7 +61,7 @@ caio_sleep_destroy(caio_sleep_t *sleep) {
 #ifdef CAIO_SELECT
 
 ASYNC
-caio_sleepA(struct caio_task *self, int *state, caio_module_t s,
+caio_sleep_selectA(struct caio_task *self, int *state, caio_select_t s,
         time_t miliseconds) {
     int eno;
     int fd = *state;
@@ -79,7 +80,7 @@ caio_sleepA(struct caio_task *self, int *state, caio_module_t s,
         CAIO_THROW(self, eno);
     }
 
-    CAIO_MODULE_WAIT(s, self, fd, CAIO_READ);
+    CAIO_AWAIT_SELECT(s, self, fd, CAIO_READ);
     caio_select_forget(s, fd);
     CAIO_FINALLY(self);
 }

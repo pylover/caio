@@ -77,7 +77,7 @@ tmrA(struct caio_task *self, struct tmr *state) {
     }
 
     while (true) {
-        CAIO_AWAIT_MODULE(caio_epoll, _epoll, self, state->fd, EPOLLIN);
+        CAIO_AWAIT_EPOLL(_epoll, self, state->fd, EPOLLIN);
         bytes = read(state->fd, &tmp, sizeof(tmp));
         if (bytes == -1) {
             warn("read\n");

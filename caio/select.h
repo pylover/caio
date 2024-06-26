@@ -45,18 +45,8 @@ int
 caio_select_forget(struct caio_select *s, int fd);
 
 
-#define CAIO_SELECT_WAIT(s, task, fd, events) \
-    do { \
-        (task)->current->line = __LINE__; \
-        if (caio_select_monitor(s, task, fd, events)) { \
-            (task)->status = CAIO_TERMINATING; \
-        } \
-        else { \
-            (task)->status = CAIO_WAITING; \
-        } \
-        return; \
-        case __LINE__:; \
-    } while (0)
+#define CAIO_AWAIT_SELECT(module, task, ...) \
+    CAIO_AWAIT_MODULE(caio_select, module, task, __VA_ARGS__)
 
 
 #endif  // CAIO_SELECT_H_

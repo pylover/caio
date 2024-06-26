@@ -19,7 +19,6 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#include "caio/options.h"
 #include "caio/caio.h"
 #include "caio/taskpool.h"
 
