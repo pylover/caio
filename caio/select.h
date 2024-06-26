@@ -29,7 +29,7 @@ typedef struct caio_select *caio_select_t;
 
 
 struct caio_select *
-caio_select_create(caio_t c, unsigned int timeout);
+caio_select_create(caio_t c, size_t maxfileno, unsigned int timeout_us);
 
 
 int

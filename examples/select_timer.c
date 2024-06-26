@@ -125,7 +125,7 @@ main() {
         goto terminate;
     }
 
-    _select = caio_select_create(_caio, 1);
+    _select = caio_select_create(_caio, 5, 1);
     if (_select == NULL) {
         exitstatus = EXIT_FAILURE;
         goto terminate;

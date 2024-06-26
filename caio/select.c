@@ -39,7 +39,7 @@ struct caio_fileevent {
 
 struct caio_select {
     struct caio_module;
-    unsigned long timeout;
+    unsigned long timeout_us;
     unsigned int maxfileno;
     size_t waitingfiles;
     struct caio_fileevent *events;
@@ -63,8 +63,8 @@ _tick(struct caio_select *s, caio_t c) {
         return 0;
     }
 
-    tv.tv_usec = (s->timeout % 1000) * 1000;
-    tv.tv_sec = s->timeout / 1000;
+    tv.tv_usec = s->timeout_us % 1000000;
+    tv.tv_sec = s->timeout_us / 1000000;
 
     FD_ZERO(&rfds);
     FD_ZERO(&wfds);
@@ -131,7 +131,7 @@ _tick(struct caio_select *s, caio_t c) {
 
 
 struct caio_select *
-caio_select_create(caio_t c, unsigned int timeout) {
+caio_select_create(caio_t c, size_t maxfileno, unsigned int timeout_us) {
     struct caio_select *s;
 
     /* Create select instance */
@@ -142,7 +142,7 @@ caio_select_create(caio_t c, unsigned int timeout) {
     memset(s, 0, sizeof(struct caio_select));
 
     s->waitingfiles = 0;
-    s->timeout = timeout;
+    s->timeout_us = timeout_us;
     s->tick = (caio_hook) _tick;
 
     if (caio_module_install(c, (struct caio_module*)s)) {
@@ -157,7 +157,11 @@ caio_select_create(caio_t c, unsigned int timeout) {
         goto failed;
     }
 
-    s->maxfileno = limits.rlim_max;
+    if (maxfileno > limits.rlim_max) {
+        goto failed;
+    }
+
+    s->maxfileno = maxfileno;
     s->events = calloc(s->maxfileno, sizeof(struct caio_fileevent));
     s->eventscount = 0;
     if (s->events == NULL) {

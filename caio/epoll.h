@@ -29,7 +29,7 @@ typedef struct caio_epoll *caio_epoll_t;
 
 
 caio_epoll_t
-caio_epoll_create(caio_t c, size_t maxevents, unsigned int timeout);
+caio_epoll_create(caio_t c, size_t maxevents, unsigned int timeout_ms);
 
 
 int

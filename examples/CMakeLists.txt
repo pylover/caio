@@ -6,7 +6,7 @@ list(APPEND examples
 if(CAIO_EPOLL)
   list(APPEND examples
       epoll_timer
-  #    epoll_sleep
+      epoll_sleep
   #    tcpserver_epoll
   )
 endif()

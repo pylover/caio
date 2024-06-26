@@ -45,14 +45,11 @@ caio_sleep_destroy(caio_sleep_t *sleep);
 
 
 #ifdef CAIO_SELECT
-
 #include "caio/select.h"
-
 
 ASYNC
 caio_sleep_selectA(struct caio_task *self, int *state, caio_select_t s,
         time_t miliseconds);
-
 
 #define CAIO_SLEEP_SELECT(s, self, sleep, miliseconds) \
     CAIO_AWAIT(self, caio_sleep, (caio_sleep_coro)caio_sleep_selectA, \
@@ -60,14 +57,19 @@ caio_sleep_selectA(struct caio_task *self, int *state, caio_select_t s,
 
 #endif
 
-/*
-#define CAIO_SLEEP(self, state, ...) \
-    CAIO_AWAIT(self, sleep, caio_sleepA, state, __VA_ARGS__)
-*/
-//
-//
-// ASYNC
-// caio_sleepA(struct caio_task *self, int *state, time_t miliseconds);
+
+#ifdef CAIO_EPOLL
+#include "caio/epoll.h"
+
+ASYNC
+caio_sleep_epollA(struct caio_task *self, int *state, caio_epoll_t s,
+        time_t miliseconds);
+
+#define CAIO_SLEEP_EPOLL(s, self, sleep, miliseconds) \
+    CAIO_AWAIT(self, caio_sleep, (caio_sleep_coro)caio_sleep_epollA, \
+            sleep, (caio_module_t)s, miliseconds)
+
+#endif
 
 
 #endif  // CAIO_SLEEP_H_
