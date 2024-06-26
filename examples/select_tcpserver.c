@@ -16,8 +16,6 @@
  *
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  *
- *
- * An edge-triggered epoll(7) example using caio.
  */
 #include <stdio.h>
 #include <stdbool.h>
@@ -27,7 +25,7 @@
 #include <arpa/inet.h>
 
 #include "caio/caio.h"
-#include "caio/epoll.h"
+#include "caio/select.h"
 
 
 #define MAXCONN 8
@@ -35,7 +33,7 @@
 
 
 static caio_t _caio;
-static caio_epoll_t _epoll;
+static caio_select_t _select;
 
 
 /* TCP server caio state and */
@@ -87,7 +85,7 @@ reading:
         /* tcp read */
         bytes = read(conn->fd, conn->buff, BUFFSIZE);
         if ((bytes == -1) && IO_MUSTWAIT(errno)) {
-            CAIO_AWAIT_EPOLL(_epoll, self, conn->fd, EPOLLIN);
+            CAIO_AWAIT_SELECT(_select, self, conn->fd, CAIO_READ);
             goto reading;
         }
         else if (bytes == -1) {
@@ -104,7 +102,7 @@ writing:
         /* tcp write */
         bytes = write(conn->fd, conn->buff, conn->bufflen);
         if ((bytes == -1) && IO_MUSTWAIT(errno)) {
-            CAIO_AWAIT_EPOLL(_epoll, self, conn->fd, EPOLLOUT);
+            CAIO_AWAIT_SELECT(_select, self, conn->fd, CAIO_WRITE);
             goto writing;
         }
         else if (bytes == -1) {
@@ -119,7 +117,7 @@ writing:
 
     CAIO_FINALLY(self);
     if (conn->fd != -1) {
-        caio_epoll_forget(_epoll, conn->fd);
+        caio_select_forget(_select, conn->fd);
         close(conn->fd);
     }
     free(conn);
@@ -162,7 +160,7 @@ listenA(struct caio_task *self, struct tcpserver *state,
     while (true) {
         connfd = accept4(fd, &connaddr, &addrlen, SOCK_NONBLOCK);
         if ((connfd == -1) && IO_MUSTWAIT(errno)) {
-            CAIO_AWAIT_EPOLL(_epoll, self, fd, EPOLLIN | EPOLLET);
+            CAIO_AWAIT_SELECT(_select, self, fd, CAIO_READ);
             continue;
         }
 
@@ -191,7 +189,7 @@ listenA(struct caio_task *self, struct tcpserver *state,
 
     CAIO_FINALLY(self);
     if (fd != -1) {
-        caio_epoll_forget(_epoll, fd);
+        caio_select_forget(_select, fd);
         close(fd);
     }
 }
@@ -212,8 +210,8 @@ main() {
         goto terminate;
     }
 
-    _epoll = caio_epoll_create(_caio, MAXCONN + 1, 1);
-    if (_epoll == NULL) {
+    _select = caio_select_create(_caio, MAXCONN + 1, 1);
+    if (_select == NULL) {
         exitstatus = EXIT_FAILURE;
         goto terminate;
     }
@@ -225,7 +223,7 @@ main() {
     }
 
 terminate:
-    if (caio_epoll_destroy(_caio, _epoll)) {
+    if (caio_select_destroy(_caio, _select)) {
         exitstatus = EXIT_FAILURE;
     }
 

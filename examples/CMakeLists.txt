@@ -16,6 +16,7 @@ if(CAIO_SELECT)
   list(APPEND examples
     select_timer
     select_sleep
+	select_tcpserver
   )
 endif()
 
