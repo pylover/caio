@@ -228,7 +228,7 @@ main() {
     };
 
     if (_handlesignals()) {
-        return EXIT_FAILURE;;
+        return EXIT_FAILURE;
     }
 
     _caio = caio_create(MAXCONN + 1);
