@@ -101,5 +101,4 @@ terminate:
     }
 
     return exitstatus;
-    // return foo_forever(fooA, NULL, 2, CAIO_SIG);
 }

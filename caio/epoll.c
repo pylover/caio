@@ -45,6 +45,7 @@ _tick(struct caio_epoll *e, caio_t c) {
         return 0;
     }
 
+    errno = 0;
     nfds = epoll_wait(e->fd, e->events, e->maxevents, e->timeout_ms);
     if (nfds < 0) {
         return -1;

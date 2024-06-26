@@ -3,18 +3,19 @@ list(APPEND examples
   generator
 )
 
+
 if(CAIO_EPOLL)
   list(APPEND examples
-      epoll_timer
-      epoll_sleep
-  #    tcpserver_epoll
+    epoll_timer
+    epoll_sleep
+	epoll_tcpserver
   )
 endif()
 
 if(CAIO_SELECT)
   list(APPEND examples
-      select_timer
-      select_sleep
+    select_timer
+    select_sleep
   )
 endif()
 
@@ -22,17 +23,17 @@ endif()
 foreach (t IN LISTS examples) 
   # Test help
   add_executable(${t} 
-      ${t}.c
-      $<TARGET_OBJECTS:caio>
+    ${t}.c
+    $<TARGET_OBJECTS:caio>
   )
   target_include_directories(${t} PUBLIC "${PROJECT_BINARY_DIR}")
   add_custom_target(${t}_exec COMMAND ${t})
   add_custom_target(${t}_debug COMMAND gdb 
-      --command=${PROJECT_SOURCE_DIR}/examples/${t}.gdb
-      ./${t}
+    --command=${PROJECT_SOURCE_DIR}/examples/${t}.gdb
+    ./${t}
   )
 
   add_custom_target(${t}_profile
-      COMMAND "valgrind" ${VALGRIND_FLAGS} ./${t}
+    COMMAND "valgrind" ${VALGRIND_FLAGS} ./${t}
   )
 endforeach()

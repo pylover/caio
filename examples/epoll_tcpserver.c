@@ -19,19 +19,27 @@
  *
  * An edge-triggered epoll(7) example using caio.
  */
-#include <unistd.h>
+// #include <unistd.h>
 #include <stdio.h>
+#include <stdbool.h>
+#include <errno.h>
 #include <err.h>
-#include <string.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
-#include <netinet/in.h>
-#include <netinet/ip.h>
+// #include <string.h>
+// #include <netinet/in.h>
+// #include <netinet/ip.h>
 
 #include "caio/caio.h"
+#include "caio/epoll.h"
 
 
+#define MAXCONN 8
 #define BUFFSIZE 1024
+
+
+static caio_t _caio;
+static caio_epoll_t _epoll;
 
 
 /* TCP server caio state and */
@@ -73,63 +81,49 @@ typedef struct tcpconn {
 #define ADDRFMTV(a) inet_ntoa((a).sin_addr), ntohs((a).sin_port)
 
 
-
 static ASYNC
 echoA(struct caio_task *self, struct tcpconn *conn) {
     ssize_t bytes;
     CAIO_BEGIN(self);
-    static int events = 0;
 
     while (true) {
-        events = CAIO_ET;
-
-        /* tcp write */
-        /* Write as mush as possible until EAGAIN */
-        while (conn->bufflen) {
-            bytes = write(conn->fd, conn->buff, conn->bufflen);
-            if ((bytes == -1) && CAIO_EPOLL_MUSTWAIT()) {
-                events |= CAIO_OUT;
-                break;
-            }
-            if (bytes == -1) {
-                warn("write(%d)\n", conn->fd);
-                CAIO_THROW(self, errno);
-            }
-            if (bytes == 0) {
-                warn("write(%d) EOF\n", conn->fd);
-                CAIO_THROW(self, errno);
-            }
-            conn->bufflen -= bytes;
-        }
-
+reading:
         /* tcp read */
-        /* Read as mush as possible until EAGAIN */
-        while (conn->bufflen < BUFFSIZE) {
-            bytes = read(conn->fd, conn->buff, BUFFSIZE - conn->bufflen);
-            if ((bytes == -1) && CAIO_EPOLL_MUSTWAIT()) {
-                events |= CAIO_IN;
-                break;
-            }
-            if (bytes == -1) {
-                warn("read(%d)\n", conn->fd);
-                CAIO_THROW(self, errno);
-            }
-            if (bytes == 0) {
-                warn("read(%d) EOF\n", conn->fd);
-                CAIO_THROW(self, errno);
-            }
+        bytes = read(conn->fd, conn->buff, BUFFSIZE);
+        if ((bytes == -1) && IO_MUSTWAIT(errno)) {
+            CAIO_AWAIT_EPOLL(_epoll, self, conn->fd, EPOLLIN);
+            goto reading;
         }
+        else if (bytes == -1) {
+            warn("read(fd: %d)", conn->fd);
+            CAIO_THROW(self, errno);
+        }
+        else if (bytes == 0) {
+            warn("read(fd: %d) EOF", conn->fd);
+            CAIO_THROW(self, errno);
+        }
+        conn->bufflen = bytes;
 
-        /* reset errno and rewait events if neccessary */
-        errno = 0;
-        if ((conn->bufflen == 0) || (events & CAIO_OUT)) {
-            CAIO_EPOLL_WAIT(self, conn->fd, events);
+writing:
+        /* tcp write */
+        bytes = write(conn->fd, conn->buff, conn->bufflen);
+        if ((bytes == -1) && IO_MUSTWAIT(errno)) {
+            CAIO_AWAIT_EPOLL(_epoll, self, conn->fd, EPOLLOUT);
+            goto writing;
+        }
+        else if (bytes == -1) {
+            warn("write(fd: %d)", conn->fd);
+            CAIO_THROW(self, errno);
+        }
+        else if (bytes == 0) {
+            warn("write(fd: %d) EOF", conn->fd);
+            CAIO_THROW(self, errno);
         }
     }
 
     CAIO_FINALLY(self);
     if (conn->fd != -1) {
-        caio_epoll_unregister(conn->fd);
+        caio_epoll_forget(_epoll, conn->fd);
         close(conn->fd);
     }
     free(conn);
@@ -171,8 +165,8 @@ listenA(struct caio_task *self, struct tcpserver *state,
 
     while (true) {
         connfd = accept4(fd, &connaddr, &addrlen, SOCK_NONBLOCK);
-        if ((connfd == -1) && CAIO_EPOLL_MUSTWAIT()) {
-            CAIO_EPOLL_WAIT(self, fd, CAIO_IN | CAIO_ET);
+        if ((connfd == -1) && IO_MUSTWAIT(errno)) {
+            CAIO_AWAIT_EPOLL(_epoll, self, fd, EPOLLIN | EPOLLET);
             continue;
         }
 
@@ -192,7 +186,7 @@ listenA(struct caio_task *self, struct tcpserver *state,
         c->fd = connfd;
         c->localaddr = bindaddr;
         c->remoteaddr = connaddr;
-        if (tcpconn_spawn(echoA, c)) {
+        if (tcpconn_spawn(_caio, echoA, c)) {
             warn("Maximum connection exceeded, fd: %d\n", connfd);
             close(connfd);
             free(c);
@@ -201,7 +195,7 @@ listenA(struct caio_task *self, struct tcpserver *state,
 
     CAIO_FINALLY(self);
     if (fd != -1) {
-        caio_epoll_unregister(fd);
+        caio_epoll_forget(_epoll, fd);
         close(fd);
     }
 }
@@ -209,12 +203,39 @@ listenA(struct caio_task *self, struct tcpserver *state,
 
 int
 main() {
-    int backlog = 2;
+    int exitstatus = EXIT_SUCCESS;
+    struct tcpserver state = {0, 0};
     struct sockaddr_in bindaddr = {
         .sin_addr = {htons(0)},
         .sin_port = htons(3030),
     };
-    struct tcpserver state = {0, 0};
 
-    return tcpserver_forever(listenA, &state, bindaddr, backlog, 5, CAIO_SIG);
+    _caio = caio_create(MAXCONN + 1);
+    if (_caio == NULL) {
+        exitstatus = EXIT_FAILURE;
+        goto terminate;
+    }
+
+    _epoll = caio_epoll_create(_caio, MAXCONN + 1, 1);
+    if (_epoll == NULL) {
+        exitstatus = EXIT_FAILURE;
+        goto terminate;
+    }
+
+    tcpserver_spawn(_caio, listenA, &state, bindaddr, MAXCONN);
+
+    if (caio_loop(_caio)) {
+        exitstatus = EXIT_FAILURE;
+    }
+
+terminate:
+    if (caio_epoll_destroy(_caio, _epoll)) {
+        exitstatus = EXIT_FAILURE;
+    }
+
+    if (caio_destroy(_caio)) {
+        exitstatus = EXIT_FAILURE;
+    }
+
+    return exitstatus;
 }
