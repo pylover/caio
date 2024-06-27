@@ -172,9 +172,9 @@ caio_module_uninstall(struct caio *c, struct caio_module *m);
 
 
 /* IO helper macros */
-#define CAIO_READ 1
-#define CAIO_ERR 2
-#define CAIO_WRITE 4
+#define CAIO_IN 0x1
+#define CAIO_ERR 0x2
+#define CAIO_OUT 0x4
 #define IO_MUSTWAIT(e) \
     (((e) == EAGAIN) || ((e) == EWOULDBLOCK) || ((e) == EINPROGRESS))
 

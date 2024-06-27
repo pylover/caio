@@ -78,11 +78,11 @@ _tick(struct caio_select *s, struct caio* c) {
             continue;
         }
 
-        if (fe->events & CAIO_READ) {
+        if (fe->events & CAIO_IN) {
             FD_SET(fd, &rfds);
         }
 
-        if (fe->events & CAIO_WRITE) {
+        if (fe->events & CAIO_OUT) {
             FD_SET(fd, &wfds);
         }
 

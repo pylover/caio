@@ -90,7 +90,7 @@ caio_sleepA(struct caio_task *self, caio_sleep_t *state,
         CAIO_THROW(self, eno);
     }
 
-    CAIO_FILE_AWAIT(iom, self, fd, CAIO_READ);
+    CAIO_FILE_AWAIT(iom, self, fd, CAIO_IN);
     CAIO_FILE_FORGET(iom, fd);
     CAIO_FINALLY(self);
 }

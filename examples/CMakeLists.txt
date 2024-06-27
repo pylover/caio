@@ -7,13 +7,13 @@ list(APPEND examples
 if(CAIO_EPOLL OR CAIO_SELECT)
   list(APPEND examples
 	iomodule_sleep
+    iomodule_timer
   )
 endif()
 
 
 if(CAIO_EPOLL)
   list(APPEND examples
-    # epoll_timer
 	# epoll_tcpserver
   )
 endif()
@@ -21,7 +21,6 @@ endif()
 
 # if(CAIO_SELECT)
 #   list(APPEND examples
-#     select_timer
 # 	select_tcpserver
 #   )
 # endif()

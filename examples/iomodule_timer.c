@@ -25,7 +25,14 @@
 #include <sys/timerfd.h>
 
 #include "caio/caio.h"
+
+#ifdef CAIO_EPOLL
 #include "caio/epoll.h"
+#endif
+
+#ifdef CAIO_SELECT
+#include "caio/select.h"
+#endif
 
 
 typedef struct tmr {
@@ -33,6 +40,7 @@ typedef struct tmr {
     unsigned int interval;
     unsigned long value;
     const char *title;
+    struct caio_iomodule *iomodule;
 } tmr_t;
 
 
@@ -44,8 +52,7 @@ typedef struct tmr {
 #include "caio/generic.c"
 
 
-static caio_t _caio;
-static caio_epoll_t _epoll;
+static struct caio *_caio;
 
 
 static int
@@ -77,7 +84,7 @@ tmrA(struct caio_task *self, struct tmr *state) {
     }
 
     while (true) {
-        CAIO_AWAIT_EPOLL(_epoll, self, state->fd, EPOLLIN);
+        CAIO_FILE_AWAIT(state->iomodule, self, state->fd, CAIO_IN);
         bytes = read(state->fd, &tmp, sizeof(tmp));
         if (bytes == -1) {
             warn("read\n");
@@ -94,7 +101,7 @@ tmrA(struct caio_task *self, struct tmr *state) {
     CAIO_FINALLY(self);
     printf("%s(%ds), fd: %d, terminated\n", state->title, state->interval,
                 state->fd);
-    caio_epoll_forget(_epoll, state->fd);
+    CAIO_FILE_FORGET(state->iomodule, state->fd);
     if (state->fd != -1) {
         close(state->fd);
     }
@@ -104,20 +111,8 @@ tmrA(struct caio_task *self, struct tmr *state) {
 int
 main() {
     int exitstatus = EXIT_SUCCESS;
-
-    struct tmr foo = {
-        .fd = -1,
-        .title = "Foo",
-        .interval = 1,
-        .value = 0,
-    };
-
-    struct tmr bar = {
-        .fd = -1,
-        .title = "Bar",
-        .interval = 3,
-        .value = 0,
-    };
+    struct caio_epoll *epoll;
+    struct caio_select *select;
 
     _caio = caio_create(2);
     if (_caio == NULL) {
@@ -125,23 +120,57 @@ main() {
         goto terminate;
     }
 
-    _epoll = caio_epoll_create(_caio, 2, 1);
-    if (_epoll == NULL) {
+#ifdef CAIO_EPOLL
+    struct tmr epolltimer = {
+        .fd = -1,
+        .title = "epoll",
+        .interval = 1,
+        .value = 0,
+    };
+    epoll = caio_epoll_create(_caio, 2, 1);
+    if (epoll == NULL) {
         exitstatus = EXIT_FAILURE;
         goto terminate;
     }
 
-    tmr_spawn(_caio, tmrA, &foo);
-    tmr_spawn(_caio, tmrA, &bar);
+    epolltimer.iomodule = (struct caio_iomodule *)epoll;
+    tmr_spawn(_caio, tmrA, &epolltimer);
+#endif
+
+#ifdef CAIO_SELECT
+    struct tmr selecttimer = {
+        .fd = -1,
+        .title = "select",
+        .interval = 2,
+        .value = 0,
+    };
+    select = caio_select_create(_caio, 5, 1);
+    if (select == NULL) {
+        exitstatus = EXIT_FAILURE;
+        goto terminate;
+    }
+
+    selecttimer.iomodule = (struct caio_iomodule *)select;
+    tmr_spawn(_caio, tmrA, &selecttimer);
+#endif
 
     if (caio_loop(_caio)) {
         exitstatus = EXIT_FAILURE;
     }
 
 terminate:
-    if (caio_epoll_destroy(_caio, _epoll)) {
+
+#ifdef CAIO_EPOLL
+    if (caio_epoll_destroy(_caio, epoll)) {
         exitstatus = EXIT_FAILURE;
     }
+#endif
+
+#ifdef CAIO_SELECT
+    if (caio_select_destroy(_caio, select)) {
+        exitstatus = EXIT_FAILURE;
+    }
+#endif
 
     if (caio_destroy(_caio)) {
         exitstatus = EXIT_FAILURE;
