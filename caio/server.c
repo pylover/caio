@@ -1,0 +1,5 @@
+#ifndef CAIO_CONNECTION_H_
+#define CAIO_CONNECTION_H_
+
+
+#endif  // CAIO_CONNECTION_H_

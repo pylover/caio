@@ -29,6 +29,9 @@ endif()
 # set_property(CACHE CAIO_MODULES_MAX PROPERTY STRINGS 4 8 32 64 128 256)
 
 
+# Builtin types and utilities
+option(CAIO_CONNECTION "Build caio connection structure and functions." ON)
+
 # Builtin modules 
 option(CAIO_MODULES "Enable caio modules system." ON)
 if (CAIO_MODULES)
@@ -46,6 +49,8 @@ cmake_dependent_option(CAIO_EPOLL "Build and link epoll(7) caio IO module."
 	ON "CAIO_IOMODULES" OFF)
 cmake_dependent_option(CAIO_SELECT "Build and link select(2) caio IO module."
 	ON "CAIO_IOMODULES" OFF)
+cmake_dependent_option(CAIO_SERVER "Build and link socket server caio module."
+	ON "CAIO_IOMODULES AND CAIO_CONNECTION" OFF)
 
 
 # Menu config
@@ -81,6 +86,36 @@ if(CAIO_SELECT)
       ${CMAKE_CURRENT_SOURCE_DIR}/caio/select.h
   )
   install(FILES caio/select.h DESTINATION "include/caio")
+endif()
+
+
+if(CAIO_CONNECTION)
+  target_sources(caio
+    PUBLIC 
+      ${CMAKE_CURRENT_SOURCE_DIR}/caio/connection.c
+      ${CMAKE_CURRENT_SOURCE_DIR}/caio/connection.h
+  )
+  install(FILES caio/connection.h DESTINATION "include/caio")
+endif()
+
+
+if(CAIO_SERVER)
+  target_sources(caio
+    PUBLIC 
+      ${CMAKE_CURRENT_SOURCE_DIR}/caio/server.c
+      ${CMAKE_CURRENT_SOURCE_DIR}/caio/server.h
+  )
+  install(FILES caio/server.h DESTINATION "include/caio")
+endif()
+
+
+if(CAIO_HTTP)
+  target_sources(caio
+    PUBLIC 
+      ${CMAKE_CURRENT_SOURCE_DIR}/caio/http.c
+      ${CMAKE_CURRENT_SOURCE_DIR}/caio/http.h
+  )
+  install(FILES caio/http.h DESTINATION "include/caio")
 endif()
 
 
