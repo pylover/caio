@@ -32,7 +32,7 @@ enum caio_taskstatus {
 };
 
 
-typedef struct caio *caio_t;
+struct caio;
 struct caio_task;
 typedef void (*caio_invoker) (struct caio_task *self);
 
@@ -54,7 +54,7 @@ struct caio_task {
 
 /* Modules */
 struct caio_module;
-typedef int (*caio_hook) (struct caio_module *m, caio_t c);
+typedef int (*caio_hook) (struct caio_module *m, struct caio* c);
 struct caio_module {
     caio_hook loopstart;
     caio_hook tick;
@@ -64,13 +64,13 @@ struct caio_module {
 
 /* IO Modules */
 struct caio_iomodule;
-typedef int (*caio_iomonitor) (struct caio_iomodule *iom,
+typedef int (*caio_filemonitor) (struct caio_iomodule *iom,
         struct caio_task *task, int fd, int events);
-typedef int (*caio_ioforget) (struct caio_iomodule *iom, int fd);
+typedef int (*caio_fileforget) (struct caio_iomodule *iom, int fd);
 struct caio_iomodule {
     struct caio_module;
-    caio_iomonitor monitor;
-    caio_ioforget forget;
+    caio_filemonitor monitor;
+    caio_fileforget forget;
 };
 
 
@@ -89,16 +89,16 @@ struct caio_iomodule {
     } while (0)
 
 
-caio_t
+struct caio*
 caio_create(size_t maxtasks);
 
 
 int
-caio_destroy(caio_t c);
+caio_destroy(struct caio* c);
 
 
 struct caio_task *
-caio_task_new(caio_t c);
+caio_task_new(struct caio* c);
 
 
 int
@@ -106,11 +106,11 @@ caio_task_dispose(struct caio_task *task);
 
 
 void
-caio_task_killall(caio_t c);
+caio_task_killall(struct caio* c);
 
 
 int
-caio_loop(caio_t c);
+caio_loop(struct caio* c);
 
 
 int
@@ -173,8 +173,8 @@ caio_module_uninstall(struct caio *c, struct caio_module *m);
 
 /* IO helper macros */
 #define CAIO_READ 1
-#define CAIO_WRITE 2
-#define CAIO_ERR 4
+#define CAIO_ERR 2
+#define CAIO_WRITE 4
 #define IO_MUSTWAIT(e) \
     (((e) == EAGAIN) || ((e) == EWOULDBLOCK) || ((e) == EINPROGRESS))
 

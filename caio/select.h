@@ -29,11 +29,11 @@ struct caio_select;
 
 
 struct caio_select *
-caio_select_create(caio_t c, size_t maxfileno, unsigned int timeout_us);
+caio_select_create(struct caio* c, size_t maxfileno, unsigned int timeout_us);
 
 
 int
-caio_select_destroy(caio_t c, struct caio_select *s);
+caio_select_destroy(struct caio* c, struct caio_select *s);
 
 
 int

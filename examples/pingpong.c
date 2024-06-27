@@ -22,7 +22,7 @@
 #include "caio/caio.h"
 
 
-static caio_t _caio;
+static struct caio * _caio;
 typedef struct pingpong {
     const char *table;
     int shoots;

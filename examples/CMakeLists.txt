@@ -4,22 +4,27 @@ list(APPEND examples
 )
 
 
+if(CAIO_EPOLL OR CAIO_SELECT)
+  list(APPEND examples
+	iomodule_sleep
+  )
+endif()
+
+
 if(CAIO_EPOLL)
   list(APPEND examples
-    epoll_timer
-    epoll_sleep
-	epoll_tcpserver
+    # epoll_timer
+	# epoll_tcpserver
   )
 endif()
 
 
-if(CAIO_SELECT)
-  list(APPEND examples
-    select_timer
-    select_sleep
-	select_tcpserver
-  )
-endif()
+# if(CAIO_SELECT)
+#   list(APPEND examples
+#     select_timer
+# 	select_tcpserver
+#   )
+# endif()
 
 
 foreach (t IN LISTS examples) 

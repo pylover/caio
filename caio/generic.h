@@ -67,7 +67,7 @@ CAIO_NAME(call_new)(struct caio_task *task, CAIO_NAME(coro) coro,
 
 
 int
-CAIO_NAME(spawn) (caio_t c, CAIO_NAME(coro) coro, CAIO_NAME(t) *state
+CAIO_NAME(spawn) (struct caio *c, CAIO_NAME(coro) coro, CAIO_NAME(t) *state
 #ifdef CAIO_ARG1
         , CAIO_ARG1 arg1
     #ifdef CAIO_ARG2

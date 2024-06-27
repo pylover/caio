@@ -18,14 +18,12 @@
  */
 #include <stdio.h>
 
-#include "caio/epoll.h"
 #include "caio/sleep.h"
 
 
 typedef struct foo {
     caio_sleep_t sleep;
-    time_t first;
-    time_t second;
+    time_t delay;
 } foo_t;
 
 
@@ -37,19 +35,32 @@ typedef struct foo {
 #include "caio/generic.c"
 
 
-static caio_t _caio;
-static caio_iomodule_t _iomodule;
+static struct caio *_caio;
+
+#ifdef CAIO_EPOLL
+#include "caio/epoll.h"
+static struct caio_epoll *_epoll;
+#endif
+
+#ifdef CAIO_SELECT
+#include "caio/select.h"
+static struct caio_select *_select;
+#endif
 
 
 static ASYNC
 fooA(struct caio_task *self, foo_t *state) {
     CAIO_BEGIN(self);
 
-    printf("Waiting %ld miliseconds\n", state->first);
-    CAIO_SLEEP_EPOLL(_iomodule, self, &state->sleep, state->first);
+#ifdef CAIO_EPOLL
+    printf("EPOLL: Waiting %ld miliseconds\n", state->delay);
+    CAIO_SLEEP(self, &state->sleep, _epoll, state->delay);
+#endif
 
-    printf("Waiting %ld miliseconds\n", state->second);
-    CAIO_SLEEP_EPOLL(_iomodule, self, &state->sleep, state->second);
+#ifdef CAIO_SELECT
+    printf("SELECT: Waiting %ld miliseconds\n", state->delay);
+    CAIO_SLEEP(self, &state->sleep, _select, state->delay);
+#endif
 
     CAIO_FINALLY(self);
 }
@@ -60,8 +71,7 @@ main() {
     int exitstatus = EXIT_SUCCESS;
 
     struct foo foo = {
-        .first = 1000,
-        .second = 2000,
+        .delay = 1000,
     };
 
     _caio = caio_create(2);
@@ -70,11 +80,21 @@ main() {
         goto terminate;
     }
 
-    _iomodule = caio_epoll_create(_caio, 1, 1);
-    if (_iomodule == NULL) {
+#ifdef CAIO_EPOLL
+    _epoll = caio_epoll_create(_caio, 1, 1);
+    if (_epoll == NULL) {
         exitstatus = EXIT_FAILURE;
         goto terminate;
     }
+#endif
+
+#ifdef CAIO_SELECT
+    _select = caio_select_create(_caio, 4, 1);
+    if (_select == NULL) {
+        exitstatus = EXIT_FAILURE;
+        goto terminate;
+    }
+#endif
 
     if (caio_sleep_create(&foo.sleep)) {
         exitstatus = EXIT_FAILURE;
@@ -92,9 +112,17 @@ terminate:
         exitstatus = EXIT_FAILURE;
     }
 
-    if (caio_epoll_destroy(_caio, _iomodule)) {
+#ifdef CAIO_EPOLL
+    if (caio_epoll_destroy(_caio, _epoll)) {
         exitstatus = EXIT_FAILURE;
     }
+#endif
+
+#ifdef CAIO_SELECT
+    if (caio_select_destroy(_caio, _select)) {
+        exitstatus = EXIT_FAILURE;
+    }
+#endif
 
     if (caio_destroy(_caio)) {
         exitstatus = EXIT_FAILURE;

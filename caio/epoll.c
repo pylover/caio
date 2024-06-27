@@ -36,7 +36,7 @@ struct caio_epoll {
 
 
 static int
-_tick(struct caio_epoll *e, caio_t c) {
+_tick(struct caio_epoll *e, struct caio* c) {
     int i;
     int nfds;
     struct caio_task *task;
@@ -67,8 +67,35 @@ _tick(struct caio_epoll *e, caio_t c) {
 }
 
 
+static int
+_monitor(struct caio_epoll *e, struct caio_task *task, int fd,
+        int events) {
+    struct epoll_event ee;
+
+    ee.events = events | EPOLLONESHOT;
+    ee.data.ptr = task;
+    if (epoll_ctl(e->fd, EPOLL_CTL_MOD, fd, &ee)) {
+        if (epoll_ctl(e->fd, EPOLL_CTL_ADD, fd, &ee)) {
+            return -1;
+        }
+        errno = 0;
+    }
+
+    e->waitingfiles++;
+    return 0;
+}
+
+
+static int
+_forget(struct caio_epoll *e, int fd) {
+    if (epoll_ctl(e->fd, EPOLL_CTL_DEL, fd, NULL)) {
+        return -1;
+    }
+
+    return 0;
+}
 struct caio_epoll *
-caio_epoll_create(caio_t c, size_t maxevents, unsigned int timeout_ms) {
+caio_epoll_create(struct caio* c, size_t maxevents, unsigned int timeout_ms) {
     struct caio_epoll *e;
 
     if (maxevents == 0) {
@@ -96,6 +123,8 @@ caio_epoll_create(caio_t c, size_t maxevents, unsigned int timeout_ms) {
     }
 
     e->tick = (caio_hook) _tick;
+    e->monitor = (caio_filemonitor)_monitor;
+    e->forget = (caio_fileforget)_forget;
 
     if (caio_module_install(c, (struct caio_module*)e)) {
         goto failed;
@@ -114,7 +143,7 @@ failed:
 
 
 int
-caio_epoll_destroy(caio_t c, struct caio_epoll *e) {
+caio_epoll_destroy(struct caio* c, struct caio_epoll *e) {
     int ret = 0;
 
     if (e == NULL) {
@@ -132,34 +161,5 @@ caio_epoll_destroy(caio_t c, struct caio_epoll *e) {
     }
 
     free(e);
-    return 0;
-}
-
-
-int
-caio_epoll_monitor(struct caio_epoll *e, struct caio_task *task, int fd,
-        int events) {
-    struct epoll_event ee;
-
-    ee.events = events | EPOLLONESHOT;
-    ee.data.ptr = task;
-    if (epoll_ctl(e->fd, EPOLL_CTL_MOD, fd, &ee)) {
-        if (epoll_ctl(e->fd, EPOLL_CTL_ADD, fd, &ee)) {
-            return -1;
-        }
-        errno = 0;
-    }
-
-    e->waitingfiles++;
-    return 0;
-}
-
-
-int
-caio_epoll_forget(struct caio_epoll *e, int fd) {
-    if (epoll_ctl(e->fd, EPOLL_CTL_DEL, fd, NULL)) {
-        return -1;
-    }
-
     return 0;
 }

@@ -48,7 +48,7 @@ struct caio_select {
 
 
 static int
-_tick(struct caio_select *s, caio_t c) {
+_tick(struct caio_select *s, struct caio* c) {
     int i;
     int fd;
     int nfds;
@@ -130,8 +130,42 @@ _tick(struct caio_select *s, caio_t c) {
 }
 
 
+static int
+_monitor(struct caio_select *s, struct caio_task *task, int fd, int events) {
+    struct caio_fileevent *fe;
+    if ((fd < 0) || (fd > s->maxfileno) || (s->eventscount == s->maxfileno)) {
+        return -1;
+    }
+
+    fe = &s->events[s->eventscount++];
+    s->waitingfiles++;
+    fe->events = events;
+    fe->task = task;
+    fe->fd = fd;
+    return 0;
+}
+
+
+static int
+_forget(struct caio_select *s, int fd) {
+    int i;
+    struct caio_fileevent *fe;
+
+    for (i = 0; i < s->eventscount; i++) {
+        fe = &s->events[i];
+        if (fe->fd == fd) {
+            FILEEVENT_RESET(fe);
+            s->waitingfiles--;
+            return 0;
+        }
+    }
+
+    return -1;
+}
+
+
 struct caio_select *
-caio_select_create(caio_t c, size_t maxfileno, unsigned int timeout_us) {
+caio_select_create(struct caio* c, size_t maxfileno, unsigned int timeout_us) {
     struct caio_select *s;
 
     /* Create select instance */
@@ -144,6 +178,8 @@ caio_select_create(caio_t c, size_t maxfileno, unsigned int timeout_us) {
     s->waitingfiles = 0;
     s->timeout_us = timeout_us;
     s->tick = (caio_hook) _tick;
+    s->monitor = (caio_filemonitor)_monitor;
+    s->forget = (caio_fileforget)_forget;
 
     if (caio_module_install(c, (struct caio_module*)s)) {
         goto failed;
@@ -176,7 +212,7 @@ failed:
 
 
 int
-caio_select_destroy(caio_t c, caio_select_t s) {
+caio_select_destroy(struct caio* c, struct caio_select *s) {
     int ret = 0;
 
     if (s == NULL) {
@@ -191,39 +227,4 @@ caio_select_destroy(caio_t c, caio_select_t s) {
 
     free(s);
     return 0;
-}
-
-
-int
-caio_select_monitor(struct caio_select *s, struct caio_task *task, int fd,
-        int events) {
-    struct caio_fileevent *fe;
-    if ((fd < 0) || (fd > s->maxfileno) || (s->eventscount == s->maxfileno)) {
-        return -1;
-    }
-
-    fe = &s->events[s->eventscount++];
-    s->waitingfiles++;
-    fe->events = events;
-    fe->task = task;
-    fe->fd = fd;
-    return 0;
-}
-
-
-int
-caio_select_forget(struct caio_select *s, int fd) {
-    int i;
-    struct caio_fileevent *fe;
-
-    for (i = 0; i < s->eventscount; i++) {
-        fe = &s->events[i];
-        if (fe->fd == fd) {
-            FILEEVENT_RESET(fe);
-            s->waitingfiles--;
-            return 0;
-        }
-    }
-
-    return -1;
 }
