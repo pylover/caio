@@ -25,4 +25,9 @@
 #define CAIO_VERSION "@PROJECT_VERSION@"
 
 
+#cmakedefine CAIO_MODULES_MAX @CAIO_MODULES_MAX@
+#cmakedefine CAIO_SELECT @CAIO_SELECT@
+#cmakedefine CAIO_EPOLL @CAIO_EPOLL@
+
+
 #endif  // CAIO_MANIFEST_H_IN_

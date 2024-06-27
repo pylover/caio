@@ -42,8 +42,7 @@ add_custom_target(menu COMMAND ccmake ${PROJECT_BINARY_DIR} )
 add_custom_target(fresh COMMAND cmake ${PROJECT_SOURCE_DIR} --fresh)
 
 
-configure_file(caio/manifest.h.in caio/manifest.h)
-configure_file(caio/options.h.in caio/options.h @ONLY)
+configure_file(caio/config.h.in caio/config.h @ONLY)
 include_directories(${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR})
 
 
