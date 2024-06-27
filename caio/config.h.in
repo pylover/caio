@@ -16,8 +16,8 @@
  *  
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
-#ifndef CAIO_MANIFEST_H_IN_
-#define CAIO_MANIFEST_H_IN_
+#ifndef CAIO_CONFIG_H_IN_
+#define CAIO_CONFIG_H_IN_
 
 
 #define CAIO_VERSION_MAJOR "@PROJECT_VERSION_MAJOR@"
@@ -30,4 +30,4 @@
 #cmakedefine CAIO_EPOLL @CAIO_EPOLL@
 
 
-#endif  // CAIO_MANIFEST_H_IN_
+#endif  // CAIO_CONFIG_H_IN_
