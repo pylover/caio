@@ -38,7 +38,7 @@ typedef struct foo {
 
 
 static caio_t _caio;
-static caio_epoll_t _epoll;
+static caio_iomodule_t _iomodule;
 
 
 static ASYNC
@@ -46,10 +46,10 @@ fooA(struct caio_task *self, foo_t *state) {
     CAIO_BEGIN(self);
 
     printf("Waiting %ld miliseconds\n", state->first);
-    CAIO_SLEEP_EPOLL(_epoll, self, &state->sleep, state->first);
+    CAIO_SLEEP_EPOLL(_iomodule, self, &state->sleep, state->first);
 
     printf("Waiting %ld miliseconds\n", state->second);
-    CAIO_SLEEP_EPOLL(_epoll, self, &state->sleep, state->second);
+    CAIO_SLEEP_EPOLL(_iomodule, self, &state->sleep, state->second);
 
     CAIO_FINALLY(self);
 }
@@ -70,8 +70,8 @@ main() {
         goto terminate;
     }
 
-    _epoll = caio_epoll_create(_caio, 1, 1);
-    if (_epoll == NULL) {
+    _iomodule = caio_epoll_create(_caio, 1, 1);
+    if (_iomodule == NULL) {
         exitstatus = EXIT_FAILURE;
         goto terminate;
     }
@@ -92,7 +92,7 @@ terminate:
         exitstatus = EXIT_FAILURE;
     }
 
-    if (caio_epoll_destroy(_caio, _epoll)) {
+    if (caio_epoll_destroy(_caio, _iomodule)) {
         exitstatus = EXIT_FAILURE;
     }
 

@@ -25,16 +25,27 @@ endif()
 
 
 # Maximum allowed modules
-set(CAIO_MODULES_MAX 8 CACHE STRING "Maximum allowed modules.")
-set_property(CACHE CAIO_MODULES_MAX PROPERTY STRINGS 4 8 32 64 128 256)
+# set(CAIO_MODULES_MAX 8 CACHE STRING "Maximum allowed modules.")
+# set_property(CACHE CAIO_MODULES_MAX PROPERTY STRINGS 4 8 32 64 128 256)
 
 
 # Builtin modules 
-option(CAIO_BUILTIN_MODULES "Build caio built-in modules." ON)
-cmake_dependent_option(CAIO_EPOLL "Build and link epoll(7) caio module." 
-	ON "CAIO_BUILTIN_MODULES" OFF)
-cmake_dependent_option(CAIO_SELECT "Build and link select(2) caio module."
-	ON "CAIO_BUILTIN_MODULES" OFF)
+option(CAIO_MODULES "Enable caio modules system." ON)
+if (CAIO_MODULES)
+  set(CAIO_MODULES_MAX 8 CACHE STRING "Maximum allowed modules.")
+  set_property(CACHE CAIO_MODULES_MAX PROPERTY STRINGS 4 8 32 64 128 256)
+else()
+  unset(CAIO_MODULES_MAX CACHE)
+endif()
+
+
+# Builtin IO modules 
+cmake_dependent_option(CAIO_IOMODULES "Enable caio IO modules." 
+	ON "CAIO_MODULES" OFF)
+cmake_dependent_option(CAIO_EPOLL "Build and link epoll(7) caio IO module." 
+	ON "CAIO_IOMODULES" OFF)
+cmake_dependent_option(CAIO_SELECT "Build and link select(2) caio IO module."
+	ON "CAIO_IOMODULES" OFF)
 
 
 # Menu config

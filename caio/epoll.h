@@ -25,23 +25,23 @@
 #include <caio/caio.h>
 
 
-typedef struct caio_epoll *caio_epoll_t;
+struct caio_epoll;
 
 
-caio_epoll_t
+struct caio_epoll *
 caio_epoll_create(caio_t c, size_t maxevents, unsigned int timeout_ms);
 
 
 int
-caio_epoll_destroy(caio_t c, caio_epoll_t e);
+caio_epoll_destroy(caio_t c, struct caio_epoll *e);
 
 
 int
-caio_epoll_monitor(caio_epoll_t e, struct caio_task *task, int fd, int events);
+caio_epoll_monitor(struct caio_epoll *e, struct caio_task *task, int fd, int events);
 
 
 int
-caio_epoll_forget(caio_epoll_t e, int fd);
+caio_epoll_forget(struct caio_epoll *e, int fd);
 
 
 #define CAIO_AWAIT_EPOLL(module, task, ...) \

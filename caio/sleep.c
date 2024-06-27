@@ -27,7 +27,7 @@
 #undef CAIO_ARG2
 #undef CAIO_ENTITY
 #define CAIO_ENTITY caio_sleep
-#define CAIO_ARG1 caio_module_t
+#define CAIO_ARG1 struct caio_iomodule *
 #define CAIO_ARG2 time_t
 #include "caio/generic.c"
 
@@ -76,11 +76,9 @@ _settimeout(int fd, time_t miliseconds) {
 }
 
 
-#ifdef CAIO_SELECT
-
 ASYNC
-caio_sleep_selectA(struct caio_task *self, caio_sleep_t *state,
-        caio_select_t s, time_t miliseconds) {
+caio_sleepA(struct caio_task *self, caio_sleep_t *state,
+        struct caio_iomodule *iom, time_t miliseconds) {
     int eno;
     int fd = *state;
     CAIO_BEGIN(self);
@@ -92,33 +90,7 @@ caio_sleep_selectA(struct caio_task *self, caio_sleep_t *state,
         CAIO_THROW(self, eno);
     }
 
-    CAIO_AWAIT_SELECT(s, self, fd, CAIO_READ);
-    caio_select_forget(s, fd);
+    CAIO_FILE_AWAIT(iom, self, fd, CAIO_READ);
+    CAIO_FILE_FORGET(iom, fd);
     CAIO_FINALLY(self);
 }
-
-#endif
-
-
-#ifdef CAIO_EPOLL
-
-ASYNC
-caio_sleep_epollA(struct caio_task *self, caio_sleep_t *state,
-        caio_epoll_t s, time_t miliseconds) {
-    int eno;
-    int fd = *state;
-    CAIO_BEGIN(self);
-
-    if (_settimeout(fd, miliseconds)) {
-        eno = errno;
-        close(fd);
-        *state = -1;
-        CAIO_THROW(self, eno);
-    }
-
-    CAIO_AWAIT_EPOLL(s, self, fd, EPOLLIN);
-    caio_epoll_forget(s, fd);
-    CAIO_FINALLY(self);
-}
-
-#endif

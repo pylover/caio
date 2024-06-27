@@ -53,13 +53,40 @@ struct caio_task {
 
 
 /* Modules */
-typedef struct caio_module *caio_module_t;
+struct caio_module;
 typedef int (*caio_hook) (struct caio_module *m, caio_t c);
 struct caio_module {
     caio_hook loopstart;
     caio_hook tick;
     caio_hook loopend;
 };
+
+
+/* IO Modules */
+struct caio_iomodule;
+typedef int (*caio_iomonitor) (struct caio_iomodule *iom,
+        struct caio_task *task, int fd, int events);
+typedef int (*caio_ioforget) (struct caio_iomodule *iom, int fd);
+struct caio_iomodule {
+    struct caio_module;
+    caio_iomonitor monitor;
+    caio_ioforget forget;
+};
+
+
+#define CAIO_FILE_FORGET(module, fd) (module)->forget(module, fd)
+#define CAIO_FILE_AWAIT(module, task, fd, events) \
+    do { \
+        (task)->current->line = __LINE__; \
+        if ((module)->monitor(module, task, fd, events)) { \
+            (task)->status = CAIO_TERMINATING; \
+        } \
+        else { \
+            (task)->status = CAIO_WAITING; \
+        } \
+        return; \
+        case __LINE__:; \
+    } while (0)
 
 
 caio_t
@@ -142,20 +169,6 @@ caio_module_uninstall(struct caio *c, struct caio_module *m);
 #define CAIO_HASERROR(task) (task->eno != 0)
 #define CAIO_ISERROR(task, e) (CAIO_HASERROR(task) && (task->eno == e))
 #define CAIO_CLEARERROR(task) task->eno = 0
-
-
-#define CAIO_AWAIT_MODULE(modulename, module, task, ...) \
-    do { \
-        (task)->current->line = __LINE__; \
-        if (modulename ## _monitor(module, task, __VA_ARGS__)) { \
-            (task)->status = CAIO_TERMINATING; \
-        } \
-        else { \
-            (task)->status = CAIO_WAITING; \
-        } \
-        return; \
-        case __LINE__:; \
-    } while (0)
 
 
 /* IO helper macros */

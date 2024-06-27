@@ -25,7 +25,7 @@
 #include <caio/caio.h>
 
 
-typedef struct caio_select *caio_select_t;
+struct caio_select;
 
 
 struct caio_select *
@@ -33,20 +33,16 @@ caio_select_create(caio_t c, size_t maxfileno, unsigned int timeout_us);
 
 
 int
-caio_select_destroy(caio_t c, caio_select_t s);
+caio_select_destroy(caio_t c, struct caio_select *s);
 
 
 int
-caio_select_monitor(caio_select_t s, struct caio_task *task, int fd,
+caio_select_monitor(struct caio_select *s, struct caio_task *task, int fd,
         int events);
 
 
 int
 caio_select_forget(struct caio_select *s, int fd);
-
-
-#define CAIO_AWAIT_SELECT(module, task, ...) \
-    CAIO_AWAIT_MODULE(caio_select, module, task, __VA_ARGS__)
 
 
 #endif  // CAIO_SELECT_H_
