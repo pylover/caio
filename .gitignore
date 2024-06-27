@@ -5,3 +5,4 @@
 
 # Projedct specific
 build
+examples/*.gdb
