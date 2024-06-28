@@ -28,15 +28,21 @@
 #include <arpa/inet.h>
 
 #include "caio/caio.h"
+
+#ifdef CAIO_EPOLL
 #include "caio/epoll.h"
+#endif
+
+#ifdef CAIO_SELECT
+#include "caio/select.h"
+#endif
 
 
 #define MAXCONN 8
 #define BUFFSIZE 1024
 
 
-static caio_t _caio;
-static caio_epoll_t _epoll;
+static struct caio *_caio;
 static struct sigaction oldaction;
 
 
@@ -44,6 +50,7 @@ static struct sigaction oldaction;
 typedef struct tcpserver {
     int connections_active;
     int connections_total;
+    struct caio_iomodule *iomodule;
 } tcpserver_t;
 
 
@@ -54,6 +61,7 @@ typedef struct tcpconn {
     struct sockaddr_in remoteaddr;
     char buff[BUFFSIZE];
     size_t bufflen;
+    struct tcpserver *server;
 } tcpconn_t;
 
 
@@ -101,6 +109,7 @@ _handlesignals() {
 static ASYNC
 echoA(struct caio_task *self, struct tcpconn *conn) {
     ssize_t bytes;
+    struct tcpserver *server = conn->server;
     CAIO_BEGIN(self);
 
     while (true) {
@@ -108,7 +117,7 @@ reading:
         /* tcp read */
         bytes = read(conn->fd, conn->buff, BUFFSIZE);
         if ((bytes == -1) && IO_MUSTWAIT(errno)) {
-            CAIO_AWAIT_EPOLL(_epoll, self, conn->fd, EPOLLIN);
+            CAIO_FILE_AWAIT(server->iomodule, self, conn->fd, CAIO_IN);
             goto reading;
         }
         else if (bytes == -1) {
@@ -125,7 +134,7 @@ writing:
         /* tcp write */
         bytes = write(conn->fd, conn->buff, conn->bufflen);
         if ((bytes == -1) && IO_MUSTWAIT(errno)) {
-            CAIO_AWAIT_EPOLL(_epoll, self, conn->fd, EPOLLOUT);
+            CAIO_FILE_AWAIT(server->iomodule, self, conn->fd, CAIO_OUT);
             goto writing;
         }
         else if (bytes == -1) {
@@ -140,7 +149,7 @@ writing:
 
     CAIO_FINALLY(self);
     if (conn->fd != -1) {
-        caio_epoll_forget(_epoll, conn->fd);
+        CAIO_FILE_FORGET(server->iomodule, conn->fd);
         close(conn->fd);
     }
     free(conn);
@@ -183,7 +192,7 @@ listenA(struct caio_task *self, struct tcpserver *state,
     while (true) {
         connfd = accept4(fd, &connaddr, &addrlen, SOCK_NONBLOCK);
         if ((connfd == -1) && IO_MUSTWAIT(errno)) {
-            CAIO_AWAIT_EPOLL(_epoll, self, fd, EPOLLIN | EPOLLET);
+            CAIO_FILE_AWAIT(state->iomodule, self, fd, CAIO_IN);
             continue;
         }
 
@@ -203,6 +212,7 @@ listenA(struct caio_task *self, struct tcpserver *state,
         c->fd = connfd;
         c->localaddr = bindaddr;
         c->remoteaddr = connaddr;
+        c->server = state;
         if (tcpconn_spawn(_caio, echoA, c)) {
             warn("Maximum connection exceeded, fd: %d\n", connfd);
             close(connfd);
@@ -212,7 +222,7 @@ listenA(struct caio_task *self, struct tcpserver *state,
 
     CAIO_FINALLY(self);
     if (fd != -1) {
-        caio_epoll_forget(_epoll, fd);
+        CAIO_FILE_FORGET(state->iomodule, fd);
         close(fd);
     }
 }
@@ -237,11 +247,27 @@ main() {
         goto terminate;
     }
 
-    _epoll = caio_epoll_create(_caio, MAXCONN + 1, 1);
-    if (_epoll == NULL) {
+#ifdef CAIO_EPOLL
+    struct caio_epoll *epoll;
+    epoll = caio_epoll_create(_caio, MAXCONN + 1, 1);
+    if (epoll == NULL) {
         exitstatus = EXIT_FAILURE;
         goto terminate;
     }
+    state.iomodule = (struct caio_iomodule*)epoll;
+    printf("Using epoll(7) for IO monitoring.\n");
+
+#elifdef CAIO_SELECT
+    struct caio_select *select;
+    select = caio_select_create(_caio, MAXCONN + 1, 1);
+    if (select == NULL) {
+        exitstatus = EXIT_FAILURE;
+        goto terminate;
+    }
+    state.iomodule = (struct caio_iomodule*)select;
+    printf("Using select(2) for IO monitoring.\n");
+
+#endif
 
     tcpserver_spawn(_caio, listenA, &state, bindaddr, MAXCONN);
 
@@ -250,9 +276,19 @@ main() {
     }
 
 terminate:
-    if (caio_epoll_destroy(_caio, _epoll)) {
+#ifdef CAIO_EPOLL
+
+    if (caio_epoll_destroy(_caio, epoll)) {
         exitstatus = EXIT_FAILURE;
     }
+
+#elifdef CAIO_SELECT
+
+    if (caio_select_destroy(_caio, select)) {
+        exitstatus = EXIT_FAILURE;
+    }
+
+#endif
 
     if (caio_destroy(_caio)) {
         exitstatus = EXIT_FAILURE;

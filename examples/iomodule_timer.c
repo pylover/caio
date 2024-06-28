@@ -111,8 +111,6 @@ tmrA(struct caio_task *self, struct tmr *state) {
 int
 main() {
     int exitstatus = EXIT_SUCCESS;
-    struct caio_epoll *epoll;
-    struct caio_select *select;
 
     _caio = caio_create(2);
     if (_caio == NULL) {
@@ -121,6 +119,7 @@ main() {
     }
 
 #ifdef CAIO_EPOLL
+    struct caio_epoll *epoll;
     struct tmr epolltimer = {
         .fd = -1,
         .title = "epoll",
@@ -138,6 +137,7 @@ main() {
 #endif
 
 #ifdef CAIO_SELECT
+    struct caio_select *select;
     struct tmr selecttimer = {
         .fd = -1,
         .title = "select",

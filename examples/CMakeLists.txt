@@ -8,6 +8,7 @@ if(CAIO_EPOLL OR CAIO_SELECT)
   list(APPEND examples
 	iomodule_sleep
     iomodule_timer
+    iomodule_tcpserver
   )
 endif()
 
