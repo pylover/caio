@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <errno.h>
 
+#include "caio/config.h"
 #include "caio/caio.h"
 #include "caio/taskpool.h"
 

@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+#include "caio/config.h"
 #include "caio/caio.h"
 
 

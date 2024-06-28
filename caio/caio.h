@@ -20,9 +20,6 @@
 #define CAIO_CAIO_H_
 
 
-#include "caio/config.h"
-
-
 enum caio_taskstatus {
     CAIO_IDLE = 1,
     CAIO_RUNNING = 2,

@@ -21,6 +21,7 @@
 #include <err.h>
 #include <errno.h>
 
+#include "caio/config.h"
 #include "caio/caio.h"
 
 

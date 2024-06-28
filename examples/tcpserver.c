@@ -27,6 +27,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
+#include "caio/config.h"
 #include "caio/caio.h"
 
 #ifdef CAIO_EPOLL
