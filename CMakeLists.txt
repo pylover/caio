@@ -54,10 +54,20 @@ configure_file(caio/config.h.in caio/config.h @ONLY)
 include_directories(${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR})
 
 
-add_library(caio STATIC 
-  caio/taskpool.c caio/taskpool.h
-  caio/caio.c caio/caio.h
-  caio/sleep.c caio/sleep.h
+add_library(caio STATIC SHARED)
+target_sources(caio 
+	INTERFACE
+      ${CMAKE_CURRENT_SOURCE_DIR}/caio/caio.h
+	PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}/caio/caio.c 
+	  ${CMAKE_CURRENT_SOURCE_DIR}/caio/taskpool.h
+      ${CMAKE_CURRENT_SOURCE_DIR}/caio/taskpool.c 
+	  ${CMAKE_CURRENT_SOURCE_DIR}/caio/sleep.h
+      ${CMAKE_CURRENT_SOURCE_DIR}/caio/sleep.c 
+)
+add_library(caio_generic INTERFACE 
+    caio/generic.h
+    caio/generic.c
 )
 
 
@@ -87,6 +97,16 @@ install(FILES caio/caio.h DESTINATION "include/caio")
 install(FILES caio/sleep.h DESTINATION "include/caio")
 install(FILES caio/generic.h DESTINATION "include/caio")
 install(FILES caio/generic.c DESTINATION "include/caio")
+
+# make uninstall
+add_custom_target("uninstall" COMMENT "Uninstall installed files")
+add_custom_command(
+  TARGET "uninstall"
+  POST_BUILD
+  COMMENT "Uninstall files with install_manifest.txt"
+  COMMAND xargs rm -vf < install_manifest.txt || echo Nothing in
+            install_manifest.txt to be uninstalled!
+)
 
 
 # Lint

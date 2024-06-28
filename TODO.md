@@ -5,6 +5,7 @@
 - All todos
 - Preserve filename, function name and line number on CAIO_THROW
 - Readme & documentation
+- cmake find_packages
 
 - io_uring
   - readme: cmake CAIO_URING_ENABLED
