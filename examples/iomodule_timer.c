@@ -144,7 +144,7 @@ main() {
         .interval = 2,
         .value = 0,
     };
-    select = caio_select_create(_caio, 5, 1);
+    select = caio_select_create(_caio, 2, 1);
     if (select == NULL) {
         exitstatus = EXIT_FAILURE;
         goto terminate;

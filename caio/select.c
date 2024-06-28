@@ -165,7 +165,8 @@ _forget(struct caio_select *s, int fd) {
 
 
 struct caio_select *
-caio_select_create(struct caio* c, size_t maxfileno, unsigned int timeout_us) {
+caio_select_create(struct caio* c, size_t maxevents,
+        unsigned int timeout_us) {
     struct caio_select *s;
 
     /* Create select instance */
@@ -193,11 +194,13 @@ caio_select_create(struct caio* c, size_t maxfileno, unsigned int timeout_us) {
         goto failed;
     }
 
-    if (maxfileno > limits.rlim_max) {
+    if (maxevents > limits.rlim_max) {
         goto failed;
     }
 
-    s->maxfileno = maxfileno;
+    /* select(2) requires the highest number of fileno instead of event count.
+     * So, it must increased 3 times for (stdin, stdout and stderr) */
+    s->maxfileno = maxevents + 3;
     s->events = calloc(s->maxfileno, sizeof(struct caio_fileevent));
     s->eventscount = 0;
     if (s->events == NULL) {

@@ -1,11 +1,10 @@
 - rename all ifdef, ifndef, elifdef, elifndef with if defined syntax.
 - Prevent compile on kernel <= 2.6.9
-- fixed callstack allocation per task
-- Dynamic(infinite) stack size option
+- fixed callstack allocation per task (option)
+- Dynamic(infinite) stack size (option)
 - All todos
 - Preserve filename, function name and line number on CAIO_THROW
-- Use pre allocated callstack instead of multiple malloc/free
-- Readme
+- Readme & documentation
 
 - io_uring
   - readme: cmake CAIO_URING_ENABLED
@@ -14,4 +13,3 @@
   - Use atomic store and load as the liburing way
   - Fixed files and buffers
 
-- Macros to enable io_uring and epoll

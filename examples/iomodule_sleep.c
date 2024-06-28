@@ -89,7 +89,7 @@ main() {
 #endif
 
 #ifdef CAIO_SELECT
-    _select = caio_select_create(_caio, 4, 1);
+    _select = caio_select_create(_caio, 1, 1);
     if (_select == NULL) {
         exitstatus = EXIT_FAILURE;
         goto terminate;

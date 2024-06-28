@@ -18,7 +18,5 @@
  */
 int
 main() {
-
-    caio_server_
-
+    return EXIT_FAILURE;
 }
