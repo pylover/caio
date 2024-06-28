@@ -6,9 +6,9 @@ list(APPEND examples
 
 if(CAIO_EPOLL OR CAIO_SELECT)
   list(APPEND examples
-	iomodule_sleep
-    iomodule_timer
-    iomodule_tcpserver
+	sleep
+    timer
+    tcpserver
   )
 endif()
 
