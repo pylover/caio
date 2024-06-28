@@ -23,7 +23,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-#include "caio.h"
+#include "caio/caio.h"
 
 
 struct caio_taskpool {
