@@ -45,6 +45,11 @@ cmake_dependent_option(CAIO_SELECT "Build and link select(2) caio IO module."
 	ON "CAIO_IOMODULES" OFF)
 
 
+# Builtin coroutines 
+option(CAIO_STREAMSERVER 
+	"Include bsd-socket server coroutine an main function" ON)
+
+
 # Menu config
 add_custom_target(menu COMMAND ccmake ${PROJECT_BINARY_DIR} )
 add_custom_target(fresh COMMAND cmake ${PROJECT_SOURCE_DIR} --fresh)
@@ -71,6 +76,16 @@ add_library(caio_generic INTERFACE
 )
 
 
+if(CAIO_IOMODULES)
+  target_sources(caio
+    PUBLIC 
+      ${CMAKE_CURRENT_SOURCE_DIR}/caio/sleep.h
+      ${CMAKE_CURRENT_SOURCE_DIR}/caio/sleep.c
+  )
+  install(FILES caio/sleep.h DESTINATION "include/caio")
+endif()
+
+
 if(CAIO_EPOLL)
   target_sources(caio
     PUBLIC 
@@ -93,10 +108,11 @@ endif()
 
 # Install
 install(TARGETS caio DESTINATION "lib")
+install(FILES caio/config.h DESTINATION "include/caio")
 install(FILES caio/caio.h DESTINATION "include/caio")
-install(FILES caio/sleep.h DESTINATION "include/caio")
 install(FILES caio/generic.h DESTINATION "include/caio")
 install(FILES caio/generic.c DESTINATION "include/caio")
+
 
 # make uninstall
 add_custom_target("uninstall" COMMENT "Uninstall installed files")

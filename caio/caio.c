@@ -20,15 +20,16 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#include "caio/config.h"
 #include "caio/caio.h"
 #include "caio/taskpool.h"
 
 
 struct caio {
     struct caio_taskpool taskpool;
+#ifdef CAIO_MODULES
     struct caio_module *modules[CAIO_MODULES_MAX];
     size_t modulescount;
+#endif  // CAIO_MODULES
 };
 
 
@@ -39,7 +40,9 @@ caio_create(size_t maxtasks) {
         return NULL;
     }
 
+#ifdef CAIO_MODULES
     c->modulescount = 0;
+#endif  // CAIO_MODULES
 
     /* Initialize task pool */
     if (caio_taskpool_init(&c->taskpool, maxtasks)) {
@@ -102,6 +105,8 @@ caio_task_killall(struct caio *c) {
 }
 
 
+#ifdef CAIO_MODULES
+
 int
 caio_module_install(struct caio *c, struct caio_module *m) {
     if (c->modulescount == CAIO_MODULES_MAX) {
@@ -147,6 +152,9 @@ caio_module_uninstall(struct caio *c, struct caio_module *m) {
     c->modulescount -= shift;
     return 0;
 }
+
+
+#endif  // CAIO_MODULES
 
 
 static inline bool

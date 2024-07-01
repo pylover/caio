@@ -20,6 +20,9 @@
 #define CAIO_CAIO_H_
 
 
+#include "caio/config.h"
+
+
 enum caio_taskstatus {
     CAIO_IDLE = 1,
     CAIO_RUNNING = 2,
@@ -50,6 +53,8 @@ struct caio_task {
 
 
 /* Modules */
+#ifdef CAIO_MODULES
+
 struct caio_module;
 typedef int (*caio_hook) (struct caio_module *m, struct caio* c);
 struct caio_module {
@@ -60,6 +65,8 @@ struct caio_module {
 
 
 /* IO Modules */
+#ifdef CAIO_IOMODULES
+
 struct caio_iomodule;
 typedef int (*caio_filemonitor) (struct caio_iomodule *iom,
         struct caio_task *task, int fd, int events);
@@ -71,11 +78,11 @@ struct caio_iomodule {
 };
 
 
-#define CAIO_FILE_FORGET(module, fd) (module)->forget(module, fd)
-#define CAIO_FILE_AWAIT(module, task, fd, events) \
+#define CAIO_FILE_FORGET(iomodule, fd) (iomodule)->forget(iomodule, fd)
+#define CAIO_FILE_AWAIT(iomodule, task, fd, events) \
     do { \
         (task)->current->line = __LINE__; \
-        if ((module)->monitor(module, task, fd, events)) { \
+        if ((iomodule)->monitor(iomodule, task, fd, events)) { \
             (task)->status = CAIO_TERMINATING; \
         } \
         else { \
@@ -84,6 +91,17 @@ struct caio_iomodule {
         return; \
         case __LINE__:; \
     } while (0)
+
+
+int
+caio_module_install(struct caio *c, struct caio_module *m);
+
+
+int
+caio_module_uninstall(struct caio *c, struct caio_module *m);
+
+#endif  // CAIO_IOMODULES
+#endif  // CAIO_MODULES
 
 
 struct caio*
@@ -108,14 +126,6 @@ caio_task_killall(struct caio* c);
 
 int
 caio_loop(struct caio* c);
-
-
-int
-caio_module_install(struct caio *c, struct caio_module *m);
-
-
-int
-caio_module_uninstall(struct caio *c, struct caio_module *m);
 
 
 /* Generic stuff */
