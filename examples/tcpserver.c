@@ -49,8 +49,7 @@ static struct sigaction oldaction;
 
 /* TCP server caio state and */
 typedef struct tcpserver {
-    int connections_active;
-    int connections_total;
+    int sessions;
     struct caio_iomodule *iomodule;
 } tcpserver_t;
 
@@ -214,6 +213,7 @@ listenA(struct caio_task *self, struct tcpserver *state,
         c->localaddr = bindaddr;
         c->remoteaddr = connaddr;
         c->server = state;
+        state->sessions++;
         if (tcpconn_spawn(_caio, echoA, c)) {
             warn("Maximum connection exceeded, fd: %d\n", connfd);
             close(connfd);
@@ -232,7 +232,10 @@ listenA(struct caio_task *self, struct tcpserver *state,
 int
 main() {
     int exitstatus = EXIT_SUCCESS;
-    struct tcpserver state = {0, 0};
+    struct tcpserver state = {
+        .sessions = 0,
+        .iomodule = NULL
+    };
     struct sockaddr_in bindaddr = {
         .sin_addr = {htons(0)},
         .sin_port = htons(3030),

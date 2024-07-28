@@ -108,13 +108,13 @@ endif()
 
 # Install
 install(TARGETS caio DESTINATION "lib")
-install(FILES caio/config.h DESTINATION "include/caio")
+install(FILES ${CMAKE_BINARY_DIR}/caio/config.h DESTINATION "include/caio")
 install(FILES caio/caio.h DESTINATION "include/caio")
 install(FILES caio/generic.h DESTINATION "include/caio")
 install(FILES caio/generic.c DESTINATION "include/caio")
 
 
-# make uninstall
+# Uninstall
 add_custom_target("uninstall" COMMENT "Uninstall installed files")
 add_custom_command(
   TARGET "uninstall"
