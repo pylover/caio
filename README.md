@@ -1,11 +1,19 @@
 # caio (C AsyncIO)
 
 
-C non-blocking IO without callbacks.
+C non-blocking IO without blocking wait functions and callbacks.
 
 Yes, [Duff's device](https://en.wikipedia.org/wiki/Duff%27s_device) allows
 simulating coroutine in C.
 
+
+## Features
+- A simple module system to easily extend.
+- Builtin `epoll(7)` module.
+- Builtin `select(2)` module.
+
+
+## Under the hood
 Here is a minimal `caio` coroutine:
 
 ```C
