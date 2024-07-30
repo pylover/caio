@@ -14,9 +14,10 @@ endif()
 
 
 if(CAIO_IOURING)
-  list(APPEND examples
-	cat
+  list(APPEND iouring_examples
+	  cat
   )
+  list(APPEND examples ${iouring_examples})
 endif()
 
 
@@ -37,3 +38,10 @@ foreach (t IN LISTS examples)
     COMMAND "valgrind" ${VALGRIND_FLAGS} ./${t}
   )
 endforeach()
+ 
+
+if(CAIO_IOURING)
+  foreach (t IN LISTS iouring_examples) 
+    target_link_libraries(${t} PUBLIC uring)
+  endforeach()
+endif()
