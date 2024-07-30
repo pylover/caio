@@ -37,11 +37,17 @@ endif()
 
 
 # Builtin IO modules 
-cmake_dependent_option(CAIO_IOMODULES "Enable caio IO modules." 
+cmake_dependent_option(CAIO_IOMODULES 
+	"Enable caio IO modules." 
 	ON "CAIO_MODULES" OFF)
-cmake_dependent_option(CAIO_EPOLL "Build and link epoll(7) caio IO module." 
+cmake_dependent_option(CAIO_EPOLL 
+	"Build and link epoll(7) caio IO module." 
 	ON "CAIO_IOMODULES" OFF)
-cmake_dependent_option(CAIO_SELECT "Build and link select(2) caio IO module."
+cmake_dependent_option(CAIO_SELECT 
+	"Build and link select(2) caio IO module."
+	ON "CAIO_IOMODULES" OFF)
+cmake_dependent_option(CAIO_IOURING 
+	"Build and link io_uring(7) caio IO module."
 	ON "CAIO_IOMODULES" OFF)
 
 
@@ -105,6 +111,15 @@ if(CAIO_SELECT)
   install(FILES caio/select.h DESTINATION "include/caio")
 endif()
 
+
+if(CAIO_IOURING)
+  target_sources(caio
+    PUBLIC 
+      ${CMAKE_CURRENT_SOURCE_DIR}/caio/io_uring.c
+      ${CMAKE_CURRENT_SOURCE_DIR}/caio/io_uring.h
+  )
+  install(FILES caio/io_uring.h DESTINATION "include/caio")
+endif()
 
 # Install
 install(TARGETS caio DESTINATION "lib")

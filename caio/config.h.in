@@ -30,6 +30,7 @@
 #cmakedefine CAIO_IOMODULES @CAIO_IOMODULES@
 #cmakedefine CAIO_SELECT @CAIO_SELECT@
 #cmakedefine CAIO_EPOLL @CAIO_EPOLL@
+#cmakedefine CAIO_IOURING @CAIO_IOURING@
 
 
 #endif  // CAIO_CONFIG_H_IN_

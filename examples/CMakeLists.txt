@@ -13,18 +13,11 @@ if(CAIO_EPOLL OR CAIO_SELECT)
 endif()
 
 
-if(CAIO_EPOLL)
+if(CAIO_IOURING)
   list(APPEND examples
-	# epoll_tcpserver
+	cat
   )
 endif()
-
-
-# if(CAIO_SELECT)
-#   list(APPEND examples
-# 	select_tcpserver
-#   )
-# endif()
 
 
 foreach (t IN LISTS examples) 

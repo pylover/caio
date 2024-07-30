@@ -67,6 +67,15 @@ foo(struct caio_task *self, struct bar* state) {
 sudo apt install cmake cmake-curses-gui build-essential valgrind
 ```
 
+##### io_uring
+You may disable the `io_uring` module via `make menu` variable 
+`CAIO_IOURING`. if not, you need to install these packages to compile the 
+project and access to `io_uring` manuals.
+
+```bash
+apt install liburing2 liburing-dev
+```
+
 ##### Linter 
 ```bash
 pip3 install prettyc
