@@ -49,7 +49,7 @@ static struct sigaction oldaction;
 
 /* TCP server caio state and */
 typedef struct tcpserver {
-    int sessions;
+    volatile int sessions;
     struct caio_iomodule *iomodule;
 } tcpserver_t;
 
@@ -85,6 +85,12 @@ typedef struct tcpconn {
 
 #define ADDRFMTS "%s:%d"
 #define ADDRFMTV(a) inet_ntoa((a).sin_addr), ntohs((a).sin_port)
+
+
+static void
+_state_print(const struct tcpserver *s) {
+    printf("caio tcpserver example, active sessions: %d\n", s->sessions);
+}
 
 
 static void
@@ -151,6 +157,8 @@ writing:
     if (conn->fd != -1) {
         CAIO_FILE_FORGET(server->iomodule, conn->fd);
         close(conn->fd);
+        conn->server->sessions--;
+        _state_print(conn->server);
     }
     free(conn);
 }
@@ -214,6 +222,7 @@ listenA(struct caio_task *self, struct tcpserver *state,
         c->remoteaddr = connaddr;
         c->server = state;
         state->sessions++;
+        _state_print(state);
         if (tcpconn_spawn(_caio, echoA, c)) {
             warn("Maximum connection exceeded, fd: %d\n", connfd);
             close(connfd);
