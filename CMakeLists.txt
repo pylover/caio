@@ -16,12 +16,12 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
 
 # Build type and debug symbols
 set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release)
-if(NOT CMAKE_BUILD_TYPE)
+if (NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Include debug symbols" FORCE)
-endif()
-if(CMAKE_BUILD_TYPE!=Release)
+endif ()
+if (CMAKE_BUILD_TYPE!=Release)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")
-endif()
+endif ()
 
 
 # Builtin modules 
@@ -31,9 +31,9 @@ option(CAIO_MODULES "Enable caio modules system." ON)
 if (CAIO_MODULES)
   set(CAIO_MODULES_MAX 8 CACHE STRING "Maximum allowed modules.")
   set_property(CACHE CAIO_MODULES_MAX PROPERTY STRINGS 4 8 32 64 128 256)
-else()
+else ()
   unset(CAIO_MODULES_MAX CACHE)
-endif()
+endif ()
 
 
 # Builtin IO modules 
@@ -77,7 +77,7 @@ add_library(caio_generic INTERFACE
 )
 
 
-if(CAIO_FDMON)
+if (CAIO_FDMON)
   target_sources(caio
 	INTERFACE
       ${CMAKE_CURRENT_SOURCE_DIR}/caio/fdmon.h
@@ -88,7 +88,7 @@ if(CAIO_FDMON)
   install(FILES caio/fdmon.h DESTINATION "include/caio")
   install(FILES caio/sleep.h DESTINATION "include/caio")
 
-  if(CAIO_EPOLL)
+  if (CAIO_EPOLL)
     target_sources(caio
   	INTERFACE
         ${CMAKE_CURRENT_SOURCE_DIR}/caio/epoll.h
@@ -96,9 +96,9 @@ if(CAIO_FDMON)
         ${CMAKE_CURRENT_SOURCE_DIR}/caio/epoll.c
     )
     install(FILES caio/epoll.h DESTINATION "include/caio")
-  endif()
+  endif ()
   
-  if(CAIO_SELECT)
+  if (CAIO_SELECT)
     target_sources(caio
   	INTERFACE 
         ${CMAKE_CURRENT_SOURCE_DIR}/caio/select.h
@@ -106,11 +106,11 @@ if(CAIO_FDMON)
         ${CMAKE_CURRENT_SOURCE_DIR}/caio/select.c
     )
     install(FILES caio/select.h DESTINATION "include/caio")
-  endif()
-endif()
+  endif ()
+endif ()
 
 
-if(CAIO_URING)
+if (CAIO_URING)
   target_sources(caio
 	INTERFACE 
       ${CMAKE_CURRENT_SOURCE_DIR}/caio/uring.h
@@ -119,7 +119,7 @@ if(CAIO_URING)
   )
   target_link_libraries(caio PUBLIC uring) 
   install(FILES caio/uring.h DESTINATION "include/caio")
-endif()
+endif ()
 
 
 # Install
@@ -183,4 +183,4 @@ set(VALGRIND_FLAGS
 # Examples
 if (NOT DEFINED ENV{SKIP_EXAMPLES})
   add_subdirectory(examples)
-endif()
+endif ()

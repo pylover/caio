@@ -1,5 +1,4 @@
 ## now
-- check CAIO_URING everywhere
 
 ## later
 - USE CLOG 

@@ -4,21 +4,20 @@ list(APPEND examples
 )
 
 
-if(CAIO_EPOLL OR CAIO_SELECT)
+if (CAIO_EPOLL OR CAIO_SELECT)
   list(APPEND examples
 	sleep
     timer
     tcpserver
   )
-endif()
+endif ()
 
 
-if(CAIO_URING)
-  list(APPEND uring_examples
+if (CAIO_URING)
+  list(APPEND examples
 	  cat
   )
-  list(APPEND examples ${uring_examples})
-endif()
+endif ()
 
 
 foreach (t IN LISTS examples) 
@@ -37,11 +36,11 @@ foreach (t IN LISTS examples)
   add_custom_target(${t}_profile
     COMMAND "valgrind" ${VALGRIND_FLAGS} ./${t} $$CLI_ARGS
   )
-endforeach()
+endforeach ()
  
 
-if(CAIO_URING)
+if (CAIO_URING)
   foreach (t IN LISTS examples) 
     target_link_libraries(${t} PUBLIC uring)
   endforeach()
-endif()
+endif ()
