@@ -20,15 +20,8 @@
  * An io_uring(7) example of cat
  */
 #include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <signal.h>
 #include <string.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <sys/mman.h>
 #include <sys/ioctl.h>
-#include <sys/syscall.h>
 
 #include "caio/config.h"
 #include "caio/caio.h"

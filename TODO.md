@@ -1,7 +1,8 @@
+## now
+- rename caio_iouring to caio_uring
+
 - USE CLOG 
 - readme about iouring
-- manage includes, remove all and add them one by one
-- rename caio_iouring to caio_uring
 - check CAIO_IOURING everywhere
 - pre-emptive using an auxiliary parent process.
 - rename all ifdef, ifndef, elifdef, elifndef with if defined syntax.

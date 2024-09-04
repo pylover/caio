@@ -16,7 +16,7 @@
  *
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
-#include <unistd.h>
+// #include <unistd.h>
 #include <errno.h>
 
 #include "caio/caio.h"

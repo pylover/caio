@@ -16,11 +16,11 @@
  *
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
-#include <sys/epoll.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include <sys/epoll.h>
 
 #include "caio/fdmon.h"
 #include "caio/epoll.h"

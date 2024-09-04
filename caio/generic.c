@@ -19,7 +19,7 @@
 #include <stdlib.h>  // NOLINT
 #include <unistd.h>
 
-#include "caio.h"
+#include "caio/caio.h"
 
 
 void

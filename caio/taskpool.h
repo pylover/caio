@@ -20,9 +20,6 @@
 #define CAIO_TASKPOOL_H_
 
 
-#include <stddef.h>
-#include <stdbool.h>
-
 #include "caio/caio.h"
 
 

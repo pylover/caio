@@ -20,6 +20,8 @@
 #define CAIO_CAIO_H_
 
 
+#include <stddef.h>
+
 #include "caio/config.h"
 
 

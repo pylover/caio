@@ -17,9 +17,7 @@
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
 #include <stdio.h>
-#include <stdlib.h>
 #include <stdbool.h>
-#include <unistd.h>
 #include <err.h>
 #include <errno.h>
 #include <sys/timerfd.h>
@@ -27,6 +25,7 @@
 #include "caio/config.h"
 #include "caio/caio.h"
 #include "caio/fdmon.h"
+
 
 #ifdef CAIO_EPOLL
 #include "caio/epoll.h"

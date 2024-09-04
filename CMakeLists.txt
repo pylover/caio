@@ -77,51 +77,49 @@ add_library(caio_generic INTERFACE
 )
 
 
-if(CAIO_MODULES)
-  if(CAIO_FDMON)
+if(CAIO_FDMON)
+  target_sources(caio
+	INTERFACE
+      ${CMAKE_CURRENT_SOURCE_DIR}/caio/fdmon.h
+      ${CMAKE_CURRENT_SOURCE_DIR}/caio/sleep.h
+	PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}/caio/sleep.c
+  )
+  install(FILES caio/fdmon.h DESTINATION "include/caio")
+  install(FILES caio/sleep.h DESTINATION "include/caio")
+
+  if(CAIO_EPOLL)
     target_sources(caio
   	INTERFACE
-        ${CMAKE_CURRENT_SOURCE_DIR}/caio/fdmon.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/caio/sleep.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/caio/epoll.h
   	PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/caio/fdmon.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/caio/sleep.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/caio/epoll.c
     )
-    install(FILES caio/fdmon.h DESTINATION "include/caio")
-    install(FILES caio/sleep.h DESTINATION "include/caio")
-  
-    if(CAIO_EPOLL)
-      target_sources(caio
-    	INTERFACE
-          ${CMAKE_CURRENT_SOURCE_DIR}/caio/epoll.h
-    	PRIVATE
-          ${CMAKE_CURRENT_SOURCE_DIR}/caio/epoll.c
-      )
-      install(FILES caio/epoll.h DESTINATION "include/caio")
-    endif()
-    
-    if(CAIO_SELECT)
-      target_sources(caio
-    	INTERFACE 
-          ${CMAKE_CURRENT_SOURCE_DIR}/caio/select.h
-    	PRIVATE
-          ${CMAKE_CURRENT_SOURCE_DIR}/caio/select.c
-      )
-      install(FILES caio/select.h DESTINATION "include/caio")
-    endif()
+    install(FILES caio/epoll.h DESTINATION "include/caio")
   endif()
-
-  if(CAIO_IOURING)
+  
+  if(CAIO_SELECT)
     target_sources(caio
   	INTERFACE 
-        ${CMAKE_CURRENT_SOURCE_DIR}/caio/iouring.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/caio/select.h
   	PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/caio/iouring.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/caio/select.c
     )
-    target_link_libraries(caio PUBLIC uring) 
-    install(FILES caio/iouring.h DESTINATION "include/caio")
+    install(FILES caio/select.h DESTINATION "include/caio")
   endif()
-endif()  
+endif()
+
+
+if(CAIO_IOURING)
+  target_sources(caio
+	INTERFACE 
+      ${CMAKE_CURRENT_SOURCE_DIR}/caio/iouring.h
+	PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}/caio/iouring.c
+  )
+  target_link_libraries(caio PUBLIC uring) 
+  install(FILES caio/iouring.h DESTINATION "include/caio")
+endif()
 
 
 # Install

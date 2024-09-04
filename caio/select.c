@@ -16,10 +16,9 @@
  *
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
-#include <sys/select.h>
-#include <sys/resource.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/resource.h>
 
 #include "caio/select.h"
 
