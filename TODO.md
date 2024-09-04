@@ -1,3 +1,7 @@
+- USE CLOG 
+- rename caio_iomodule to caio_filemodule
+- rename caio_iouring to caio_uring
+- check CAIO_IOURING everywhere
 - pre-emptive using an auxiliary parent process.
 - rename all ifdef, ifndef, elifdef, elifndef with if defined syntax.
 - Prevent compile on kernel <= 2.6.9

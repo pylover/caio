@@ -115,10 +115,10 @@ endif()
 if(CAIO_IOURING)
   target_sources(caio
     PUBLIC 
-      ${CMAKE_CURRENT_SOURCE_DIR}/caio/io_uring.c
-      ${CMAKE_CURRENT_SOURCE_DIR}/caio/io_uring.h
+      ${CMAKE_CURRENT_SOURCE_DIR}/caio/iouring.c
+      ${CMAKE_CURRENT_SOURCE_DIR}/caio/iouring.h
   )
-  install(FILES caio/io_uring.h DESTINATION "include/caio")
+  install(FILES caio/iouring.h DESTINATION "include/caio")
 endif()
 
 # Install

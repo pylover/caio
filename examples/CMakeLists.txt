@@ -29,14 +29,14 @@ foreach (t IN LISTS examples)
     $<TARGET_OBJECTS:caio>
   )
   target_include_directories(${t} PUBLIC "${PROJECT_BINARY_DIR}")
-  add_custom_target(${t}_exec COMMAND ${t})
+  add_custom_target(${t}_exec COMMAND ./${t} $$CLI_ARGS)
   add_custom_target(${t}_debug COMMAND gdb 
     --command=${PROJECT_SOURCE_DIR}/examples/${t}.gdb
-    ./${t}
+    ./${t} $$CLI_ARGS
   )
 
   add_custom_target(${t}_profile
-    COMMAND "valgrind" ${VALGRIND_FLAGS} ./${t}
+    COMMAND "valgrind" ${VALGRIND_FLAGS} ./${t} $$CLI_ARGS
   )
 endforeach()
  

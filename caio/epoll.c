@@ -94,6 +94,8 @@ _forget(struct caio_epoll *e, int fd) {
 
     return 0;
 }
+
+
 struct caio_epoll *
 caio_epoll_create(struct caio* c, size_t maxevents, unsigned int timeout_ms) {
     struct caio_epoll *e;
@@ -161,5 +163,5 @@ caio_epoll_destroy(struct caio* c, struct caio_epoll *e) {
     }
 
     free(e);
-    return 0;
+    return ret;
 }
