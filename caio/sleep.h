@@ -23,6 +23,7 @@
 #include <sys/timerfd.h>
 
 #include "caio/caio.h"
+#include "caio/fdmon.h"
 
 
 typedef int caio_sleep_t;

@@ -22,6 +22,7 @@
 #include <errno.h>
 #include <string.h>
 
+#include "caio/fdmon.h"
 #include "caio/epoll.h"
 
 

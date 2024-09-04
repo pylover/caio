@@ -22,6 +22,7 @@
 
 #include <sys/select.h>
 
+#include "caio/fdmon.h"
 #include "caio/caio.h"
 
 
