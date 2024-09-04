@@ -6,16 +6,17 @@ list(APPEND examples
 
 if (CAIO_EPOLL OR CAIO_SELECT)
   list(APPEND examples
-	sleep
-    timer
-    tcpserver
+	fdmon_sleep
+    fdmon_timer
+    fdmon_tcpserver
   )
 endif ()
 
 
 if (CAIO_URING)
   list(APPEND examples
-	  cat
+	  uring_cat
+	  uring_tcpserver
   )
 endif ()
 
