@@ -46,7 +46,7 @@ cmake_dependent_option(CAIO_EPOLL
 cmake_dependent_option(CAIO_SELECT 
 	"Build and link select(2) caio IO module."
 	ON "CAIO_FDMON" OFF)
-cmake_dependent_option(CAIO_IOURING 
+cmake_dependent_option(CAIO_URING 
 	"Build and link io_uring(7) caio IO module."
 	ON "CAIO_FDMON" OFF)
 
@@ -110,15 +110,15 @@ if(CAIO_FDMON)
 endif()
 
 
-if(CAIO_IOURING)
+if(CAIO_URING)
   target_sources(caio
 	INTERFACE 
-      ${CMAKE_CURRENT_SOURCE_DIR}/caio/iouring.h
+      ${CMAKE_CURRENT_SOURCE_DIR}/caio/uring.h
 	PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}/caio/iouring.c
+      ${CMAKE_CURRENT_SOURCE_DIR}/caio/uring.c
   )
   target_link_libraries(caio PUBLIC uring) 
-  install(FILES caio/iouring.h DESTINATION "include/caio")
+  install(FILES caio/uring.h DESTINATION "include/caio")
 endif()
 
 

@@ -19,10 +19,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "caio/iouring.h"
+#include "caio/uring.h"
 
 
-struct caio_iouring {
+struct caio_uring {
     struct caio_module;
     struct io_uring ring;
 
@@ -38,7 +38,7 @@ struct caio_iouring {
 
 
 int
-caio_iouring_readv(struct caio_iouring *u, int fd,
+caio_uring_readv(struct caio_uring *u, int fd,
         const struct iovec *iovecs, unsigned nr_vecs, __u64 offset) {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&(u)->ring);
     if (sqe == NULL) {
@@ -60,7 +60,7 @@ caio_iouring_readv(struct caio_iouring *u, int fd,
 
 
 int
-caio_iouring_writev(struct caio_iouring *u, int fd,
+caio_uring_writev(struct caio_uring *u, int fd,
         const struct iovec *iovecs, unsigned nr_vecs, __u64 offset) {
     struct io_uring_sqe *sqe = io_uring_get_sqe(&(u)->ring);
     if (sqe == NULL) {
@@ -82,7 +82,7 @@ caio_iouring_writev(struct caio_iouring *u, int fd,
 
 
 static int
-_tick(struct caio_iouring *u, struct caio* c) {
+_tick(struct caio_uring *u, struct caio* c) {
     if (u->jobswaiting == 0) {
         return 0;
     }
@@ -115,7 +115,7 @@ _tick(struct caio_iouring *u, struct caio* c) {
 
 
 void
-caio_iouring_seen(struct caio_iouring *u, struct io_uring_cqe *cqe) {
+caio_uring_seen(struct caio_uring *u, struct io_uring_cqe *cqe) {
     if (cqe == NULL) {
         return;
     }
@@ -123,21 +123,21 @@ caio_iouring_seen(struct caio_iouring *u, struct io_uring_cqe *cqe) {
 }
 
 
-struct caio_iouring *
-caio_iouring_create(struct caio* c, unsigned int jobsmax,
+struct caio_uring *
+caio_uring_create(struct caio* c, unsigned int jobsmax,
         unsigned int timeout_ms, sigset_t *sigmask) {
-    struct caio_iouring *u;
+    struct caio_uring *u;
 
     if (jobsmax == 0) {
         return NULL;
     }
 
-    /* Create iouring instance */
-    u = malloc(sizeof(struct caio_iouring));
+    /* Create uring instance */
+    u = malloc(sizeof(struct caio_uring));
     if (u == NULL) {
         return NULL;
     }
-    memset(u, 0, sizeof(struct caio_iouring));
+    memset(u, 0, sizeof(struct caio_uring));
 
     if (io_uring_queue_init(jobsmax, &u->ring, 0) < 0) {
         free(u);
@@ -164,7 +164,7 @@ caio_iouring_create(struct caio* c, unsigned int jobsmax,
 
 
 int
-caio_iouring_monitor(struct caio_iouring *u, struct caio_task *task,
+caio_uring_monitor(struct caio_uring *u, struct caio_task *task,
         unsigned int jobcount, struct io_uring_cqe **results) {
     if (jobcount > u->jobstotal) {
         return -1;
@@ -178,7 +178,7 @@ caio_iouring_monitor(struct caio_iouring *u, struct caio_task *task,
 
 
 int
-caio_iouring_destroy(struct caio* c, struct caio_iouring *u) {
+caio_uring_destroy(struct caio* c, struct caio_uring *u) {
     int ret = 0;
 
     if (u == NULL) {

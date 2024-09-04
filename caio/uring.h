@@ -16,8 +16,8 @@
  *
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
-#ifndef CAIO_IOURING_H_
-#define CAIO_IOURING_H_
+#ifndef CAIO_URING_H_
+#define CAIO_URING_H_
 
 
 #include <liburing.h>
@@ -25,13 +25,13 @@
 #include "caio/caio.h"
 
 
-struct caio_iouring;
+struct caio_uring;
 
 
-#define CAIO_IOURING_AWAIT(module, task, taskcount, results) \
+#define CAIO_URING_AWAIT(module, task, taskcount, results) \
     do { \
         (task)->current->line = __LINE__; \
-        if (caio_iouring_monitor(module, task, taskcount, results)) { \
+        if (caio_uring_monitor(module, task, taskcount, results)) { \
             (task)->status = CAIO_TERMINATING; \
         } \
         else { \
@@ -42,32 +42,32 @@ struct caio_iouring;
     } while (0)
 
 
-struct caio_iouring *
-caio_iouring_create(struct caio* c, unsigned int jobsmax,
+struct caio_uring *
+caio_uring_create(struct caio* c, unsigned int jobsmax,
         unsigned int timeout_ms, sigset_t *sigmask);
 
 
 int
-caio_iouring_destroy(struct caio* c, struct caio_iouring *u);
+caio_uring_destroy(struct caio* c, struct caio_uring *u);
 
 
 void
-caio_iouring_seen(struct caio_iouring *u, struct io_uring_cqe * cqe);
+caio_uring_seen(struct caio_uring *u, struct io_uring_cqe * cqe);
 
 
 int
-caio_iouring_monitor(struct caio_iouring *u, struct caio_task *task,
+caio_uring_monitor(struct caio_uring *u, struct caio_task *task,
         unsigned int jobcount, struct io_uring_cqe **results);
 
 
 int
-caio_iouring_readv(struct caio_iouring *u, int fd,
+caio_uring_readv(struct caio_uring *u, int fd,
         const struct iovec *iovecs, unsigned nr_vecs, __u64 offset);
 
 
 int
-caio_iouring_writev(struct caio_iouring *u, int fd,
+caio_uring_writev(struct caio_uring *u, int fd,
         const struct iovec *iovecs, unsigned nr_vecs, __u64 offset);
 
 
-#endif  // CAIO_IOURING_H_
+#endif  // CAIO_URING_H_

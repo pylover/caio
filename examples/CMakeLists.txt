@@ -13,11 +13,11 @@ if(CAIO_EPOLL OR CAIO_SELECT)
 endif()
 
 
-if(CAIO_IOURING)
-  list(APPEND iouring_examples
+if(CAIO_URING)
+  list(APPEND uring_examples
 	  cat
   )
-  list(APPEND examples ${iouring_examples})
+  list(APPEND examples ${uring_examples})
 endif()
 
 
@@ -40,7 +40,7 @@ foreach (t IN LISTS examples)
 endforeach()
  
 
-if(CAIO_IOURING)
+if(CAIO_URING)
   foreach (t IN LISTS examples) 
     target_link_libraries(${t} PUBLIC uring)
   endforeach()

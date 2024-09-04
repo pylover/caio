@@ -24,7 +24,6 @@
 
 #include "caio/config.h"
 #include "caio/caio.h"
-#include "caio/fdmon.h"
 
 
 #ifdef CAIO_EPOLL

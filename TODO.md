@@ -1,9 +1,9 @@
 ## now
-- rename caio_iouring to caio_uring
+- check CAIO_URING everywhere
 
+## later
 - USE CLOG 
-- readme about iouring
-- check CAIO_IOURING everywhere
+- readme about uring feature
 - pre-emptive using an auxiliary parent process.
 - rename all ifdef, ifndef, elifdef, elifndef with if defined syntax.
 - Prevent compile on kernel <= 2.6.9

@@ -25,7 +25,7 @@
 
 #include "caio/config.h"
 #include "caio/caio.h"
-#include "caio/iouring.h"
+#include "caio/uring.h"
 
 
 #define MAXTASKS 1
@@ -47,7 +47,7 @@ static struct sigaction oldaction;
 typedef struct cat {
     int argc;
     const char **argv;
-    struct caio_iouring *uring;
+    struct caio_uring *uring;
 } cat_t;
 
 
@@ -189,19 +189,19 @@ catA(struct caio_task *self, struct cat *state) {
         }
 
         /* read to buffer */
-        caio_iouring_readv(state->uring, info->fd, info->iovecs,
+        caio_uring_readv(state->uring, info->fd, info->iovecs,
                 info->blocks, 0);
-        CAIO_IOURING_AWAIT(state->uring, self, 1, &cqe);
-        caio_iouring_seen(state->uring, cqe);
+        CAIO_URING_AWAIT(state->uring, self, 1, &cqe);
+        caio_uring_seen(state->uring, cqe);
 
         /* close */
         close(info->fd);
 
         /* write from buffer to stdout */
-        caio_iouring_writev(state->uring, STDOUT_FILENO, info->iovecs,
+        caio_uring_writev(state->uring, STDOUT_FILENO, info->iovecs,
                 info->blocks, 0);
-        CAIO_IOURING_AWAIT(state->uring, self, 1, &cqe);
-        caio_iouring_seen(state->uring, cqe);
+        CAIO_URING_AWAIT(state->uring, self, 1, &cqe);
+        caio_uring_seen(state->uring, cqe);
 
         /* cleanup */
         fsync(STDOUT_FILENO);
@@ -238,7 +238,7 @@ main(int argc, const char **argv) {
     }
 
     /* Initialize io_uring */
-    state.uring = caio_iouring_create(_caio, MAXTASKS, 0, NULL);
+    state.uring = caio_uring_create(_caio, MAXTASKS, 0, NULL);
     if (state.uring == NULL) {
         perror("io_uring setup failed!");
         exitstatus = EXIT_FAILURE;
@@ -251,7 +251,7 @@ main(int argc, const char **argv) {
     }
 
 terminate:
-    caio_iouring_destroy(_caio, state.uring);
+    caio_uring_destroy(_caio, state.uring);
 
     if (caio_destroy(_caio)) {
         exitstatus = EXIT_FAILURE;
