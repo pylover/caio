@@ -21,9 +21,14 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <signal.h>
 #include <string.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
 #include <sys/ioctl.h>
+#include <sys/syscall.h>
 
 #include <liburing.h>
 
@@ -31,25 +36,26 @@
 #include "caio/caio.h"
 
 
-#define QUEUE_DEPTH 1
-#define BLOCKSIZE 1024
+#define MAXTASKS 1
+#define CHUNKSIZE 1024
+
+
+struct fileinfo {
+    int fd;
+    off_t size;
+    int blocks;
+    struct iovec iovecs[];
+};
 
 
 static struct caio *_caio;
 static struct sigaction oldaction;
 
 
-struct file_info {
-    off_t filesize;
-    long blocks;
-    struct iovec *iovecs;
-};
-
-
 typedef struct cat {
-    struct io_uring ring;
-    const char **argv;
     int argc;
+    const char **argv;
+    struct io_uring uring;
 } cat_t;
 
 
@@ -85,7 +91,7 @@ _handlesignals() {
 * Properly handles regular file and block devices as well. Pretty.
 * */
 static off_t
-_get_file_size(int fd) {
+_filesize_get(int fd) {
     struct stat st;
 
     if(fstat(fd, &st) < 0) {
@@ -107,70 +113,75 @@ _get_file_size(int fd) {
 }
 
 
+static int
+_fileinfo(const char *filename, struct fileinfo **infoptr) {
+    int fd = open(filename, O_RDONLY);
+    if (fd < 0) {
+        perror("open");
+        return -1;
+    }
+    off_t filesize = _filesize_get(fd);
+    off_t remaining = filesize;
+    off_t offset = 0;
+    int i = 0;
+    int blocks = (int) filesize / CHUNKSIZE;
+    if (filesize % CHUNKSIZE) {
+        blocks++;
+    }
+
+    *infoptr = malloc(sizeof(struct fileinfo) +
+            sizeof(struct iovec) * blocks);
+    struct fileinfo *info = *infoptr;
+    if (info == NULL) {
+        return -1;
+    }
+
+    while (remaining) {
+        off_t toread = remaining;
+        if (toread > CHUNKSIZE) {
+            toread = CHUNKSIZE;
+        }
+
+        offset += toread;
+        info->iovecs[i].iov_len = toread;
+        void *buf;
+        if(posix_memalign(&buf, CHUNKSIZE, CHUNKSIZE)) {
+            perror("posix_memalign");
+            goto failed;
+        }
+        info->iovecs[i].iov_base = buf;
+
+        i++;
+        remaining -= toread;
+    }
+    info->size = filesize;
+    info->blocks = blocks;
+    info->fd = fd;
+    return 0;
+
+failed:
+    free(*infoptr);
+    while (--i >= 0) {
+        free(info->iovecs[i].iov_base);
+    }
+
+    return -1;
+}
+
+
 /*
  * Submit the readv request via liburing
  * */
 static int
-_submit_read_request(struct io_uring *ring, const char *file_path) {
-    int file_fd = open(file_path, O_RDONLY);
-    if (file_fd < 0) {
-        perror("open");
-        return 1;
-    }
-    off_t filesize = _get_file_size(file_fd);
-    off_t bytes_remaining = filesize;
-    off_t offset = 0;
-    int current_block = 0;
-    int blocks = (int) filesize / BLOCKSIZE;
-    if (filesize % BLOCKSIZE) blocks++;
-    struct file_info *fi = malloc(sizeof(struct file_info));
-    printf("alloc fi: %p %p\n", fi, &fi->iovecs);
-    if (fi == NULL) {
-        perror("malloc");
-        return -1;
-    }
-    fi->iovecs = calloc(blocks, sizeof(struct iovec));
-    printf("alloc iovecs: %p\n", fi->iovecs);
-    if (fi->iovecs == NULL) {
-        perror("calloc");
-        return -1;
-    }
-    fi->blocks = blocks;
-
-    /*
-     * For each block of the file we need to read, we allocate an iovec struct
-     * which is indexed into the iovecs array. This array is passed in as part
-     * of the submission. If you don't understand this, then you need to look
-     * up how the readv() and writev() system calls work.
-     * */
-    while (bytes_remaining) {
-        off_t bytes_to_read = bytes_remaining;
-        if (bytes_to_read > BLOCKSIZE)
-            bytes_to_read = BLOCKSIZE;
-
-        offset += bytes_to_read;
-        fi->iovecs[current_block].iov_len = bytes_to_read;
-        void *buf = NULL;
-        if(posix_memalign(&buf, BLOCKSIZE, BLOCKSIZE)) {
-            perror("posix_memalign");
-            return 1;
-        }
-        printf("posix alloc: %p\n", buf);
-        fi->iovecs[current_block].iov_base = buf;
-
-        current_block++;
-        bytes_remaining -= bytes_to_read;
-    }
-    fi->filesize = filesize;
-
+_submit_readfile(struct fileinfo *info, struct io_uring *ring) {
     /* Get an SQE */
     struct io_uring_sqe *sqe = io_uring_get_sqe(ring);
 
     /* Setup a readv operation */
-    io_uring_prep_readv(sqe, file_fd, fi->iovecs, blocks, 0);
+    io_uring_prep_readv(sqe, info->fd, info->iovecs, info->blocks, 0);
 
     /* Set user data */
-    io_uring_sqe_set_data(sqe, fi);
+    io_uring_sqe_set_data(sqe, info);
 
     /* Finally, submit the request */
     io_uring_submit(ring);
@@ -180,68 +191,94 @@ _submit_read_request(struct io_uring *ring, const char *file_path) {
 
 
 /*
- * Output a string of characters of len length to stdout.
- * We use buffered output here to be efficient,
- * since we need to output character-by-character.
+ * Submit the writev request via liburing
  * */
-static void
-output_to_console(const char *buf, int len) {
-    printf("out buf: %p\n", buf);
-    while (len--) {
-        fputc(*buf++, stdout);
-    }
+static int
+_submit_writefile(struct fileinfo *info, struct io_uring *ring) {
+    /* Get an SQE */
+    struct io_uring_sqe *sqe = io_uring_get_sqe(ring);
+
+    /* Setup a readv operation */
+    io_uring_prep_writev(sqe, info->fd, info->iovecs, info->blocks, 0);
+
+    /* Set user data */
+    io_uring_sqe_set_data(sqe, info);
+
+    /* Finally, submit the request */
+    io_uring_submit(ring);
+
+    return 0;
 }
 
 
-/*
- * Wait for a completion to be available, fetch the data from
- * the readv operation and print it to the console.
- * */
 static int
-_get_completion_and_print(struct io_uring *ring) {
-    int i;
+_get_readv_completion(struct fileinfo **info, struct io_uring *ring) {
     struct io_uring_cqe *cqe;
-
-    int ret = io_uring_wait_cqe(ring, &cqe);
-    if (ret < 0) {
+    if (io_uring_wait_cqe(ring, &cqe) < 0) {
         perror("io_uring_wait_cqe");
-        return 1;
+        return -1;
     }
+
     if (cqe->res < 0) {
-        perror("Async readv failed.");
-        return 1;
-    }
-    struct file_info *fi = io_uring_cqe_get_data(cqe);
-    printf("retrv fi: %p\n", fi);
-    printf("vect: %p\n", fi->iovecs);
-    for (i = 0; i < fi->blocks; i++) {
-        printf("block: %p\n", &fi->iovecs[i]);
-        output_to_console(fi->iovecs[i].iov_base, fi->iovecs[i].iov_len);
+        fprintf(stderr, "Async readv failed.\n");
+        return -1;
     }
 
+    *info = io_uring_cqe_get_data(cqe);
     io_uring_cqe_seen(ring, cqe);
+    return 0;
+}
 
-    for (i = 0; i < fi->blocks; i++) {
-        free(fi->iovecs[i].iov_base);
+
+static int
+_get_writev_completion(struct fileinfo **info, struct io_uring *ring) {
+    struct io_uring_cqe *cqe;
+    if (io_uring_wait_cqe(ring, &cqe) < 0) {
+        perror("io_uring_wait_cqe");
+        return -1;
     }
-    free(fi->iovecs);
-    free(fi);
+
+    if (cqe->res < 0) {
+        fprintf(stderr, "Async readv failed.\n");
+        return -1;
+    }
+
+    *info = io_uring_cqe_get_data(cqe);
+    io_uring_cqe_seen(ring, cqe);
     return 0;
 }
 
 
 static ASYNC
 catA(struct caio_task *self, struct cat *state) {
-    int i;
+    static int i;
+    struct fileinfo *info;
     CAIO_BEGIN(self);
 
-    for (i = 0; i < state->argc; i++) {
-        int ret = _submit_read_request(&state->ring, state->argv[i]);
-        if (ret) {
-            fprintf(stderr, "Error reading file: %s\n", state->argv[i]);
+    for (i = 1; i < state->argc; i++) {
+        if (_fileinfo(state->argv[i], &info)) {
+            perror("create file info");
             CAIO_THROW(self, errno);
         }
-        _get_completion_and_print(&state->ring);
+
+        if (_submit_readfile(info, &state->uring)) {
+            perror("submit readv");
+            CAIO_THROW(self, errno);
+        }
+
+        // TODO: wait
+        _get_readv_completion(&info, &state->uring);
+        close(info->fd);
+        info->fd = STDOUT_FILENO;
+        if (_submit_writefile(info, &state->uring)) {
+            perror("submit writev");
+            CAIO_THROW(self, errno);
+        }
+
+        // TODO: wait
+        _get_writev_completion(&info, &state->uring);
+        fsync(STDOUT_FILENO);
+        free(info);
     }
 
     CAIO_FINALLY(self);
@@ -252,22 +289,30 @@ int
 main(int argc, const char **argv) {
     int exitstatus = EXIT_SUCCESS;
     struct cat state;
-    memset(&state, 0, sizeof(struct cat));
 
-    state.argv = argv + 1;
-    state.argc = argc - 1;
-
-    if (_handlesignals()) {
+    if (argc < 2) {
+        fprintf(stderr, "Usage: %s FILENAME1 [FILENAME2...]\n", argv[0]);
         return EXIT_FAILURE;
     }
 
-    _caio = caio_create(QUEUE_DEPTH);
+    memset(&state, 0, sizeof(struct cat));
+    state.argc = argc;
+    state.argv = argv;
+
+    if (_handlesignals()) {
+        exitstatus = EXIT_FAILURE;
+        goto terminate;
+    }
+
+    _caio = caio_create(MAXTASKS);
     if (_caio == NULL) {
-        return EXIT_FAILURE;
+        exitstatus = EXIT_FAILURE;
+        goto terminate;
     }
 
     /* Initialize io_uring */
-    if (io_uring_queue_init(QUEUE_DEPTH, &state.ring, 0) != 0) {
+    if (io_uring_queue_init(MAXTASKS, &state.uring, 0) < 0) {
+        perror("io_uring setup failed!");
         exitstatus = EXIT_FAILURE;
         goto terminate;
     }
@@ -278,7 +323,7 @@ main(int argc, const char **argv) {
     }
 
 terminate:
-    io_uring_queue_exit(&state.ring);
+    io_uring_queue_exit(&state.uring);
 
     if (caio_destroy(_caio)) {
         exitstatus = EXIT_FAILURE;
