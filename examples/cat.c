@@ -93,7 +93,7 @@ static off_t
 _filesize_get(int fd) {
     struct stat st;
 
-    if(fstat(fd, &st) < 0) {
+    if (fstat(fd, &st) < 0) {
         perror("fstat");
         return -1;
     }
@@ -159,7 +159,7 @@ _fileinfo_create(const char *filename) {
         offset += toread;
         info->iovecs[i].iov_len = toread;
         void *buf;
-        if(posix_memalign(&buf, CHUNKSIZE, CHUNKSIZE)) {
+        if (posix_memalign(&buf, CHUNKSIZE, CHUNKSIZE)) {
             perror("posix_memalign");
             goto failed;
         }

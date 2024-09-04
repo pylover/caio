@@ -16,7 +16,6 @@ endif()
 if(CAIO_IOURING)
   list(APPEND iouring_examples
 	  cat
-	  cat_uring
   )
   list(APPEND examples ${iouring_examples})
 endif()
