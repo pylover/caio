@@ -11,6 +11,8 @@ simulating coroutine in C.
 - A simple module system to easily extend.
 - Builtin `epoll(7)` module.
 - Builtin `select(2)` module.
+- Builtin `io_uring(7)` module using
+    [liburing](https://unixism.net/loti/index.html).
 
 
 ## Under the hood
