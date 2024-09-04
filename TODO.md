@@ -1,7 +1,6 @@
 - USE CLOG 
 - readme about iouring
 - manage includes, remove all and add them one by one
-- rename caio_iomodule to caio_filemodule
 - rename caio_iouring to caio_uring
 - check CAIO_IOURING everywhere
 - pre-emptive using an auxiliary parent process.

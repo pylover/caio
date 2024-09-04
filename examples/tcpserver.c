@@ -50,7 +50,7 @@ static struct sigaction oldaction;
 /* TCP server caio state and */
 typedef struct tcpserver {
     volatile int sessions;
-    struct caio_iomodule *iomodule;
+    struct caio_fdmon *fdmon;
 } tcpserver_t;
 
 
@@ -123,7 +123,7 @@ reading:
         /* tcp read */
         bytes = read(conn->fd, conn->buff, BUFFSIZE);
         if ((bytes == -1) && IO_MUSTWAIT(errno)) {
-            CAIO_FILE_AWAIT(server->iomodule, self, conn->fd, CAIO_IN);
+            CAIO_FILE_AWAIT(server->fdmon, self, conn->fd, CAIO_IN);
             goto reading;
         }
         else if (bytes == -1) {
@@ -140,7 +140,7 @@ writing:
         /* tcp write */
         bytes = write(conn->fd, conn->buff, conn->bufflen);
         if ((bytes == -1) && IO_MUSTWAIT(errno)) {
-            CAIO_FILE_AWAIT(server->iomodule, self, conn->fd, CAIO_OUT);
+            CAIO_FILE_AWAIT(server->fdmon, self, conn->fd, CAIO_OUT);
             goto writing;
         }
         else if (bytes == -1) {
@@ -155,7 +155,7 @@ writing:
 
     CAIO_FINALLY(self);
     if (conn->fd != -1) {
-        CAIO_FILE_FORGET(server->iomodule, conn->fd);
+        CAIO_FILE_FORGET(server->fdmon, conn->fd);
         close(conn->fd);
         conn->server->sessions--;
         _state_print(conn->server);
@@ -200,7 +200,7 @@ listenA(struct caio_task *self, struct tcpserver *state,
     while (true) {
         connfd = accept4(fd, &connaddr, &addrlen, SOCK_NONBLOCK);
         if ((connfd == -1) && IO_MUSTWAIT(errno)) {
-            CAIO_FILE_AWAIT(state->iomodule, self, fd, CAIO_IN);
+            CAIO_FILE_AWAIT(state->fdmon, self, fd, CAIO_IN);
             continue;
         }
 
@@ -232,7 +232,7 @@ listenA(struct caio_task *self, struct tcpserver *state,
 
     CAIO_FINALLY(self);
     if (fd != -1) {
-        CAIO_FILE_FORGET(state->iomodule, fd);
+        CAIO_FILE_FORGET(state->fdmon, fd);
         close(fd);
     }
 }
@@ -243,7 +243,7 @@ main() {
     int exitstatus = EXIT_SUCCESS;
     struct tcpserver state = {
         .sessions = 0,
-        .iomodule = NULL
+        .fdmon = NULL
     };
     struct sockaddr_in bindaddr = {
         .sin_addr = {htons(0)},
@@ -267,7 +267,7 @@ main() {
         exitstatus = EXIT_FAILURE;
         goto terminate;
     }
-    state.iomodule = (struct caio_iomodule*)epoll;
+    state.fdmon = (struct caio_fdmon*)epoll;
     printf("Using epoll(7) for IO monitoring.\n");
 
 #elifdef CAIO_SELECT
@@ -277,7 +277,7 @@ main() {
         exitstatus = EXIT_FAILURE;
         goto terminate;
     }
-    state.iomodule = (struct caio_iomodule*)select;
+    state.fdmon = (struct caio_fdmon*)select;
     printf("Using select(2) for IO monitoring.\n");
 
 #endif

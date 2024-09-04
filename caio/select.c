@@ -38,7 +38,7 @@ struct caio_fileevent {
 
 
 struct caio_select {
-    struct caio_iomodule;
+    struct caio_fdmon;
     unsigned long timeout_us;
     unsigned int maxfileno;
     size_t waitingfiles;

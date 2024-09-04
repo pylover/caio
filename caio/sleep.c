@@ -27,7 +27,7 @@
 #undef CAIO_ARG2
 #undef CAIO_ENTITY
 #define CAIO_ENTITY caio_sleep
-#define CAIO_ARG1 struct caio_iomodule *
+#define CAIO_ARG1 struct caio_fdmon *
 #define CAIO_ARG2 time_t
 #include "caio/generic.c"
 
@@ -78,7 +78,7 @@ _settimeout(int fd, time_t miliseconds) {
 
 ASYNC
 caio_sleepA(struct caio_task *self, caio_sleep_t *state,
-        struct caio_iomodule *iom, time_t miliseconds) {
+        struct caio_fdmon *iom, time_t miliseconds) {
     int eno;
     int fd = *state;
     CAIO_BEGIN(self);

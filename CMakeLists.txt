@@ -37,23 +37,18 @@ endif()
 
 
 # Builtin IO modules 
-cmake_dependent_option(CAIO_IOMODULES 
+cmake_dependent_option(CAIO_FDMON 
 	"Enable caio IO modules." 
 	ON "CAIO_MODULES" OFF)
 cmake_dependent_option(CAIO_EPOLL 
 	"Build and link epoll(7) caio IO module." 
-	ON "CAIO_IOMODULES" OFF)
+	ON "CAIO_FDMON" OFF)
 cmake_dependent_option(CAIO_SELECT 
 	"Build and link select(2) caio IO module."
-	ON "CAIO_IOMODULES" OFF)
+	ON "CAIO_FDMON" OFF)
 cmake_dependent_option(CAIO_IOURING 
 	"Build and link io_uring(7) caio IO module."
-	ON "CAIO_IOMODULES" OFF)
-
-
-# Builtin coroutines 
-option(CAIO_STREAMSERVER 
-	"Include bsd-socket server coroutine an main function" ON)
+	ON "CAIO_FDMON" OFF)
 
 
 # Menu config
@@ -82,7 +77,7 @@ add_library(caio_generic INTERFACE
 )
 
 
-if(CAIO_IOMODULES)
+if(CAIO_FDMON)
   target_sources(caio
     PUBLIC 
       ${CMAKE_CURRENT_SOURCE_DIR}/caio/sleep.h

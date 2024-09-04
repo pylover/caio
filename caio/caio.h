@@ -65,24 +65,24 @@ struct caio_module {
 
 
 /* IO Modules */
-#ifdef CAIO_IOMODULES
+#ifdef CAIO_FDMON
 
-struct caio_iomodule;
-typedef int (*caio_filemonitor) (struct caio_iomodule *iom,
+struct caio_fdmon;
+typedef int (*caio_filemonitor) (struct caio_fdmon *iom,
         struct caio_task *task, int fd, int events);
-typedef int (*caio_fileforget) (struct caio_iomodule *iom, int fd);
-struct caio_iomodule {
+typedef int (*caio_fileforget) (struct caio_fdmon *iom, int fd);
+struct caio_fdmon {
     struct caio_module;
     caio_filemonitor monitor;
     caio_fileforget forget;
 };
 
 
-#define CAIO_FILE_FORGET(iomodule, fd) (iomodule)->forget(iomodule, fd)
-#define CAIO_FILE_AWAIT(iomodule, task, fd, events) \
+#define CAIO_FILE_FORGET(fdmon, fd) (fdmon)->forget(fdmon, fd)
+#define CAIO_FILE_AWAIT(fdmon, task, fd, events) \
     do { \
         (task)->current->line = __LINE__; \
-        if ((iomodule)->monitor(iomodule, task, fd, events)) { \
+        if ((fdmon)->monitor(fdmon, task, fd, events)) { \
             (task)->status = CAIO_TERMINATING; \
         } \
         else { \
@@ -100,7 +100,7 @@ caio_module_install(struct caio *c, struct caio_module *m);
 int
 caio_module_uninstall(struct caio *c, struct caio_module *m);
 
-#endif  // CAIO_IOMODULES
+#endif  // CAIO_FDMON
 #endif  // CAIO_MODULES
 
 

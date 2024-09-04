@@ -32,7 +32,7 @@ typedef int caio_sleep_t;
 #undef CAIO_ARG2
 #undef CAIO_ENTITY
 #define CAIO_ENTITY caio_sleep
-#define CAIO_ARG1 struct caio_iomodule *
+#define CAIO_ARG1 struct caio_fdmon *
 #define CAIO_ARG2 time_t
 #include "caio/generic.h"
 
@@ -47,12 +47,12 @@ caio_sleep_destroy(caio_sleep_t *sleep);
 
 ASYNC
 caio_sleepA(struct caio_task *self, caio_sleep_t *state,
-        struct caio_iomodule *iom, time_t miliseconds);
+        struct caio_fdmon *iom, time_t miliseconds);
 
 
 #define CAIO_SLEEP(self, state, iom, miliseconds) \
     CAIO_AWAIT(self, caio_sleep, caio_sleepA, state, \
-            (struct caio_iomodule*)iom, miliseconds)
+            (struct caio_fdmon*)iom, miliseconds)
 
 
 #endif  // CAIO_SLEEP_H_

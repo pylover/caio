@@ -41,7 +41,7 @@ typedef struct tmr {
     unsigned int interval;
     unsigned long value;
     const char *title;
-    struct caio_iomodule *iomodule;
+    struct caio_fdmon *fdmon;
 } tmr_t;
 
 
@@ -85,7 +85,7 @@ tmrA(struct caio_task *self, struct tmr *state) {
     }
 
     while (true) {
-        CAIO_FILE_AWAIT(state->iomodule, self, state->fd, CAIO_IN);
+        CAIO_FILE_AWAIT(state->fdmon, self, state->fd, CAIO_IN);
         bytes = read(state->fd, &tmp, sizeof(tmp));
         if (bytes == -1) {
             warn("read\n");
@@ -102,7 +102,7 @@ tmrA(struct caio_task *self, struct tmr *state) {
     CAIO_FINALLY(self);
     printf("%s(%ds), fd: %d, terminated\n", state->title, state->interval,
                 state->fd);
-    CAIO_FILE_FORGET(state->iomodule, state->fd);
+    CAIO_FILE_FORGET(state->fdmon, state->fd);
     if (state->fd != -1) {
         close(state->fd);
     }
@@ -133,7 +133,7 @@ main() {
         goto terminate;
     }
 
-    epolltimer.iomodule = (struct caio_iomodule *)epoll;
+    epolltimer.fdmon = (struct caio_fdmon *)epoll;
     tmr_spawn(_caio, tmrA, &epolltimer);
 #endif
 
@@ -151,7 +151,7 @@ main() {
         goto terminate;
     }
 
-    selecttimer.iomodule = (struct caio_iomodule *)select;
+    selecttimer.fdmon = (struct caio_fdmon *)select;
     tmr_spawn(_caio, tmrA, &selecttimer);
 #endif
 

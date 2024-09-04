@@ -26,7 +26,7 @@
 
 
 struct caio_epoll {
-    struct caio_iomodule;
+    struct caio_fdmon;
     int fd;
     int timeout_ms;
     size_t maxevents;
