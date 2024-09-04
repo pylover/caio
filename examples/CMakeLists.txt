@@ -41,7 +41,7 @@ endforeach()
  
 
 if(CAIO_IOURING)
-  foreach (t IN LISTS iouring_examples) 
+  foreach (t IN LISTS examples) 
     target_link_libraries(${t} PUBLIC uring)
   endforeach()
 endif()

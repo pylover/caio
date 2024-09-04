@@ -118,6 +118,7 @@ if(CAIO_IOURING)
       ${CMAKE_CURRENT_SOURCE_DIR}/caio/iouring.c
       ${CMAKE_CURRENT_SOURCE_DIR}/caio/iouring.h
   )
+  target_link_libraries(caio PUBLIC uring) 
   install(FILES caio/iouring.h DESTINATION "include/caio")
 endif()
 
