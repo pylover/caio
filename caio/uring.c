@@ -37,50 +37,6 @@ struct caio_uring {
 };
 
 
-int
-caio_uring_readv(struct caio_uring *u, int fd,
-        const struct iovec *iovecs, unsigned nr_vecs, __u64 offset) {
-    struct io_uring_sqe *sqe = io_uring_get_sqe(&(u)->ring);
-    if (sqe == NULL) {
-        return -1;
-    }
-
-    io_uring_prep_readv(sqe, fd, iovecs, nr_vecs, offset);
-
-    // io_uring_sqe_set_data(sqe, userptr);
-    int ret = io_uring_submit(&(u)->ring);
-    if (ret < 0) {
-        errno = abs(ret);
-        return -1;
-    }
-
-    u->jobstotal++;
-    return 0;
-}
-
-
-int
-caio_uring_writev(struct caio_uring *u, int fd,
-        const struct iovec *iovecs, unsigned nr_vecs, __u64 offset) {
-    struct io_uring_sqe *sqe = io_uring_get_sqe(&(u)->ring);
-    if (sqe == NULL) {
-        return -1;
-    }
-
-    io_uring_prep_writev(sqe, fd, iovecs, nr_vecs, offset);
-
-    // io_uring_sqe_set_data(sqe, userptr);
-    int ret = io_uring_submit(&(u)->ring);
-    if (ret < 0) {
-        errno = abs(ret);
-        return -1;
-    }
-
-    u->jobstotal++;
-    return 0;
-}
-
-
 static int
 _tick(struct caio_uring *u, struct caio* c) {
     if (u->jobswaiting == 0) {
@@ -189,5 +145,23 @@ caio_uring_destroy(struct caio* c, struct caio_uring *u) {
     ret |= caio_module_uninstall(c, (struct caio_module*)u);
     free(u);
 
+    return ret;
+}
+
+
+struct io_uring_sqe *
+caio_uring_sqe_get(struct caio_uring *u) {
+    return io_uring_get_sqe(&(u)->ring);
+}
+
+
+int
+caio_uring_submit(struct caio_uring *u) {
+    int ret = io_uring_submit(&(u)->ring);
+    if (ret < 0) {
+        return ret;
+    }
+
+    u->jobstotal++;
     return ret;
 }

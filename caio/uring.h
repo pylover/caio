@@ -28,10 +28,14 @@
 struct caio_uring;
 
 
-#define CAIO_URING_AWAIT(module, task, taskcount, results) \
+#define caio_uring_readv io_uring_prep_readv
+#define caio_uring_writev io_uring_prep_writev
+
+
+#define CAIO_URING_AWAIT(umod, task, taskcount, results) \
     do { \
         (task)->current->line = __LINE__; \
-        if (caio_uring_monitor(module, task, taskcount, results)) { \
+        if (caio_uring_monitor(umod, task, taskcount, results)) { \
             (task)->status = CAIO_TERMINATING; \
         } \
         else { \
@@ -60,14 +64,12 @@ caio_uring_monitor(struct caio_uring *u, struct caio_task *task,
         unsigned int jobcount, struct io_uring_cqe **results);
 
 
-int
-caio_uring_readv(struct caio_uring *u, int fd,
-        const struct iovec *iovecs, unsigned nr_vecs, __u64 offset);
+struct io_uring_sqe *
+caio_uring_sqe_get(struct caio_uring *u);
 
 
 int
-caio_uring_writev(struct caio_uring *u, int fd,
-        const struct iovec *iovecs, unsigned nr_vecs, __u64 offset);
+caio_uring_submit(struct caio_uring *u);
 
 
 #endif  // CAIO_URING_H_

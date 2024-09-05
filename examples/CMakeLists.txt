@@ -16,7 +16,7 @@ endif ()
 if (CAIO_URING)
   list(APPEND examples
 	  uring_cat
-	  uring_tcpserver
+	  # uring_tcpserver
   )
 endif ()
 
@@ -27,6 +27,7 @@ foreach (t IN LISTS examples)
     ${t}.c
     $<TARGET_OBJECTS:caio>
   )
+  target_link_libraries(${t} PUBLIC clog uring)
   target_include_directories(${t} PUBLIC "${PROJECT_BINARY_DIR}")
   add_custom_target(${t}_exec COMMAND ./${t} $$CLI_ARGS)
   add_custom_target(${t}_debug COMMAND gdb 
@@ -42,6 +43,5 @@ endforeach ()
 
 if (CAIO_URING)
   foreach (t IN LISTS examples) 
-    target_link_libraries(${t} PUBLIC uring)
   endforeach()
 endif ()

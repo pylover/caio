@@ -175,8 +175,10 @@ failed:
 
 static ASYNC
 catA(struct caio_task *self, struct cat *state) {
+    int ret;
     static int i;
     static struct fileinfo *info;
+    static struct io_uring_sqe *sqe;
     static struct io_uring_cqe *cqe;
     CAIO_BEGIN(self);
 
@@ -188,18 +190,49 @@ catA(struct caio_task *self, struct cat *state) {
             CAIO_THROW(self, errno);
         }
 
-        /* read to buffer */
-        caio_uring_readv(state->uring, info->fd, info->iovecs,
+        /* create, setup and submit a sqe to read the file into buffer */
+        sqe = caio_uring_sqe_get(state->uring);
+        if (sqe == NULL) {
+            perror("io_uring task queue full.");
+            CAIO_THROW(self, errno);
+        }
+        caio_uring_readv(
+                sqe,
+                info->fd,
+                info->iovecs,
                 info->blocks, 0);
+        ret = caio_uring_submit(state->uring);
+        if (ret < 0) {
+            perror("io_uring task submit.");
+            CAIO_THROW(self, -ret);
+        }
+
+        /* wait for task to complete */
         CAIO_URING_AWAIT(state->uring, self, 1, &cqe);
         caio_uring_seen(state->uring, cqe);
 
-        /* close */
+        /* close the file descriptor. */
         close(info->fd);
 
-        /* write from buffer to stdout */
-        caio_uring_writev(state->uring, STDOUT_FILENO, info->iovecs,
+        /* create, setup and submit a sqe to write into stdout from the buffer
+         */
+        sqe = caio_uring_sqe_get(state->uring);
+        if (sqe == NULL) {
+            perror("io_uring task queue full.");
+            CAIO_THROW(self, errno);
+        }
+        caio_uring_writev(
+                sqe,
+                STDOUT_FILENO,
+                info->iovecs,
                 info->blocks, 0);
+        ret = caio_uring_submit(state->uring);
+        if (ret < 0) {
+            perror("io_uring task submit.");
+            CAIO_THROW(self, -ret);
+        }
+
+        /* wait for task to complete */
         CAIO_URING_AWAIT(state->uring, self, 1, &cqe);
         caio_uring_seen(state->uring, cqe);
 
