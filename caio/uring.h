@@ -65,16 +65,36 @@ int
 caio_uring_task_waitingjobs(struct caio_task *task);
 
 
+int
+caio_uring_task_completed(struct caio_task *task);
+
+
+int
+caio_uring_task_cleanup(struct caio_uring *u, struct caio_task *task);
+
+
 struct io_uring_cqe *
 caio_uring_cqe_get(struct caio_task *task, int index);
 
 
 #define caio_uring_submit(umod) io_uring_submit(&(u)->ring)
+#define caio_uring_prep_read io_uring_prep_read
+#define caio_uring_prep_write io_uring_prep_write
 #define caio_uring_prep_readv io_uring_prep_readv
 #define caio_uring_prep_writev io_uring_prep_writev
 #define caio_uring_prep_socket io_uring_prep_socket
 #define caio_uring_prep_accept io_uring_prep_accept
 #define caio_uring_prep_accept_multishot io_uring_prep_multishot_accept
+
+
+int
+caio_uring_read(struct caio_uring *u, struct caio_task *task, int fd,
+        void *buf, unsigned nbytes, __u64 offset);
+
+
+int
+caio_uring_write(struct caio_uring *u, struct caio_task *task, int fd,
+        void *buf, unsigned nbytes, __u64 offset);
 
 
 int

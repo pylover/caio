@@ -82,10 +82,16 @@ typedef struct tcpconn {
 #define ADDRFMTV(a) inet_ntoa((a).sin_addr), ntohs((a).sin_port)
 
 
-// static void
-// _state_print(const struct tcpserver *s) {
-//     printf("caio tcpserver example, active sessions: %d\n", s->sessions);
-// }
+static void
+_state_print(const struct tcpserver *s) {
+    INFO("active sessions: %d", s->sessions);
+}
+
+
+static void
+_conn_print(const struct tcpconn *c) {
+    INFO("connection: %d from: "ADDRFMTS"", c->fd, ADDRFMTV(c->remoteaddr));
+}
 
 
 static void
@@ -107,66 +113,89 @@ _handlesignals() {
 }
 
 
-// static ASYNC
-// echoA(struct caio_task *self, struct tcpconn *conn) {
-//     ssize_t bytes;
-//     struct tcpserver *server = conn->server;
-//     CAIO_BEGIN(self);
-//
-//     while (true) {
-// reading:
-//         /* tcp read */
-//         bytes = read(conn->fd, conn->buff, BUFFSIZE);
-//         if ((bytes == -1) && IO_MUSTWAIT(errno)) {
-//             CAIO_FILE_AWAIT(server->fdmon, self, conn->fd, CAIO_IN);
-//             goto reading;
-//         }
-//         else if (bytes == -1) {
-//             warn("read(fd: %d)", conn->fd);
-//             CAIO_THROW(self, errno);
-//         }
-//         else if (bytes == 0) {
-//             warn("read(fd: %d) EOF", conn->fd);
-//             CAIO_THROW(self, errno);
-//         }
-//         conn->bufflen = bytes;
-//
-// writing:
-//         /* tcp write */
-//         bytes = write(conn->fd, conn->buff, conn->bufflen);
-//         if ((bytes == -1) && IO_MUSTWAIT(errno)) {
-//             CAIO_FILE_AWAIT(server->fdmon, self, conn->fd, CAIO_OUT);
-//             goto writing;
-//         }
-//         else if (bytes == -1) {
-//             warn("write(fd: %d)", conn->fd);
-//             CAIO_THROW(self, errno);
-//         }
-//         else if (bytes == 0) {
-//             warn("write(fd: %d) EOF", conn->fd);
-//             CAIO_THROW(self, errno);
-//         }
-//     }
-//
-//     CAIO_FINALLY(self);
-//     if (conn->fd != -1) {
-//         CAIO_FILE_FORGET(server->fdmon, conn->fd);
-//         close(conn->fd);
-//         conn->server->sessions--;
-//         _state_print(conn->server);
-//     }
-//     free(conn);
-// }
+static ASYNC
+echoA(struct caio_task *self, struct tcpconn *conn) {
+    ssize_t bytes;
+    int ret;
+    struct tcpserver *server = conn->server;
+    CAIO_BEGIN(self);
+
+    while (true) {
+        /* create, setup and submit a sqe for read from socket into buffer */
+        ret = caio_uring_read(
+                server->uring,
+                self,
+                conn->fd,
+                conn->buff,
+                BUFFSIZE,
+                0);
+        if (ret < 0) {
+            perror("io_uring read submit.");
+            CAIO_THROW(self, -ret);
+        }
+
+        /* wait for task to complete */
+        CAIO_URING_AWAIT(server->uring, self, 1);
+        bytes = caio_uring_cqe_get(self, 0)->res;
+        caio_uring_cqe_seen(server->uring, self, 0);
+
+        if (bytes < 0) {
+            warn("read(fd: %d)", conn->fd);
+            CAIO_THROW(self, -bytes);
+        }
+        else if (bytes == 0) {
+            warn("read(fd: %d) EOF", conn->fd);
+            CAIO_THROW(self, -bytes);
+        }
+        conn->bufflen = bytes;
+
+        /* tcp write */
+        ret = caio_uring_write(
+                server->uring,
+                self,
+                conn->fd,
+                conn->buff,
+                conn->bufflen,
+                0);
+        if (ret < 0) {
+            perror("io_uring write submit.");
+            CAIO_THROW(self, -ret);
+        }
+
+        /* wait for task to complete */
+        CAIO_URING_AWAIT(server->uring, self, 1);
+        bytes = caio_uring_cqe_get(self, 0)->res;
+        caio_uring_cqe_seen(server->uring, self, 0);
+
+        if (bytes < 0) {
+            warn("write(fd: %d)", conn->fd);
+            CAIO_THROW(self, -bytes);
+        }
+        else if (bytes == 0) {
+            warn("write(fd: %d) EOF", conn->fd);
+            CAIO_THROW(self, -bytes);
+        }
+    }
+
+    CAIO_FINALLY(self);
+    caio_uring_task_cleanup(server->uring, self);
+    if (conn->fd != -1) {
+        close(conn->fd);
+        conn->server->sessions--;
+        _state_print(conn->server);
+    }
+    free(conn);
+}
 
 
 static ASYNC
 listenA(struct caio_task *self, struct tcpserver *state,
         struct sockaddr_in bindaddr, int backlog) {
-    socklen_t addrlen = sizeof(struct sockaddr);
-    struct sockaddr_in connaddr;
+    static socklen_t addrlen = sizeof(struct sockaddr_in);
+    static struct sockaddr_in connaddr;
     int connfd;
     int ret;
-    int sockopt = 1;
+    static int sockopt = 1;
     static int listenfd;
     CAIO_BEGIN(self);
 
@@ -195,7 +224,6 @@ listenA(struct caio_task *self, struct tcpserver *state,
     /* allow reuse the address */
     setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &sockopt, sizeof(sockopt));
 
-    DEBUG("listenfd: %d", listenfd);
     /* bind to tcp port */
     ret = bind(listenfd, &bindaddr, sizeof(bindaddr));
     if (ret < 0) {
@@ -225,44 +253,38 @@ listenA(struct caio_task *self, struct tcpserver *state,
             CAIO_THROW(self, -ret);
         }
 
-        /* wait for socket to made */
+        /* wait for new connection */
         CAIO_URING_AWAIT(state->uring, self, 1);
         connfd = caio_uring_cqe_get(self, 0)->res;
         caio_uring_cqe_seen(state->uring, self, 0);
-        DEBUG("connection fd: %d", connfd);
-    //     connfd = accept4(listenfd, &connaddr, &addrlen, SOCK_NONBLOCK);
-    //     if ((connfd == -1) && IO_MUSTWAIT(errno)) {
-    //         CAIO_FILE_AWAIT(state->fdmon, self, fd, CAIO_IN);
-    //         continue;
-    //     }
+        if (connfd < 0) {
+            perror("accept");
+            CAIO_THROW(self, -connfd);
+        }
 
-    //     if (connfd == -1) {
-    //         warn("accept4\n");
-    //         CAIO_THROW(self, errno);
-    //     }
+        /* New Connection */
+        struct tcpconn *c = malloc(sizeof(struct tcpconn));
+        if (c == NULL) {
+            warn("Out of memory\n");
+            CAIO_THROW(self, errno);
+        }
 
-    //     /* New Connection */
-    //     printf("New connection from: "ADDRFMTS"\n", ADDRFMTV(connaddr));
-    //     struct tcpconn *c = malloc(sizeof(struct tcpconn));
-    //     if (c == NULL) {
-    //         warn("Out of memory\n");
-    //         CAIO_THROW(self, errno);
-    //     }
-
-    //     c->fd = connfd;
-    //     c->localaddr = bindaddr;
-    //     c->remoteaddr = connaddr;
-    //     c->server = state;
-    //     state->sessions++;
-    //     _state_print(state);
-    //     if (tcpconn_spawn(_caio, echoA, c)) {
-    //         warn("Maximum connection exceeded, fd: %d\n", connfd);
-    //         close(connfd);
-    //         free(c);
-    //     }
+        c->fd = connfd;
+        c->localaddr = bindaddr;
+        c->remoteaddr = connaddr;
+        c->server = state;
+        state->sessions++;
+        _conn_print(c);
+        _state_print(state);
+        if (tcpconn_spawn(_caio, echoA, c)) {
+            warn("Maximum connection exceeded, fd: %d\n", connfd);
+            close(connfd);
+            free(c);
+        }
     }
 
     CAIO_FINALLY(self);
+    caio_uring_task_cleanup(state->uring, self);
     if (listenfd != -1) {
         close(listenfd);
     }

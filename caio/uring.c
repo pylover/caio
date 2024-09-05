@@ -247,6 +247,42 @@ caio_uring_task_waitingjobs(struct caio_task *task) {
 }
 
 
+int
+caio_uring_task_completed(struct caio_task *task) {
+    struct caio_uring_taskstate *ustate = task->uring;
+
+    if (ustate == NULL) {
+        return 0;
+    }
+
+    return ustate->completed;
+}
+
+
+int
+caio_uring_task_cleanup(struct caio_uring *u, struct caio_task *task) {
+    struct caio_uring_taskstate *ustate = task->uring;
+    int i;
+
+    if (ustate == NULL) {
+        return 0;
+    }
+
+    for (i = 0; i < ustate->completed; i++) {
+        caio_uring_cqe_seen(u, task, i);
+    }
+
+    for (i = 0; i < ustate->waiting; i++) {
+        u->jobstotal--;
+    }
+
+    free(ustate);
+    task->uring = NULL;
+
+    return 0;
+}
+
+
 #define _CREATE_PREP_SUBMIT(name, umod, task, ...) \
     struct io_uring_sqe *sqe; \
     sqe = caio_uring_sqe_get(umod, task); \
@@ -289,4 +325,18 @@ caio_uring_accept_multishot(struct caio_uring *u, struct caio_task *task,
         unsigned int flags) {
     _CREATE_PREP_SUBMIT(accept_multishot, u, task, sockfd, addr, addrlen,
             flags);
+}
+
+
+int
+caio_uring_read(struct caio_uring *u, struct caio_task *task, int fd,
+        void *buf, unsigned nbytes, __u64 offset) {
+    _CREATE_PREP_SUBMIT(read, u, task, fd, buf, nbytes, offset);
+}
+
+
+int
+caio_uring_write(struct caio_uring *u, struct caio_task *task, int fd,
+        void *buf, unsigned nbytes, __u64 offset) {
+    _CREATE_PREP_SUBMIT(write, u, task, fd, buf, nbytes, offset);
 }
