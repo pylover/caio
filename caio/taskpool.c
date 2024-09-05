@@ -24,10 +24,9 @@
 
 
 #define TASK_RESET(t, s) \
+    memset(t, 0, sizeof(*t)); \
     (t)->status = s; \
-    (t)->caio = NULL; \
-    (t)->eno = 0; \
-    (t)->current = NULL
+    (t)->eno = 0
 
 
 int

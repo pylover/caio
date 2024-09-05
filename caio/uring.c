@@ -19,6 +19,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <clog.h>
+
 #include "caio/uring.h"
 
 
@@ -32,13 +34,57 @@ struct caio_uring {
 
     unsigned int jobstotal;
     unsigned int jobswaiting;
-    struct io_uring_cqe **results;
-    struct caio_task *task;
 };
+
+
+struct caio_uring_taskstate {
+    volatile unsigned int waiting;
+    volatile unsigned int completed;
+    struct io_uring_cqe *cqes[CAIO_URING_TASK_MAXWAITING];
+};
+
+
+struct io_uring_sqe *
+caio_uring_sqe_get(struct caio_uring *u, struct caio_task *task) {
+    struct caio_uring_taskstate *ustate = task->uring;
+
+    if (u->jobstotal >= u->jobsmax) {
+        return NULL;
+    }
+
+    struct io_uring_sqe *sqe = io_uring_get_sqe(&(u)->ring);
+    if (sqe == NULL) {
+        return NULL;
+    }
+
+    io_uring_sqe_set_data(sqe, task);
+    if (ustate == NULL) {
+        ustate = malloc(sizeof(struct caio_uring_taskstate));
+        if (ustate == NULL) {
+            return NULL;
+        }
+        ustate->waiting = 0;
+        ustate->completed = 0;
+        task->uring = ustate;
+    }
+
+    if (ustate->waiting >= CAIO_URING_TASK_MAXWAITING) {
+        return NULL;
+    }
+
+    ustate->waiting++;
+    u->jobstotal++;
+    u->jobswaiting++;
+    return sqe;
+}
 
 
 static int
 _tick(struct caio_uring *u, struct caio* c) {
+    struct io_uring_cqe *cqe;
+    struct caio_task *task;
+    struct caio_uring_taskstate *ustate;
+
     if (u->jobswaiting == 0) {
         return 0;
     }
@@ -51,8 +97,8 @@ _tick(struct caio_uring *u, struct caio* c) {
         .tv_sec = u->timeout_ms / 1000,
         .tv_nsec = (u->timeout_ms % 1000) * 1000,
     };
-    int ret = io_uring_wait_cqes(&u->ring, u->results, u->jobswaiting,
-            &timeout, u->sigmask);
+    int ret = io_uring_wait_cqes(&u->ring, &cqe, u->jobswaiting, &timeout,
+            u->sigmask);
     if (ret < 0) {
         if (ret == -ETIME) {
             return 0;
@@ -61,21 +107,77 @@ _tick(struct caio_uring *u, struct caio* c) {
         return -1;
     }
 
-    if (u->task->status == CAIO_WAITING) {
-        u->task->status = CAIO_RUNNING;
-        u->jobswaiting = 0;
+    u->jobswaiting--;
+    task = (struct caio_task *) io_uring_cqe_get_data(cqe);
+    ustate = task->uring;
+    if (ustate == NULL) {
+        return -1;
+    }
+
+    if (ustate->waiting == 0) {
+        /* weird situation! */
+        return -1;
+    }
+
+    ustate->waiting--;
+    ustate->cqes[ustate->completed++] = cqe;
+
+    if (ustate->waiting) {
+        return 0;
+    }
+
+    if (task->status == CAIO_WAITING) {
+        task->status = CAIO_RUNNING;
     }
 
     return 0;
 }
 
 
-void
-caio_uring_seen(struct caio_uring *u, struct io_uring_cqe *cqe) {
-    if (cqe == NULL) {
-        return;
+int
+caio_uring_cqe_seen(struct caio_uring *u, struct caio_task *task, int index) {
+    struct caio_uring_taskstate *ustate = task->uring;
+    struct io_uring_cqe *cqe;
+
+    if (ustate == NULL) {
+        return -1;
     }
+
+    if (index == ustate->completed) {
+        return -1;
+    }
+
+    cqe = ustate->cqes[index];
+    if (cqe == NULL) {
+        return -1;
+    }
+
     io_uring_cqe_seen(&u->ring, cqe);
+    ustate->completed--;
+    u->jobstotal--;
+
+    if (ustate->completed == 0) {
+        free(ustate);
+        task->uring = NULL;
+    }
+
+    return 0;
+}
+
+
+struct io_uring_cqe *
+caio_uring_cqe_get(struct caio_task *task, int index) {
+    struct caio_uring_taskstate *ustate = task->uring;
+
+    if (ustate == NULL) {
+        return NULL;
+    }
+
+    if (index == ustate->completed) {
+        return NULL;
+    }
+
+    return ustate->cqes[index];
 }
 
 
@@ -107,8 +209,6 @@ caio_uring_create(struct caio* c, unsigned int jobsmax,
 
     u->jobstotal = 0;
     u->jobswaiting = 0;
-    u->results = NULL;
-    u->task = NULL;
 
     if (caio_module_install(c, (struct caio_module*)u)) {
         free(u);
@@ -116,20 +216,6 @@ caio_uring_create(struct caio* c, unsigned int jobsmax,
     }
 
     return u;
-}
-
-
-int
-caio_uring_monitor(struct caio_uring *u, struct caio_task *task,
-        unsigned int jobcount, struct io_uring_cqe **results) {
-    if (jobcount > u->jobstotal) {
-        return -1;
-    }
-
-    u->task = task;
-    u->jobswaiting = jobcount;
-    u->results = results;
-    return 0;
 }
 
 
@@ -149,41 +235,58 @@ caio_uring_destroy(struct caio* c, struct caio_uring *u) {
 }
 
 
-struct io_uring_sqe *
-caio_uring_sqe_get(struct caio_uring *u) {
-    return io_uring_get_sqe(&(u)->ring);
-}
-
-
 int
-caio_uring_submit(struct caio_uring *u) {
-    int ret = io_uring_submit(&(u)->ring);
-    if (ret < 0) {
-        return ret;
+caio_uring_task_waitingjobs(struct caio_task *task) {
+    struct caio_uring_taskstate *ustate = task->uring;
+
+    if (ustate == NULL) {
+        return 0;
     }
 
-    u->jobstotal++;
-    return ret;
+    return ustate->waiting;
 }
 
 
-#define _CREATE_PREP_SUBMIT(name, u, ...) \
+#define _CREATE_PREP_SUBMIT(name, umod, task, ...) \
     struct io_uring_sqe *sqe; \
-    sqe = caio_uring_sqe_get(u); \
+    sqe = caio_uring_sqe_get(umod, task); \
     if (sqe == NULL) return -1; \
-    caio_uring_prep_ ## name (sqe, __VA_ARGS__); \
-    return caio_uring_submit(u);
+    caio_uring_prep_ ## name(sqe, __VA_ARGS__); \
+    return caio_uring_submit(umod);
 
 
 int
-caio_uring_readv(struct caio_uring *u, int fd, const struct iovec *iovecs,
-        unsigned nrvecs, __u64 offset) {
-    _CREATE_PREP_SUBMIT(readv, u, fd, iovecs, nrvecs, offset);
+caio_uring_readv(struct caio_uring *u, struct caio_task *task, int fd,
+        const struct iovec *iovecs, unsigned nrvecs, __u64 offset) {
+    _CREATE_PREP_SUBMIT(readv, u, task, fd, iovecs, nrvecs, offset);
 }
 
 
 int
-caio_uring_writev(struct caio_uring *u, int fd, const struct iovec *iovecs,
-        unsigned nrvecs, __u64 offset) {
-    _CREATE_PREP_SUBMIT(writev, u, fd, iovecs, nrvecs, offset);
+caio_uring_writev(struct caio_uring *u, struct caio_task *task, int fd,
+        const struct iovec *iovecs, unsigned nrvecs, __u64 offset) {
+    _CREATE_PREP_SUBMIT(writev, u, task, fd, iovecs, nrvecs, offset);
+}
+
+
+int
+caio_uring_socket(struct caio_uring *u, struct caio_task *task, int domain,
+        int type, int protocol, unsigned int flags) {
+    _CREATE_PREP_SUBMIT(socket, u, task, domain, type, protocol, flags);
+}
+
+
+int
+caio_uring_accept(struct caio_uring *u, struct caio_task *task, int sockfd,
+        struct sockaddr *addr, socklen_t *addrlen, unsigned int flags) {
+    _CREATE_PREP_SUBMIT(accept, u, task, sockfd, addr, addrlen, flags);
+}
+
+
+int
+caio_uring_accept_multishot(struct caio_uring *u, struct caio_task *task,
+        int sockfd, struct sockaddr *addr, socklen_t *addrlen,
+        unsigned int flags) {
+    _CREATE_PREP_SUBMIT(accept_multishot, u, task, sockfd, addr, addrlen,
+            flags);
 }

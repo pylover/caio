@@ -1,4 +1,6 @@
 ## now
+- caio_uring_reset(umod, task) function
+- change timeout_ms to timeout_us
 
 ## later
 - USE CLOG 

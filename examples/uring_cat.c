@@ -178,7 +178,6 @@ catA(struct caio_task *self, struct cat *state) {
     int ret;
     static int i;
     static struct fileinfo *info;
-    static struct io_uring_cqe *cqe;
     CAIO_BEGIN(self);
 
     for (i = 1; i < state->argc; i++) {
@@ -193,6 +192,7 @@ catA(struct caio_task *self, struct cat *state) {
          */
         ret = caio_uring_readv(
                 state->uring,
+                self,
                 info->fd,
                 info->iovecs,
                 info->blocks,
@@ -203,8 +203,8 @@ catA(struct caio_task *self, struct cat *state) {
         }
 
         /* wait for task to complete */
-        CAIO_URING_AWAIT(state->uring, self, 1, &cqe);
-        caio_uring_seen(state->uring, cqe);
+        CAIO_URING_AWAIT(state->uring, self, 1);
+        caio_uring_cqe_seen(state->uring, self, 0);
 
         /* close the file descriptor. */
         close(info->fd);
@@ -213,6 +213,7 @@ catA(struct caio_task *self, struct cat *state) {
          */
         ret = caio_uring_writev(
                 state->uring,
+                self,
                 STDOUT_FILENO,
                 info->iovecs,
                 info->blocks,
@@ -223,8 +224,8 @@ catA(struct caio_task *self, struct cat *state) {
         }
 
         /* wait for task to complete */
-        CAIO_URING_AWAIT(state->uring, self, 1, &cqe);
-        caio_uring_seen(state->uring, cqe);
+        CAIO_URING_AWAIT(state->uring, self, 1);
+        caio_uring_cqe_seen(state->uring, self, 0);
 
         /* cleanup */
         fsync(STDOUT_FILENO);

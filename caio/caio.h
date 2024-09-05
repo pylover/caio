@@ -46,11 +46,20 @@ struct caio_basecall {
 };
 
 
+#ifdef CAIO_URING
+    struct caio_uring_taskstate;
+#endif
+
+
 struct caio_task {
     struct caio* caio;
     struct caio_basecall *current;
     enum caio_taskstatus status;
     int eno;
+
+#ifdef CAIO_URING
+    struct caio_uring_taskstate *uring;
+#endif
 };
 
 

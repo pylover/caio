@@ -168,34 +168,37 @@ listenA(struct caio_task *self, struct tcpserver *state,
     int ret;
     int sockopt = 1;
     static int listenfd;
-    struct io_uring_sqe *sqe;
-    static struct io_uring_cqe *cqe;
     CAIO_BEGIN(self);
 
-    /* Create, setup and submit a socket creation uring task */
-    sqe = caio_uring_sqe_get(state->uring);
-    if (sqe == NULL) {
-        perror("io_uring task queue full.");
-        CAIO_THROW(self, errno);
-    }
-    caio_uring_prep_socket(sqe, AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0, 0);
-    ret = caio_uring_submit(state->uring);
+    /* create, setup and submit a socket creation uring task */
+    ret = caio_uring_socket(
+            state->uring,
+            self,
+            AF_INET,
+            SOCK_STREAM | SOCK_NONBLOCK,
+            0,
+            0);
     if (ret < 0) {
-        perror("io_uring task submit.");
+        perror("io_uring socket submit.");
         CAIO_THROW(self, -ret);
     }
 
     /* wait for socket to made */
-    CAIO_URING_AWAIT(state->uring, self, 1, &cqe);
-    listenfd = cqe->res;
-    caio_uring_seen(state->uring, cqe);
+    CAIO_URING_AWAIT(state->uring, self, 1);
+    listenfd = caio_uring_cqe_get(self, 0)->res;
+    if (listenfd < 0) {
+        perror("io_uring socket submit.");
+        CAIO_THROW(self, -listenfd);
+    }
+    caio_uring_cqe_seen(state->uring, self, 0);
 
     /* allow reuse the address */
     setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &sockopt, sizeof(sockopt));
 
+    DEBUG("listenfd: %d", listenfd);
     /* bind to tcp port */
     ret = bind(listenfd, &bindaddr, sizeof(bindaddr));
-    if (ret) {
+    if (ret < 0) {
         warn("Cannot bind on: "ADDRFMTS"\n", ADDRFMTV(bindaddr));
         CAIO_THROW(self, errno);
     }
@@ -204,34 +207,28 @@ listenA(struct caio_task *self, struct tcpserver *state,
     ret = listen(listenfd, backlog);
     INFO("Listening on: tcp://"ADDRFMTS" backlog: %d", ADDRFMTV(bindaddr),
             backlog);
-    if (ret) {
+    if (ret < 0) {
         warn("Cannot listen on: "ADDRFMTS"\n", ADDRFMTV(bindaddr));
         CAIO_THROW(self, errno);
     }
 
-    DEBUG("listenfd: %d", listenfd);
     while (true) {
-        sqe = caio_uring_sqe_get(state->uring);
-        if (sqe == NULL) {
-            perror("io_uring task queue full.");
-            CAIO_THROW(self, errno);
-        }
-        caio_uring_prep_accept_multishot(
-                sqe,
+        ret = caio_uring_accept(
+                state->uring,
+                self,
                 listenfd,
                 (struct sockaddr *)&connaddr,
                 &addrlen,
                 SOCK_NONBLOCK);
-        ret = caio_uring_submit(state->uring);
         if (ret < 0) {
-            perror("io_uring task submit.");
+            perror("io_uring accept multishot submit.");
             CAIO_THROW(self, -ret);
         }
 
         /* wait for socket to made */
-        CAIO_URING_AWAIT(state->uring, self, 1, &cqe);
-        connfd = cqe->res;
-        caio_uring_seen(state->uring, cqe);
+        CAIO_URING_AWAIT(state->uring, self, 1);
+        connfd = caio_uring_cqe_get(self, 0)->res;
+        caio_uring_cqe_seen(state->uring, self, 0);
         DEBUG("connection fd: %d", connfd);
     //     connfd = accept4(listenfd, &connaddr, &addrlen, SOCK_NONBLOCK);
     //     if ((connfd == -1) && IO_MUSTWAIT(errno)) {

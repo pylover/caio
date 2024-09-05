@@ -36,6 +36,13 @@ else ()
 endif ()
 
 
+# Maximum allowed uring jobs per caio task 
+set(CAIO_URING_TASK_MAXWAITING 8 CACHE 
+  STRING "Maximum allowed io_uring jobs per caio task.")
+set_property(CACHE CAIO_URING_TASK_MAXWAITING PROPERTY 
+  STRINGS 4 8 32 64 128 256)
+
+
 # Builtin IO modules 
 cmake_dependent_option(CAIO_FDMON 
 	"Enable caio IO modules." 

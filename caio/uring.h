@@ -28,10 +28,12 @@
 struct caio_uring;
 
 
-#define CAIO_URING_AWAIT(umod, task, taskcount, results) \
+#define CAIO_URING_AWAIT(umod, task, taskcount) \
     do { \
         (task)->current->line = __LINE__; \
-        if (caio_uring_monitor(umod, task, taskcount, results)) { \
+        if ((task)->uring && \
+                (caio_uring_task_waitingjobs(task) < \
+                 (taskcount))) { \
             (task)->status = CAIO_TERMINATING; \
         } \
         else { \
@@ -51,45 +53,54 @@ int
 caio_uring_destroy(struct caio* c, struct caio_uring *u);
 
 
-void
-caio_uring_seen(struct caio_uring *u, struct io_uring_cqe * cqe);
-
-
 int
-caio_uring_monitor(struct caio_uring *u, struct caio_task *task,
-        unsigned int jobcount, struct io_uring_cqe **results);
+caio_uring_cqe_seen(struct caio_uring *u, struct caio_task *task, int index);
 
 
 struct io_uring_sqe *
-caio_uring_sqe_get(struct caio_uring *u);
+caio_uring_sqe_get(struct caio_uring *u, struct caio_task *task);
 
 
 int
-caio_uring_submit(struct caio_uring *u);
+caio_uring_task_waitingjobs(struct caio_task *task);
 
 
+struct io_uring_cqe *
+caio_uring_cqe_get(struct caio_task *task, int index);
+
+
+#define caio_uring_submit(umod) io_uring_submit(&(u)->ring)
 #define caio_uring_prep_readv io_uring_prep_readv
 #define caio_uring_prep_writev io_uring_prep_writev
 #define caio_uring_prep_socket io_uring_prep_socket
+#define caio_uring_prep_accept io_uring_prep_accept
 #define caio_uring_prep_accept_multishot io_uring_prep_multishot_accept
 
 
-#define CAIO_URING_CREATE_PREP_SUBMIT(name, u, ...) \
-    struct io_uring_sqe *sqe; \
-    sqe = caio_uring_sqe_get(u); \
-    if (sqe == NULL) return -1; \
-    caio_uring_prep_ ## name (sqe, __VA_ARGS__); \
-    return caio_uring_submit(u);
+int
+caio_uring_readv(struct caio_uring *u, struct caio_task *task, int fd,
+        const struct iovec *iovecs, unsigned nrvecs, __u64 offset);
 
 
 int
-caio_uring_readv(struct caio_uring *u, int fd, const struct iovec *iovecs,
-        unsigned nrvecs, __u64 offset);
+caio_uring_writev(struct caio_uring *u, struct caio_task *task, int fd,
+        const struct iovec *iovecs, unsigned nrvecs, __u64 offset);
 
 
 int
-caio_uring_writev(struct caio_uring *u, int fd, const struct iovec *iovecs,
-        unsigned nrvecs, __u64 offset);
+caio_uring_socket(struct caio_uring *u, struct caio_task *task, int domain,
+        int type, int protocol, unsigned int flags);
+
+
+int
+caio_uring_accept(struct caio_uring *u, struct caio_task *task, int sockfd,
+        struct sockaddr *addr, socklen_t *addrlen, unsigned int flags);
+
+
+int
+caio_uring_accept_multishot(struct caio_uring *u, struct caio_task *task,
+        int sockfd, struct sockaddr *addr, socklen_t *addrlen,
+        unsigned int flags);
 
 
 #endif  // CAIO_URING_H_
