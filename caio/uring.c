@@ -165,3 +165,25 @@ caio_uring_submit(struct caio_uring *u) {
     u->jobstotal++;
     return ret;
 }
+
+
+#define _CREATE_PREP_SUBMIT(name, u, ...) \
+    struct io_uring_sqe *sqe; \
+    sqe = caio_uring_sqe_get(u); \
+    if (sqe == NULL) return -1; \
+    caio_uring_prep_ ## name (sqe, __VA_ARGS__); \
+    return caio_uring_submit(u);
+
+
+int
+caio_uring_readv(struct caio_uring *u, int fd, const struct iovec *iovecs,
+        unsigned nrvecs, __u64 offset) {
+    _CREATE_PREP_SUBMIT(readv, u, fd, iovecs, nrvecs, offset);
+}
+
+
+int
+caio_uring_writev(struct caio_uring *u, int fd, const struct iovec *iovecs,
+        unsigned nrvecs, __u64 offset) {
+    _CREATE_PREP_SUBMIT(writev, u, fd, iovecs, nrvecs, offset);
+}

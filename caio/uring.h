@@ -28,10 +28,6 @@
 struct caio_uring;
 
 
-#define caio_uring_readv io_uring_prep_readv
-#define caio_uring_writev io_uring_prep_writev
-
-
 #define CAIO_URING_AWAIT(umod, task, taskcount, results) \
     do { \
         (task)->current->line = __LINE__; \
@@ -70,6 +66,30 @@ caio_uring_sqe_get(struct caio_uring *u);
 
 int
 caio_uring_submit(struct caio_uring *u);
+
+
+#define caio_uring_prep_readv io_uring_prep_readv
+#define caio_uring_prep_writev io_uring_prep_writev
+#define caio_uring_prep_socket io_uring_prep_socket
+#define caio_uring_prep_accept_multishot io_uring_prep_multishot_accept
+
+
+#define CAIO_URING_CREATE_PREP_SUBMIT(name, u, ...) \
+    struct io_uring_sqe *sqe; \
+    sqe = caio_uring_sqe_get(u); \
+    if (sqe == NULL) return -1; \
+    caio_uring_prep_ ## name (sqe, __VA_ARGS__); \
+    return caio_uring_submit(u);
+
+
+int
+caio_uring_readv(struct caio_uring *u, int fd, const struct iovec *iovecs,
+        unsigned nrvecs, __u64 offset);
+
+
+int
+caio_uring_writev(struct caio_uring *u, int fd, const struct iovec *iovecs,
+        unsigned nrvecs, __u64 offset);
 
 
 #endif  // CAIO_URING_H_

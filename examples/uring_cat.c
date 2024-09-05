@@ -178,7 +178,6 @@ catA(struct caio_task *self, struct cat *state) {
     int ret;
     static int i;
     static struct fileinfo *info;
-    static struct io_uring_sqe *sqe;
     static struct io_uring_cqe *cqe;
     CAIO_BEGIN(self);
 
@@ -190,20 +189,16 @@ catA(struct caio_task *self, struct cat *state) {
             CAIO_THROW(self, errno);
         }
 
-        /* create, setup and submit a sqe to read the file into buffer */
-        sqe = caio_uring_sqe_get(state->uring);
-        if (sqe == NULL) {
-            perror("io_uring task queue full.");
-            CAIO_THROW(self, errno);
-        }
-        caio_uring_readv(
-                sqe,
+        /* create, setup and submit a sqe for read the file into buffer
+         */
+        ret = caio_uring_readv(
+                state->uring,
                 info->fd,
                 info->iovecs,
-                info->blocks, 0);
-        ret = caio_uring_submit(state->uring);
+                info->blocks,
+                0);
         if (ret < 0) {
-            perror("io_uring task submit.");
+            perror("io_uring readv submit.");
             CAIO_THROW(self, -ret);
         }
 
@@ -216,17 +211,12 @@ catA(struct caio_task *self, struct cat *state) {
 
         /* create, setup and submit a sqe to write into stdout from the buffer
          */
-        sqe = caio_uring_sqe_get(state->uring);
-        if (sqe == NULL) {
-            perror("io_uring task queue full.");
-            CAIO_THROW(self, errno);
-        }
-        caio_uring_writev(
-                sqe,
+        ret = caio_uring_writev(
+                state->uring,
                 STDOUT_FILENO,
                 info->iovecs,
-                info->blocks, 0);
-        ret = caio_uring_submit(state->uring);
+                info->blocks,
+                0);
         if (ret < 0) {
             perror("io_uring task submit.");
             CAIO_THROW(self, -ret);
