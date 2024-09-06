@@ -1,13 +1,13 @@
 ## now
-- caio_uring_reset(umod, task) function
-- change timeout_ms to timeout_us
+- use clog instead of err, warn, perror
+- clear errno somewhere
 
 ## later
-- USE CLOG 
 - readme about uring feature
 - pre-emptive using an auxiliary parent process.
 - rename all ifdef, ifndef, elifdef, elifndef with if defined syntax.
-- Prevent compile on kernel <= 2.6.9
+- Prevent compile on kernel smaller than 2.6.9
+- Prevent compile on kernel smaller than 5.1 if CAIO_URING is ON.
 - fixed callstack allocation per task (option)
 - Dynamic(infinite) stack size (option)
 - All todos
@@ -15,10 +15,9 @@
 - Readme & documentation
 - cmake find_packages
 
-- io_uring
-  - readme: cmake CAIO_URING_ENABLED
+## io_uring
+  - readme: cmake CAIO_URING
   - readme: install liburing
   - Huge memory allocation instead of mmap
-  - Use atomic store and load as the liburing way
   - Fixed files and buffers
 

@@ -29,7 +29,7 @@
 struct caio_epoll {
     struct caio_fdmon;
     int fd;
-    int timeout_ms;
+    int timeout_us;
     size_t maxevents;
     size_t waitingfiles;
     struct epoll_event *events;
@@ -47,7 +47,7 @@ _tick(struct caio_epoll *e, struct caio* c) {
     }
 
     errno = 0;
-    nfds = epoll_wait(e->fd, e->events, e->maxevents, e->timeout_ms);
+    nfds = epoll_wait(e->fd, e->events, e->maxevents, e->timeout_us / 1000);
     if (nfds < 0) {
         return -1;
     }
@@ -98,7 +98,7 @@ _forget(struct caio_epoll *e, int fd) {
 
 
 struct caio_epoll *
-caio_epoll_create(struct caio* c, size_t maxevents, unsigned int timeout_ms) {
+caio_epoll_create(struct caio* c, size_t maxevents, unsigned int timeout_us) {
     struct caio_epoll *e;
 
     if (maxevents == 0) {
@@ -112,7 +112,7 @@ caio_epoll_create(struct caio* c, size_t maxevents, unsigned int timeout_ms) {
     }
     memset(e, 0, sizeof(struct caio_epoll));
 
-    e->timeout_ms = timeout_ms;
+    e->timeout_us = timeout_us;
     e->waitingfiles = 0;
     e->maxevents = maxevents;
     e->fd = epoll_create1(0);

@@ -263,7 +263,7 @@ main() {
 
 #ifdef CAIO_EPOLL
     struct caio_epoll *epoll;
-    epoll = caio_epoll_create(_caio, MAXCONN + 1, 1);
+    epoll = caio_epoll_create(_caio, MAXCONN + 1, 1000);
     if (epoll == NULL) {
         exitstatus = EXIT_FAILURE;
         goto terminate;

@@ -262,7 +262,7 @@ main(int argc, const char **argv) {
     }
 
     /* Initialize io_uring */
-    state.uring = caio_uring_create(_caio, MAXTASKS, 0, NULL);
+    state.uring = caio_uring_create(_caio, MAXTASKS, 1000, NULL);
     if (state.uring == NULL) {
         perror("io_uring setup failed!");
         exitstatus = EXIT_FAILURE;

@@ -27,7 +27,7 @@ struct caio_epoll;
 
 
 struct caio_epoll *
-caio_epoll_create(struct caio* c, size_t maxevents, unsigned int timeout_ms);
+caio_epoll_create(struct caio* c, size_t maxevents, unsigned int timeout_us);
 
 
 int

@@ -314,7 +314,7 @@ main() {
 
     /* Initialize io_uring */
     // TODO: tune max uring tasks
-    state.uring = caio_uring_create(_caio, MAXCONN + 1, 0, NULL);
+    state.uring = caio_uring_create(_caio, MAXCONN + 1, 1000, NULL);
     if (state.uring == NULL) {
         perror("io_uring setup failed!");
         exitstatus = EXIT_FAILURE;

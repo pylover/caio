@@ -126,7 +126,7 @@ main() {
         .interval = 1,
         .value = 0,
     };
-    epoll = caio_epoll_create(_caio, 2, 1);
+    epoll = caio_epoll_create(_caio, 2, 1000);
     if (epoll == NULL) {
         exitstatus = EXIT_FAILURE;
         goto terminate;

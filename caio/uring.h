@@ -46,7 +46,7 @@ struct caio_uring;
 
 struct caio_uring *
 caio_uring_create(struct caio* c, unsigned int jobsmax,
-        unsigned int timeout_ms, sigset_t *sigmask);
+        unsigned int timeout_us, sigset_t *sigmask);
 
 
 int
