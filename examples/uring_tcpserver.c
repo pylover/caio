@@ -248,7 +248,7 @@ listenA(struct caio_task *self, struct tcpserver *state,
                 &addrlen,
                 SOCK_NONBLOCK);
         if (ret < 0) {
-            ERROR("io_uring accept multishot submit.");
+            ERROR("io_uring accept submit.");
             CAIO_THROW(self, -ret);
         }
 
