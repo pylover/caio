@@ -23,9 +23,10 @@
 #include <stdbool.h>
 #include <signal.h>
 #include <errno.h>
-#include <err.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+
+#include <clog.h>
 
 #include "caio/config.h"
 #include "caio/caio.h"
@@ -90,7 +91,7 @@ typedef struct tcpconn {
 
 static void
 _state_print(const struct tcpserver *s) {
-    printf("caio tcpserver example, active sessions: %d\n", s->sessions);
+    INFO("active sessions: %d", s->sessions);
 }
 
 
@@ -128,11 +129,11 @@ reading:
             goto reading;
         }
         else if (bytes == -1) {
-            warn("read(fd: %d)", conn->fd);
+            ERROR("read(fd: %d)", conn->fd);
             CAIO_THROW(self, errno);
         }
         else if (bytes == 0) {
-            warn("read(fd: %d) EOF", conn->fd);
+            INFO("read(fd: %d) EOF", conn->fd);
             CAIO_THROW(self, errno);
         }
         conn->bufflen = bytes;
@@ -145,11 +146,11 @@ writing:
             goto writing;
         }
         else if (bytes == -1) {
-            warn("write(fd: %d)", conn->fd);
+            ERROR("write(fd: %d)", conn->fd);
             CAIO_THROW(self, errno);
         }
         else if (bytes == 0) {
-            warn("write(fd: %d) EOF", conn->fd);
+            INFO("write(fd: %d) EOF", conn->fd);
             CAIO_THROW(self, errno);
         }
     }
@@ -185,16 +186,16 @@ listenA(struct caio_task *self, struct tcpserver *state,
     /* Bind to tcp port */
     res = bind(fd, &bindaddr, sizeof(bindaddr));
     if (res) {
-        warn("Cannot bind on: "ADDRFMTS"\n", ADDRFMTV(bindaddr));
+        ERROR("Cannot bind on: "ADDRFMTS"\n", ADDRFMTV(bindaddr));
         CAIO_THROW(self, errno);
     }
 
     /* Listen */
     res = listen(fd, backlog);
-    printf("Listening on: tcp://"ADDRFMTS" backlog: %d\n", ADDRFMTV(bindaddr),
+    INFO("Listening on: tcp://"ADDRFMTS" backlog: %d", ADDRFMTV(bindaddr),
             backlog);
     if (res) {
-        warn("Cannot listen on: "ADDRFMTS"\n", ADDRFMTV(bindaddr));
+        ERROR("Cannot listen on: "ADDRFMTS"\n", ADDRFMTV(bindaddr));
         CAIO_THROW(self, errno);
     }
 
@@ -206,15 +207,15 @@ listenA(struct caio_task *self, struct tcpserver *state,
         }
 
         if (connfd == -1) {
-            warn("accept4\n");
+            ERROR("accept4\n");
             CAIO_THROW(self, errno);
         }
 
         /* New Connection */
-        printf("New connection from: "ADDRFMTS"\n", ADDRFMTV(connaddr));
+        INFO("New connection from: "ADDRFMTS"", ADDRFMTV(connaddr));
         struct tcpconn *c = malloc(sizeof(struct tcpconn));
         if (c == NULL) {
-            warn("Out of memory\n");
+            ERROR("Out of memory\n");
             CAIO_THROW(self, errno);
         }
 
@@ -225,7 +226,7 @@ listenA(struct caio_task *self, struct tcpserver *state,
         state->sessions++;
         _state_print(state);
         if (tcpconn_spawn(_caio, echoA, c)) {
-            warn("Maximum connection exceeded, fd: %d\n", connfd);
+            ERROR("Maximum connection exceeded, fd: %d\n", connfd);
             close(connfd);
             free(c);
         }
@@ -269,7 +270,7 @@ main() {
         goto terminate;
     }
     state.fdmon = (struct caio_fdmon*)epoll;
-    printf("Using epoll(7) for IO monitoring.\n");
+    INFO("Using epoll(7) for IO monitoring.");
 
 #elifdef CAIO_SELECT
     struct caio_select *select;
@@ -279,7 +280,7 @@ main() {
         goto terminate;
     }
     state.fdmon = (struct caio_fdmon*)select;
-    printf("Using select(2) for IO monitoring.\n");
+    INFO("Using select(2) for IO monitoring.");
 
 #endif
 

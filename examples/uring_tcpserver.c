@@ -23,7 +23,6 @@
 #include <stdbool.h>
 #include <signal.h>
 #include <errno.h>
-#include <err.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
@@ -130,7 +129,7 @@ echoA(struct caio_task *self, struct tcpconn *conn) {
                 BUFFSIZE,
                 0);
         if (ret < 0) {
-            perror("io_uring read submit.");
+            ERROR("io_uring read submit.");
             CAIO_THROW(self, -ret);
         }
 
@@ -140,11 +139,11 @@ echoA(struct caio_task *self, struct tcpconn *conn) {
         caio_uring_cqe_seen(server->uring, self, 0);
 
         if (bytes < 0) {
-            warn("read(fd: %d)", conn->fd);
+            ERROR("read(fd: %d)", conn->fd);
             CAIO_THROW(self, -bytes);
         }
         else if (bytes == 0) {
-            warn("read(fd: %d) EOF", conn->fd);
+            INFO("read(fd: %d) EOF", conn->fd);
             CAIO_THROW(self, -bytes);
         }
         conn->bufflen = bytes;
@@ -158,7 +157,7 @@ echoA(struct caio_task *self, struct tcpconn *conn) {
                 conn->bufflen,
                 0);
         if (ret < 0) {
-            perror("io_uring write submit.");
+            ERROR("io_uring write submit.");
             CAIO_THROW(self, -ret);
         }
 
@@ -168,11 +167,11 @@ echoA(struct caio_task *self, struct tcpconn *conn) {
         caio_uring_cqe_seen(server->uring, self, 0);
 
         if (bytes < 0) {
-            warn("write(fd: %d)", conn->fd);
+            ERROR("write(fd: %d)", conn->fd);
             CAIO_THROW(self, -bytes);
         }
         else if (bytes == 0) {
-            warn("write(fd: %d) EOF", conn->fd);
+            INFO("write(fd: %d) EOF", conn->fd);
             CAIO_THROW(self, -bytes);
         }
     }
@@ -208,7 +207,7 @@ listenA(struct caio_task *self, struct tcpserver *state,
             0,
             0);
     if (ret < 0) {
-        perror("io_uring socket submit.");
+        ERROR("io_uring socket submit.");
         CAIO_THROW(self, -ret);
     }
 
@@ -216,7 +215,7 @@ listenA(struct caio_task *self, struct tcpserver *state,
     CAIO_URING_AWAIT(state->uring, self, 1);
     listenfd = caio_uring_cqe_get(self, 0)->res;
     if (listenfd < 0) {
-        perror("io_uring socket submit.");
+        ERROR("io_uring socket submit.");
         CAIO_THROW(self, -listenfd);
     }
     caio_uring_cqe_seen(state->uring, self, 0);
@@ -227,7 +226,7 @@ listenA(struct caio_task *self, struct tcpserver *state,
     /* bind to tcp port */
     ret = bind(listenfd, &bindaddr, sizeof(bindaddr));
     if (ret < 0) {
-        warn("Cannot bind on: "ADDRFMTS"\n", ADDRFMTV(bindaddr));
+        ERROR("Cannot bind on: "ADDRFMTS"\n", ADDRFMTV(bindaddr));
         CAIO_THROW(self, errno);
     }
 
@@ -236,7 +235,7 @@ listenA(struct caio_task *self, struct tcpserver *state,
     INFO("Listening on: tcp://"ADDRFMTS" backlog: %d", ADDRFMTV(bindaddr),
             backlog);
     if (ret < 0) {
-        warn("Cannot listen on: "ADDRFMTS"\n", ADDRFMTV(bindaddr));
+        ERROR("Cannot listen on: "ADDRFMTS"\n", ADDRFMTV(bindaddr));
         CAIO_THROW(self, errno);
     }
 
@@ -249,7 +248,7 @@ listenA(struct caio_task *self, struct tcpserver *state,
                 &addrlen,
                 SOCK_NONBLOCK);
         if (ret < 0) {
-            perror("io_uring accept multishot submit.");
+            ERROR("io_uring accept multishot submit.");
             CAIO_THROW(self, -ret);
         }
 
@@ -258,14 +257,14 @@ listenA(struct caio_task *self, struct tcpserver *state,
         connfd = caio_uring_cqe_get(self, 0)->res;
         caio_uring_cqe_seen(state->uring, self, 0);
         if (connfd < 0) {
-            perror("accept");
+            ERROR("accept");
             CAIO_THROW(self, -connfd);
         }
 
         /* New Connection */
         struct tcpconn *c = malloc(sizeof(struct tcpconn));
         if (c == NULL) {
-            warn("Out of memory\n");
+            ERROR("Out of memory\n");
             CAIO_THROW(self, errno);
         }
 
@@ -277,7 +276,7 @@ listenA(struct caio_task *self, struct tcpserver *state,
         _conn_print(c);
         _state_print(state);
         if (tcpconn_spawn(_caio, echoA, c)) {
-            warn("Maximum connection exceeded, fd: %d\n", connfd);
+            ERROR("Maximum connection exceeded, fd: %d\n", connfd);
             close(connfd);
             free(c);
         }
@@ -316,7 +315,7 @@ main() {
     // TODO: tune max uring tasks
     state.uring = caio_uring_create(_caio, MAXCONN + 1, 1000, NULL);
     if (state.uring == NULL) {
-        perror("io_uring setup failed!");
+        ERROR("io_uring setup failed!");
         exitstatus = EXIT_FAILURE;
         goto terminate;
     }

@@ -19,6 +19,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+#include <clog.h>
+
 #include "caio/config.h"
 #include "caio/caio.h"
 
@@ -41,7 +43,7 @@ typedef struct pingpong {
 static ASYNC
 pongA(struct caio_task *self, struct pingpong *state) {
     CAIO_BEGIN(self);
-    printf("Table: %s: pong #%d\n", state->table, state->shoots++);
+    INFO("Table: %s: pong #%d\n", state->table, state->shoots++);
     CAIO_FINALLY(self);
 }
 
@@ -51,7 +53,7 @@ pingA(struct caio_task *self, struct pingpong *state) {
     CAIO_BEGIN(self);
 
     while (true) {
-        printf("Table: %s: ping #%d\n", state->table, state->shoots++);
+        INFO("Table: %s: ping #%d\n", state->table, state->shoots++);
         if (state->shoots > 9) {
             break;
         }

@@ -18,9 +18,10 @@
  */
 #include <stdio.h>
 #include <stdbool.h>
-#include <err.h>
 #include <errno.h>
 #include <sys/timerfd.h>
+
+#include <clog.h>
 
 #include "caio/config.h"
 #include "caio/caio.h"
@@ -79,7 +80,7 @@ tmrA(struct caio_task *self, struct tmr *state) {
 
     state->fd = maketmr(state->interval);
     if (state->fd == -1) {
-        warn("maketmr\n");
+        ERROR("maketmr\n");
         CAIO_THROW(self, errno);
     }
 
@@ -87,19 +88,19 @@ tmrA(struct caio_task *self, struct tmr *state) {
         CAIO_FILE_AWAIT(state->fdmon, self, state->fd, CAIO_IN);
         bytes = read(state->fd, &tmp, sizeof(tmp));
         if (bytes == -1) {
-            warn("read\n");
+            ERROR("read\n");
             CAIO_THROW(self, errno);
         }
         state->value += tmp;
         if (state->value > 4) {
             break;
         }
-        printf("%s(%ds), fd: %d, value: %lu\n", state->title, state->interval,
+        INFO("%s(%ds), fd: %d, value: %lu\n", state->title, state->interval,
                 state->fd, state->value);
     }
 
     CAIO_FINALLY(self);
-    printf("%s(%ds), fd: %d, terminated\n", state->title, state->interval,
+    INFO("%s(%ds), fd: %d, terminated\n", state->title, state->interval,
                 state->fd);
     CAIO_FILE_FORGET(state->fdmon, state->fd);
     if (state->fd != -1) {

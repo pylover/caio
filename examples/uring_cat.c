@@ -23,6 +23,8 @@
 #include <string.h>
 #include <sys/ioctl.h>
 
+#include <clog.h>
+
 #include "caio/config.h"
 #include "caio/caio.h"
 #include "caio/uring.h"
@@ -242,7 +244,7 @@ main(int argc, const char **argv) {
     struct cat state;
 
     if (argc < 2) {
-        fprintf(stderr, "Usage: %s FILENAME1 [FILENAME2...]\n", argv[0]);
+        ERRORH("Usage: %s FILENAME1 [FILENAME2...]\n", argv[0]);
         return EXIT_FAILURE;
     }
 

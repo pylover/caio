@@ -1,5 +1,4 @@
 ## now
-- use clog instead of err, warn, perror
 - clear errno somewhere
 
 ## later
@@ -14,6 +13,7 @@
 - Preserve filename, function name and line number on CAIO_THROW
 - Readme & documentation
 - cmake find_packages
+- readme about clog
 
 ## io_uring
   - readme: cmake CAIO_URING

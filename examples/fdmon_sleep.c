@@ -18,6 +18,8 @@
  */
 #include <stdio.h>
 
+#include <clog.h>
+
 #include "caio/config.h"
 #include "caio/sleep.h"
 
@@ -54,12 +56,12 @@ fooA(struct caio_task *self, foo_t *state) {
     CAIO_BEGIN(self);
 
 #ifdef CAIO_EPOLL
-    printf("EPOLL: Waiting %ld miliseconds\n", state->delay);
+    INFO("EPOLL: Waiting %ld miliseconds", state->delay);
     CAIO_SLEEP(self, &state->sleep, _epoll, state->delay);
 #endif
 
 #ifdef CAIO_SELECT
-    printf("SELECT: Waiting %ld miliseconds\n", state->delay);
+    INFO("SELECT: Waiting %ld miliseconds", state->delay);
     CAIO_SLEEP(self, &state->sleep, _select, state->delay);
 #endif
 

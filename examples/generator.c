@@ -18,8 +18,9 @@
  */
 #include <stdio.h>
 #include <stdbool.h>
-#include <err.h>
 #include <errno.h>
+
+#include <clog.h>
 
 #include "caio/config.h"
 #include "caio/caio.h"
@@ -69,25 +70,25 @@ consumerA(struct caio_task *self, consumer_t *) {
     while (true) {
         CAIO_AWAIT(self, generator, producerA, &foo, &value);
         if (!CAIO_HASERROR(self)) {
-            printf("foo yields: %d\n", value);
+            INFO("foo yields: %d\n", value);
         }
 
         CAIO_AWAIT(self, generator, producerA, &bar, &value);
         if (!CAIO_HASERROR(self)) {
-            printf("bar yields: %d\n", value);
+            INFO("bar yields: %d\n", value);
         }
         else if (CAIO_ISERROR(self, ECANCELED)) {
-            printf("bar stopped\n");
+            INFO("bar stopped\n");
             CAIO_CLEARERROR(self);
             break;
         }
         else {
-            warn("Unknowd error: %d\n", self->eno);
+            ERROR("Unknowd error: %d\n", self->eno);
             break;
         }
     }
-    printf("foo called %d times.\n", foo.count);
-    printf("bar called %d times.\n", bar.count);
+    INFO("foo called %d times.\n", foo.count);
+    INFO("bar called %d times.\n", bar.count);
     CAIO_FINALLY(self);
 }
 
