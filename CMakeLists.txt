@@ -44,6 +44,9 @@ set_property(CACHE CAIO_URING_TASK_MAXWAITING PROPERTY
 
 
 # Builtin IO modules 
+cmake_dependent_option(CAIO_SIGNAL 
+	"Enable caio signal modules." 
+	ON "CAIO_MODULES" OFF)
 cmake_dependent_option(CAIO_FDMON 
 	"Enable caio IO modules." 
 	ON "CAIO_MODULES" OFF)
@@ -82,6 +85,17 @@ add_library(caio_generic INTERFACE
     caio/generic.h
     caio/generic.c
 )
+
+
+if (CAIO_SIGNAL)
+  target_sources(caio
+	INTERFACE
+      ${CMAKE_CURRENT_SOURCE_DIR}/caio/signal.h
+	PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}/caio/signal.c
+  )
+  install(FILES caio/signal.h DESTINATION "include/caio")
+endif ()
 
 
 if (CAIO_FDMON)

@@ -80,7 +80,7 @@ caio_uring_sqe_get(struct caio_uring *u, struct caio_task *task) {
 
 
 static int
-_tick(struct caio_uring *u, struct caio* c) {
+_tick(struct caio *c, struct caio_uring *u) {
     struct io_uring_cqe *cqe;
     struct caio_task *task;
     struct caio_uring_taskstate *ustate;

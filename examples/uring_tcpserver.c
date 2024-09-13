@@ -21,7 +21,6 @@
  */
 #include <stdio.h>
 #include <stdbool.h>
-#include <signal.h>
 #include <errno.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -30,6 +29,7 @@
 
 #include "caio/config.h"
 #include "caio/caio.h"
+#include "caio/signal.h"
 #include "caio/uring.h"
 
 
@@ -38,7 +38,6 @@
 
 
 static struct caio *_caio;
-static struct sigaction oldaction;
 
 
 /* TCP server caio state and */
@@ -90,25 +89,6 @@ _state_print(const struct tcpserver *s) {
 static void
 _conn_print(const struct tcpconn *c) {
     INFO("connection: %d from: "ADDRFMTS"", c->fd, ADDRFMTV(c->remoteaddr));
-}
-
-
-static void
-_sighandler(int s) {
-    printf("\nsignal: %d\n", s);
-    caio_task_killall(_caio);
-    printf("\n");
-}
-
-
-static int
-_handlesignals() {
-    struct sigaction new_action = {{_sighandler}, {{0, 0, 0, 0}}};
-    if (sigaction(SIGINT, &new_action, &oldaction) != 0) {
-        return -1;
-    }
-
-    return 0;
 }
 
 
@@ -293,6 +273,8 @@ listenA(struct caio_task *self, struct tcpserver *state,
 int
 main() {
     int exitstatus = EXIT_SUCCESS;
+    struct caio_signal *sig;
+
     struct tcpserver state = {
         .sessions = 0,
     };
@@ -300,10 +282,6 @@ main() {
         .sin_addr = {htons(0)},
         .sin_port = htons(3030),
     };
-
-    if (_handlesignals()) {
-        return EXIT_FAILURE;
-    }
 
     _caio = caio_create(MAXCONN + 1);
     if (_caio == NULL) {
@@ -313,9 +291,21 @@ main() {
 
     /* Initialize io_uring */
     // TODO: tune max uring tasks
-    state.uring = caio_uring_create(_caio, MAXCONN + 1, 1000, NULL);
+    state.uring = caio_uring_create(_caio, MAXCONN + 1, 2000, NULL);
     if (state.uring == NULL) {
         ERROR("io_uring setup failed!");
+        exitstatus = EXIT_FAILURE;
+        goto terminate;
+    }
+
+    /* let's catch some signals */
+    sigset_t signals;
+    sigemptyset(&signals);
+    sigaddset(&signals, SIGINT);
+    sigaddset(&signals, SIGHUP);
+    sig = caio_signal_create(_caio, &signals);
+    if (sig == NULL) {
+        ERROR("caio_signal_create failed!");
         exitstatus = EXIT_FAILURE;
         goto terminate;
     }
@@ -327,6 +317,7 @@ main() {
     }
 
 terminate:
+    caio_signal_destroy(_caio, sig);
     caio_uring_destroy(_caio, state.uring);
 
     if (caio_destroy(_caio)) {

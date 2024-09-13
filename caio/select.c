@@ -47,7 +47,7 @@ struct caio_select {
 
 
 static int
-_tick(struct caio_select *s, struct caio* c) {
+_tick(struct caio *c, struct caio_select *s) {
     int i;
     int fd;
     int nfds;

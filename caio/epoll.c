@@ -37,7 +37,7 @@ struct caio_epoll {
 
 
 static int
-_tick(struct caio_epoll *e, struct caio* c) {
+_tick(struct caio *c, struct caio_epoll *e) {
     int i;
     int nfds;
     struct caio_task *task;

@@ -196,22 +196,25 @@ caio_loop(struct caio *c) {
     struct caio_task *task = NULL;
     struct caio_taskpool *taskpool = &c->taskpool;
     struct caio_module *module;
+    bool terminating = false;
     int i;
     int ret;
 
     for (i = 0; i < c->modulescount; i++) {
         module = c->modules[i];
-        if (module->loopstart && module->loopstart(module, c)) {
-            goto interrupt;
+        if (module->loopstart && module->loopstart(c, module)) {
+            return -1;
         }
     }
 
 loop:
     while (taskpool->count) {
-        for (i = 0; i < c->modulescount; i++) {
-            module = c->modules[i];
-            if (module->tick && module->tick(module, c)) {
-                goto interrupt;
+        if (!terminating) {
+            for (i = 0; i < c->modulescount; i++) {
+                module = c->modules[i];
+                if (module->tick && module->tick(c, module)) {
+                    goto interrupt;
+                }
             }
         }
 
@@ -226,8 +229,8 @@ loop:
     ret = 0;
     for (i = 0; i < c->modulescount; i++) {
         module = c->modules[i];
-        if (module->loopend && module->loopend(module, c)) {
-            goto interrupt;
+        if (module->loopend && module->loopend(c, module)) {
+            return -1;
         }
     }
     if (ret) {
@@ -240,6 +243,7 @@ loop:
     return 0;
 
 interrupt:
+    terminating = true;
     caio_task_killall(c);
     goto loop;
 }
