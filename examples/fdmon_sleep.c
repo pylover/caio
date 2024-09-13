@@ -84,7 +84,7 @@ main() {
     }
 
 #ifdef CAIO_EPOLL
-    _epoll = caio_epoll_create(_caio, 1, 1000);
+    _epoll = caio_epoll_create(_caio, 1);
     if (_epoll == NULL) {
         exitstatus = EXIT_FAILURE;
         goto terminate;
@@ -92,7 +92,7 @@ main() {
 #endif
 
 #ifdef CAIO_SELECT
-    _select = caio_select_create(_caio, 1, 1);
+    _select = caio_select_create(_caio, 1);
     if (_select == NULL) {
         exitstatus = EXIT_FAILURE;
         goto terminate;

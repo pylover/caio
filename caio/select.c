@@ -38,7 +38,6 @@ struct caio_fileevent {
 
 struct caio_select {
     struct caio_fdmon;
-    unsigned long timeout_us;
     unsigned int maxfileno;
     size_t waitingfiles;
     struct caio_fileevent *events;
@@ -47,7 +46,7 @@ struct caio_select {
 
 
 static int
-_tick(struct caio *c, struct caio_select *s) {
+_tick(struct caio *c, struct caio_select *s, unsigned int timeout_us) {
     int i;
     int fd;
     int nfds;
@@ -62,8 +61,8 @@ _tick(struct caio *c, struct caio_select *s) {
         return 0;
     }
 
-    tv.tv_usec = s->timeout_us % 1000000;
-    tv.tv_sec = s->timeout_us / 1000000;
+    tv.tv_usec = timeout_us % 1000000;
+    tv.tv_sec = timeout_us / 1000000;
 
     FD_ZERO(&rfds);
     FD_ZERO(&wfds);
@@ -164,8 +163,7 @@ _forget(struct caio_select *s, int fd) {
 
 
 struct caio_select *
-caio_select_create(struct caio* c, size_t maxevents,
-        unsigned int timeout_us) {
+caio_select_create(struct caio* c, size_t maxevents) {
     struct caio_select *s;
 
     /* Create select instance */
@@ -176,8 +174,7 @@ caio_select_create(struct caio* c, size_t maxevents,
     memset(s, 0, sizeof(struct caio_select));
 
     s->waitingfiles = 0;
-    s->timeout_us = timeout_us;
-    s->tick = (caio_hook) _tick;
+    s->tick = (caio_tick) _tick;
     s->monitor = (caio_filemonitor)_monitor;
     s->forget = (caio_fileforget)_forget;
 

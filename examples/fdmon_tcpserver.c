@@ -264,7 +264,7 @@ main() {
 
 #ifdef CAIO_EPOLL
     struct caio_epoll *epoll;
-    epoll = caio_epoll_create(_caio, MAXCONN + 1, 1000);
+    epoll = caio_epoll_create(_caio, MAXCONN + 1);
     if (epoll == NULL) {
         exitstatus = EXIT_FAILURE;
         goto terminate;
@@ -274,7 +274,7 @@ main() {
 
 #elifdef CAIO_SELECT
     struct caio_select *select;
-    select = caio_select_create(_caio, MAXCONN + 1, 1);
+    select = caio_select_create(_caio, MAXCONN + 1);
     if (select == NULL) {
         exitstatus = EXIT_FAILURE;
         goto terminate;

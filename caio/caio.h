@@ -69,9 +69,11 @@ struct caio_task {
 
 struct caio_module;
 typedef int (*caio_hook) (struct caio *c, struct caio_module *m);
+typedef int (*caio_tick) (struct caio *c, struct caio_module *m,
+        unsigned int timeout_us);
 struct caio_module {
     caio_hook loopstart;
-    caio_hook tick;
+    caio_tick tick;
     caio_hook loopend;
 };
 

@@ -30,7 +30,7 @@ struct caio_select;
 
 
 struct caio_select *
-caio_select_create(struct caio* c, size_t maxfileno, unsigned int timeout_us);
+caio_select_create(struct caio* c, size_t maxfileno);
 
 
 int

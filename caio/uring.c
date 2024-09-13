@@ -29,7 +29,6 @@ struct caio_uring {
     struct io_uring ring;
 
     sigset_t *sigmask;
-    int timeout_us;
     unsigned int jobsmax;
 
     unsigned int jobstotal;
@@ -80,7 +79,7 @@ caio_uring_sqe_get(struct caio_uring *u, struct caio_task *task) {
 
 
 static int
-_tick(struct caio *c, struct caio_uring *u) {
+_tick(struct caio *c, struct caio_uring *u, unsigned int timeout_us) {
     struct io_uring_cqe *cqe;
     struct caio_task *task;
     struct caio_uring_taskstate *ustate;
@@ -93,14 +92,10 @@ _tick(struct caio *c, struct caio_uring *u) {
         return -1;
     }
 
-    struct __kernel_timespec *t = NULL;
     struct __kernel_timespec timeout;
-    if (u->timeout_us) {
-        timeout.tv_sec = u->timeout_us / 1000000;
-        timeout.tv_nsec = (u->timeout_us % 1000000) * 1000;
-        t = &timeout;
-    }
-    int ret = io_uring_wait_cqes(&u->ring, &cqe, u->jobswaiting, t,
+    timeout.tv_sec = timeout_us / 1000000;
+    timeout.tv_nsec = (timeout_us % 1000000) * 1000;
+    int ret = io_uring_wait_cqes(&u->ring, &cqe, u->jobswaiting, &timeout,
             u->sigmask);
     if (ret < 0) {
         if (ret == -ETIME) {
@@ -185,8 +180,7 @@ caio_uring_cqe_get(struct caio_task *task, int index) {
 
 
 struct caio_uring *
-caio_uring_create(struct caio* c, unsigned int jobsmax,
-        unsigned int timeout_us, sigset_t *sigmask) {
+caio_uring_create(struct caio* c, unsigned int jobsmax, sigset_t *sigmask) {
     struct caio_uring *u;
 
     if (jobsmax == 0) {
@@ -206,9 +200,8 @@ caio_uring_create(struct caio* c, unsigned int jobsmax,
     }
 
     u->sigmask = sigmask;
-    u->timeout_us = timeout_us;
     u->jobsmax = jobsmax;
-    u->tick = (caio_hook) _tick;
+    u->tick = (caio_tick) _tick;
 
     u->jobstotal = 0;
     u->jobswaiting = 0;

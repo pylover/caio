@@ -88,7 +88,7 @@ _loopend(struct caio *c, struct caio_signal *s) {
 
 
 static int
-_tick(struct caio *c, struct caio_signal *s) {
+_tick(struct caio *c, struct caio_signal *s, unsigned int timeout_us) {
     return _terminate;
 }
 
@@ -107,7 +107,7 @@ caio_signal_create(struct caio* c, sigset_t *signals) {
     s->signals = signals;
     s->loopstart = (caio_hook) _loopstart;
     s->loopend = (caio_hook) _loopend;
-    s->tick = (caio_hook) _tick;
+    s->tick = (caio_tick) _tick;
 
     if (caio_module_install(c, (struct caio_module*)s)) {
         free(s);

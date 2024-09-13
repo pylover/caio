@@ -31,6 +31,13 @@ option(CAIO_MODULES "Enable caio modules system." ON)
 if (CAIO_MODULES)
   set(CAIO_MODULES_MAX 8 CACHE STRING "Maximum allowed modules.")
   set_property(CACHE CAIO_MODULES_MAX PROPERTY STRINGS 4 8 32 64 128 256)
+
+  set(CAIO_MODULES_TICKTIMEOUT_SHORT_US 1000 CACHE 
+    STRING "Modules short timeout in microseconds.")
+  
+  set(CAIO_MODULES_TICKTIMEOUT_LONG_US 10000 CACHE 
+    STRING "Modules short timeout in microseconds.")
+
 else ()
   unset(CAIO_MODULES_MAX CACHE)
 endif ()

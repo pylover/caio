@@ -29,19 +29,19 @@ foreach (t IN LISTS examples)
   )
   target_link_libraries(${t} PUBLIC clog)
   if (CAIO_URING)
-  target_link_libraries(${t} PUBLIC uring)
+    target_link_libraries(${t} PUBLIC uring)
   endif ()
   target_include_directories(${t} PUBLIC "${PROJECT_BINARY_DIR}")
 
   add_custom_target(${t}_exec 
-  COMMAND ./${t} $$CLI_ARGS
-  DEPENDS ${t}
+    COMMAND ./${t} $$CLI_ARGS
+    DEPENDS ${t}
   )
   add_custom_target(${t}_debug 
-  COMMAND gdb 
-  DEPENDS ${t}
-    --command=${PROJECT_SOURCE_DIR}/examples/${t}.gdb
-    ./${t} $$CLI_ARGS
+    COMMAND gdb 
+    DEPENDS ${t}
+      --command=${PROJECT_SOURCE_DIR}/examples/${t}.gdb
+      ./${t} $$CLI_ARGS
   )
 
   add_custom_target(${t}_profile

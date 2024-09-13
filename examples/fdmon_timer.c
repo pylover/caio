@@ -127,7 +127,7 @@ main() {
         .interval = 1,
         .value = 0,
     };
-    epoll = caio_epoll_create(_caio, 2, 1000);
+    epoll = caio_epoll_create(_caio, 2);
     if (epoll == NULL) {
         exitstatus = EXIT_FAILURE;
         goto terminate;
@@ -145,7 +145,7 @@ main() {
         .interval = 2,
         .value = 0,
     };
-    select = caio_select_create(_caio, 2, 1);
+    select = caio_select_create(_caio, 2);
     if (select == NULL) {
         exitstatus = EXIT_FAILURE;
         goto terminate;
