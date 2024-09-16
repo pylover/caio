@@ -1,4 +1,5 @@
 ## now
+- config CAIO_SGINAL
 - clear errno somewhere
 
 ## later

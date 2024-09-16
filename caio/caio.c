@@ -26,6 +26,7 @@
 
 struct caio {
     struct caio_taskpool taskpool;
+    volatile bool terminating;
 #ifdef CAIO_MODULES
     struct caio_module *modules[CAIO_MODULES_MAX];
     size_t modulescount;
@@ -39,6 +40,8 @@ caio_create(size_t maxtasks) {
     if (c == NULL) {
         return NULL;
     }
+
+    c->terminating = false;
 
 #ifdef CAIO_MODULES
     c->modulescount = 0;
@@ -197,7 +200,6 @@ caio_loop(struct caio *c) {
     struct caio_taskpool *taskpool = &c->taskpool;
     struct caio_module *module;
     unsigned int timeout = 1000;
-    bool terminating = false;
     int i;
     int ret;
 
@@ -210,7 +212,7 @@ caio_loop(struct caio *c) {
 
 loop:
     while (taskpool->count) {
-        if (!terminating) {
+        if (!c->terminating) {
             for (i = 0; i < c->modulescount; i++) {
                 module = c->modules[i];
                 if (module->tick && module->tick(c, module, timeout)) {
@@ -252,7 +254,7 @@ loop:
     return 0;
 
 interrupt:
-    terminating = true;
+    c->terminating = true;
     caio_task_killall(c);
     goto loop;
 }
