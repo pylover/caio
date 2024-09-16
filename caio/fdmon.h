@@ -49,4 +49,12 @@ struct caio_fdmon {
     } while (0)
 
 
+/* IO helper macros */
+#define CAIO_IN 0x1
+#define CAIO_ERR 0x2
+#define CAIO_OUT 0x4
+#define IO_MUSTWAIT(e) \
+    (((e) == EAGAIN) || ((e) == EWOULDBLOCK) || ((e) == EINPROGRESS))
+
+
 #endif  // CAIO_FDMON_H_
