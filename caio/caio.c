@@ -18,6 +18,7 @@
  */
 #include <stdlib.h>
 #include <stdbool.h>
+#include <unistd.h>
 #include <errno.h>
 
 #include "caio/caio.h"
@@ -198,10 +199,11 @@ int
 caio_loop(struct caio *c) {
     struct caio_task *task = NULL;
     struct caio_taskpool *taskpool = &c->taskpool;
-    struct caio_module *module;
-    unsigned int timeout = 1000;
+
+#ifdef CAIO_MODULES
     int i;
-    int ret;
+    unsigned int modtimeout = 1000;
+    struct caio_module *module;
 
     for (i = 0; i < c->modulescount; i++) {
         module = c->modules[i];
@@ -211,20 +213,27 @@ caio_loop(struct caio *c) {
     }
 
 loop:
+#endif
+
     while (taskpool->count) {
+
+#ifdef CAIO_MODULES
         if (!c->terminating) {
             for (i = 0; i < c->modulescount; i++) {
                 module = c->modules[i];
-                if (module->tick && module->tick(c, module, timeout)) {
+                if (module->tick && module->tick(c, module, modtimeout)) {
                     goto interrupt;
                 }
             }
         }
+#endif
 
         task = caio_taskpool_next(taskpool, task,
                     CAIO_RUNNING | CAIO_TERMINATING);
         if (task == NULL) {
-            timeout = CAIO_MODULES_TICKTIMEOUT_LONG_US / c->modulescount;
+#ifdef CAIO_MODULES
+            modtimeout = CAIO_MODULES_TICKTIMEOUT_LONG_US / c->modulescount;
+#endif
             continue;
         }
 
@@ -234,27 +243,26 @@ loop:
             }
         } while ((task = caio_taskpool_next(taskpool, task,
                     CAIO_RUNNING | CAIO_TERMINATING)));
-        timeout = CAIO_MODULES_TICKTIMEOUT_SHORT_US;
+#ifdef CAIO_MODULES
+        modtimeout = CAIO_MODULES_TICKTIMEOUT_SHORT_US;
+#endif
     }
 
-    ret = 0;
+#ifdef CAIO_MODULES
     for (i = 0; i < c->modulescount; i++) {
         module = c->modules[i];
         if (module->loopend && module->loopend(c, module)) {
             return -1;
         }
     }
-    if (ret) {
-        if (errno == EINTR) {
-            goto interrupt;
-        }
-        return -1;
-    }
+#endif
 
     return 0;
 
+#ifdef CAIO_MODULES
 interrupt:
     c->terminating = true;
     caio_task_killall(c);
     goto loop;
+#endif
 }
