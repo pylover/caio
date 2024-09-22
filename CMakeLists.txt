@@ -27,7 +27,6 @@ endif ()
 # Builtin modules 
 option(CAIO_MODULES "Enable caio modules system." ON)
 
-# Maximum allowed modules
 if (CAIO_MODULES)
   set(CAIO_MODULES_MAX 8 CACHE STRING "Maximum allowed modules.")
   set_property(CACHE CAIO_MODULES_MAX PROPERTY STRINGS 4 8 32 64 128 256)

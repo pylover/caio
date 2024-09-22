@@ -18,7 +18,9 @@
  */
 #include <stdlib.h>
 #include <string.h>
+#ifndef CAIO_FDMON_MAXFILES
 #include <sys/resource.h>
+#endif
 
 #include "caio/select.h"
 
@@ -182,6 +184,7 @@ caio_select_create(struct caio* c, size_t maxevents) {
         goto failed;
     }
 
+#ifndef CAIO_FDMON_MAXFILES
     /* Find maximum allowed file descriptors for this process and allocate
      * as much as needed for task repository
      */
@@ -193,7 +196,11 @@ caio_select_create(struct caio* c, size_t maxevents) {
     if (maxevents > limits.rlim_max) {
         goto failed;
     }
-
+#else
+    if (maxevents > CAIO_FDMON_MAXFILES) {
+        goto failed;
+    }
+#endif
     /* select(2) requires the highest number of fileno instead of event count.
      * So, it must increased 3 times for (stdin, stdout and stderr) */
     s->maxfileno = maxevents + 3;
