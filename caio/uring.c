@@ -19,8 +19,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <clog.h>
-
 #include "caio/uring.h"
 
 
