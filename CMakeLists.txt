@@ -7,7 +7,7 @@ include(CMakeDependentOption)
 
 
 # GCC and it's flags
-set(CMAKE_C_COMPILER gcc)
+# set(CMAKE_C_COMPILER gcc)
 set(CMAKE_VERBOSE_MAKEFILE OFF)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fms-extensions")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_GNU_SOURCE=1")
@@ -42,13 +42,6 @@ else ()
 endif ()
 
 
-# Maximum allowed uring jobs per caio task 
-set(CAIO_URING_TASK_MAXWAITING 8 CACHE 
-  STRING "Maximum allowed io_uring jobs per caio task.")
-set_property(CACHE CAIO_URING_TASK_MAXWAITING PROPERTY 
-  STRINGS 4 8 32 64 128 256)
-
-
 # Builtin IO modules 
 cmake_dependent_option(CAIO_SIGNAL 
 	"Enable caio signal modules." 
@@ -67,6 +60,15 @@ cmake_dependent_option(CAIO_URING
 	ON "CAIO_FDMON" OFF)
 
 
+# Maximum allowed uring jobs per caio task 
+if (CAIO_URING)
+  set(CAIO_URING_TASK_MAXWAITING 8 CACHE 
+    STRING "Maximum allowed io_uring jobs per caio task.")
+  set_property(CACHE CAIO_URING_TASK_MAXWAITING PROPERTY 
+    STRINGS 4 8 32 64 128 256)
+endif()
+
+
 # Menu config
 add_custom_target(menu COMMAND ccmake ${PROJECT_BINARY_DIR} )
 add_custom_target(fresh COMMAND cmake ${PROJECT_SOURCE_DIR} --fresh)
@@ -76,7 +78,7 @@ configure_file(caio/config.h.in caio/config.h @ONLY)
 include_directories(${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR})
 
 
-add_library(caio STATIC SHARED)
+add_library(caio SHARED)
 target_sources(caio 
 	INTERFACE
       ${CMAKE_CURRENT_SOURCE_DIR}/caio/caio.h
