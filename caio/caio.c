@@ -167,28 +167,24 @@ _step(struct caio_task *task) {
 
 start:
     /* Pre execution */
-    switch (task->status) {
-        case CAIO_TERMINATING:
-            /* Tell coroutine to jump to the CORO_FINALLY label */
-            call->line = -1;
-            break;
-        default:
+    if (task->status == CAIO_TERMINATING) {
+        /* Tell coroutine to jump to the CORO_FINALLY label */
+        call->line = -1;
     }
 
     call->invoke(task);
 
     /* Post execution */
-    switch (task->status) {
-        case CAIO_TERMINATING:
-            goto start;
-        case CAIO_TERMINATED:
-            task->current = call->parent;
-            free(call);
-            if (task->current != NULL) {
-                task->status = CAIO_RUNNING;
-            }
-            break;
-        default:
+    if (task->status == CAIO_TERMINATING) {
+        goto start;
+    }
+
+    if (task->status == CAIO_TERMINATED) {
+        task->current = call->parent;
+        free(call);
+        if (task->current != NULL) {
+            task->status = CAIO_RUNNING;
+        }
     }
 
     return task->current == NULL;
