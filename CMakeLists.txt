@@ -210,6 +210,7 @@ set(VALGRIND_FLAGS
 
 
 # Examples
-if (NOT DEFINED ENV{SKIP_EXAMPLES})
+option(CAIO_EXAMPLES "Build caio examples." ON)
+if (CAIO_EXAMPLES) 
   add_subdirectory(examples)
 endif ()
