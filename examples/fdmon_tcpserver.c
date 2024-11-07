@@ -184,7 +184,7 @@ listenA(struct caio_task *self, struct tcpserver *state,
     setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
 
     /* Bind to tcp port */
-    res = bind(fd, &bindaddr, sizeof(bindaddr));
+    res = bind(fd, (const struct sockaddr *)&bindaddr, sizeof(bindaddr));
     if (res) {
         ERROR("Cannot bind on: "ADDRFMTS"\n", ADDRFMTV(bindaddr));
         CAIO_THROW(self, errno);
@@ -200,7 +200,8 @@ listenA(struct caio_task *self, struct tcpserver *state,
     }
 
     while (true) {
-        connfd = accept4(fd, &connaddr, &addrlen, SOCK_NONBLOCK);
+        connfd = accept4(fd, (struct sockaddr * restrict)&connaddr, &addrlen,
+                SOCK_NONBLOCK);
         if ((connfd == -1) && IO_MUSTWAIT(errno)) {
             CAIO_FILE_AWAIT(state->fdmon, self, fd, CAIO_IN);
             continue;
@@ -262,7 +263,7 @@ main() {
         goto terminate;
     }
 
-#ifdef CAIO_EPOLL
+#if defined(CAIO_EPOLL)
     struct caio_epoll *epoll;
     epoll = caio_epoll_create(_caio, MAXCONN + 1);
     if (epoll == NULL) {
@@ -272,7 +273,7 @@ main() {
     state.fdmon = (struct caio_fdmon*)epoll;
     INFO("Using epoll(7) for IO monitoring.");
 
-#elifdef CAIO_SELECT
+#elif defined(CAIO_SELECT)
     struct caio_select *select;
     select = caio_select_create(_caio, MAXCONN + 1);
     if (select == NULL) {
@@ -291,13 +292,13 @@ main() {
     }
 
 terminate:
-#ifdef CAIO_EPOLL
+#if defined(CAIO_EPOLL)
 
     if (caio_epoll_destroy(_caio, epoll)) {
         exitstatus = EXIT_FAILURE;
     }
 
-#elifdef CAIO_SELECT
+#elif defined(CAIO_SELECT)
 
     if (caio_select_destroy(_caio, select)) {
         exitstatus = EXIT_FAILURE;

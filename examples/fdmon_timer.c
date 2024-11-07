@@ -159,8 +159,6 @@ main() {
         exitstatus = EXIT_FAILURE;
     }
 
-terminate:
-
 #ifdef CAIO_EPOLL
     if (caio_epoll_destroy(_caio, epoll)) {
         exitstatus = EXIT_FAILURE;
@@ -172,6 +170,8 @@ terminate:
         exitstatus = EXIT_FAILURE;
     }
 #endif
+
+terminate:
 
     if (caio_destroy(_caio)) {
         exitstatus = EXIT_FAILURE;

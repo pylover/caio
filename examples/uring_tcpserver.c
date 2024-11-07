@@ -204,7 +204,8 @@ listenA(struct caio_task *self, struct tcpserver *state,
     setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &sockopt, sizeof(sockopt));
 
     /* bind to tcp port */
-    ret = bind(listenfd, &bindaddr, sizeof(bindaddr));
+    ret = bind(listenfd, (const struct sockaddr *)&bindaddr,
+            sizeof(bindaddr));
     if (ret < 0) {
         ERROR("Cannot bind on: "ADDRFMTS"\n", ADDRFMTV(bindaddr));
         CAIO_THROW(self, errno);

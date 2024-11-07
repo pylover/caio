@@ -20,6 +20,8 @@
 #define CAIO_SIGNAL_H_
 
 
+#include <signal.h>
+
 #include "caio/caio.h"
 
 

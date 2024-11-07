@@ -62,7 +62,7 @@ producerA(struct caio_task *self, struct generator *state, int *out) {
 
 
 static ASYNC
-consumerA(struct caio_task *self, consumer_t *) {
+consumerA(struct caio_task *self, consumer_t *_) {
     static struct generator foo = {.name = "foo", 0};
     static struct generator bar = {.name = "bar", 0};
     static int value;
