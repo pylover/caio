@@ -21,6 +21,7 @@
 
 
 #include <liburing.h>
+#include <sys/socket.h>
 
 #include "caio/caio.h"
 
