@@ -70,25 +70,25 @@ consumerA(struct caio_task *self, consumer_t *_) {
     while (true) {
         CAIO_AWAIT(self, generator, producerA, &foo, &value);
         if (!CAIO_HASERROR(self)) {
-            INFO("foo yields: %d\n", value);
+            INFO("foo yields: %d", value);
         }
 
         CAIO_AWAIT(self, generator, producerA, &bar, &value);
         if (!CAIO_HASERROR(self)) {
-            INFO("bar yields: %d\n", value);
+            INFO("bar yields: %d", value);
         }
         else if (CAIO_ISERROR(self, ECANCELED)) {
-            INFO("bar stopped\n");
+            INFO("bar stopped");
             CAIO_CLEARERROR(self);
             break;
         }
         else {
-            ERROR("Unknowd error: %d\n", self->eno);
+            ERROR("Unknowd error: %d", self->eno);
             break;
         }
     }
-    INFO("foo called %d times.\n", foo.count);
-    INFO("bar called %d times.\n", bar.count);
+    INFO("foo called %d times.", foo.count);
+    INFO("bar called %d times.", bar.count);
     CAIO_FINALLY(self);
 }
 

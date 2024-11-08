@@ -75,7 +75,7 @@ maketmr(unsigned int interval) {
 static ASYNC
 tmrA(struct caio_task *self, struct tmr *state) {
     CAIO_BEGIN(self);
-    unsigned long tmp;
+    unsigned long long tmp;
     ssize_t bytes;
 
     state->fd = maketmr(state->interval);
@@ -95,12 +95,12 @@ tmrA(struct caio_task *self, struct tmr *state) {
         if (state->value > 4) {
             break;
         }
-        INFO("%s(%ds), fd: %d, value: %lu\n", state->title, state->interval,
+        INFO("%s(%ds), fd: %d, value: %lu", state->title, state->interval,
                 state->fd, state->value);
     }
 
     CAIO_FINALLY(self);
-    INFO("%s(%ds), fd: %d, terminated\n", state->title, state->interval,
+    INFO("%s(%ds), fd: %d, terminated", state->title, state->interval,
                 state->fd);
     CAIO_FILE_FORGET(state->fdmon, state->fd);
     if (state->fd != -1) {

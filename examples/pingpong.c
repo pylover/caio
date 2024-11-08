@@ -43,7 +43,7 @@ typedef struct pingpong {
 static ASYNC
 pongA(struct caio_task *self, struct pingpong *state) {
     CAIO_BEGIN(self);
-    INFO("Table: %s: pong #%d\n", state->table, state->shoots++);
+    INFO("Table: %s: pong #%d", state->table, state->shoots++);
     CAIO_FINALLY(self);
 }
 
@@ -53,7 +53,7 @@ pingA(struct caio_task *self, struct pingpong *state) {
     CAIO_BEGIN(self);
 
     while (true) {
-        INFO("Table: %s: ping #%d\n", state->table, state->shoots++);
+        INFO("Table: %s: ping #%d", state->table, state->shoots++);
         if (state->shoots > 9) {
             break;
         }
