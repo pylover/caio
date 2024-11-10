@@ -22,7 +22,6 @@
 
 #include <clog.h>
 
-#include "caio/config.h"
 #include "caio/caio.h"
 
 
