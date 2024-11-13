@@ -20,8 +20,9 @@
 #define CAIO_URING_H_
 
 
-#include <liburing.h>
 #include <sys/socket.h>
+
+#include <liburing.h>
 
 #include "caio/caio.h"
 

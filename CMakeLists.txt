@@ -17,11 +17,15 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
 # Build type and debug symbols
 set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release)
 if (NOT CMAKE_BUILD_TYPE)
-	set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Include debug symbols" FORCE)
+  set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Include debug symbols" FORCE)
 endif ()
 if (CMAKE_BUILD_TYPE!=Release)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")
 endif ()
+
+
+# Semaphore
+option(CAIO_SEMAPHORE "Enable caio semaphore." ON)
 
 
 # Builtin modules 
@@ -44,20 +48,20 @@ endif ()
 
 # Builtin IO modules 
 cmake_dependent_option(CAIO_SIGNAL 
-	"Enable caio signal modules." 
-	ON "CAIO_MODULES" OFF)
+  "Enable caio signal modules." 
+  ON "CAIO_MODULES" OFF)
 cmake_dependent_option(CAIO_FDMON 
-	"Enable caio IO modules." 
-	ON "CAIO_MODULES" OFF)
+  "Enable caio IO modules." 
+  ON "CAIO_MODULES" OFF)
 cmake_dependent_option(CAIO_EPOLL 
-	"Build and link epoll(7) caio IO module." 
-	ON "CAIO_FDMON" OFF)
+  "Build and link epoll(7) caio IO module." 
+  ON "CAIO_FDMON" OFF)
 cmake_dependent_option(CAIO_SELECT 
-	"Build and link select(2) caio IO module."
-	ON "CAIO_FDMON" OFF)
+  "Build and link select(2) caio IO module."
+  ON "CAIO_FDMON" OFF)
 cmake_dependent_option(CAIO_URING 
-	"Build and link io_uring(7) caio IO module."
-	ON "CAIO_FDMON" OFF)
+  "Build and link io_uring(7) caio IO module."
+  ON "CAIO_FDMON" OFF)
 
 
 # Maximum allowed uring jobs per caio task 
@@ -80,14 +84,16 @@ include_directories(${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR})
 
 add_library(caio SHARED)
 target_sources(caio 
-	INTERFACE
-      ${CMAKE_CURRENT_SOURCE_DIR}/caio/caio.h
-	PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}/caio/caio.c 
-	  ${CMAKE_CURRENT_SOURCE_DIR}/caio/taskpool.h
-      ${CMAKE_CURRENT_SOURCE_DIR}/caio/taskpool.c 
-	  ${CMAKE_CURRENT_SOURCE_DIR}/caio/sleep.h
-      ${CMAKE_CURRENT_SOURCE_DIR}/caio/sleep.c 
+  INTERFACE
+    ${CMAKE_CURRENT_SOURCE_DIR}/caio/caio.h
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/caio/caio.c 
+    ${CMAKE_CURRENT_SOURCE_DIR}/caio/taskpool.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/caio/taskpool.c 
+    ${CMAKE_CURRENT_SOURCE_DIR}/caio/sleep.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/caio/sleep.c 
+    ${CMAKE_CURRENT_SOURCE_DIR}/caio/semaphore.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/caio/semaphore.c 
 )
 add_library(caio_generic INTERFACE 
     caio/generic.h
@@ -95,12 +101,23 @@ add_library(caio_generic INTERFACE
 )
 
 
+if (CAIO_SEMAPHORE)
+  target_sources(caio 
+    INTERFACE
+      ${CMAKE_CURRENT_SOURCE_DIR}/caio/semaphore.h
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}/caio/semaphore.c 
+  )
+  install(FILES caio/semaphore.h DESTINATION "include/caio")
+endif ()
+
+
 if (CAIO_SIGNAL)
   target_sources(caio
-	INTERFACE
-      ${CMAKE_CURRENT_SOURCE_DIR}/caio/signal.h
-	PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}/caio/signal.c
+  INTERFACE
+    ${CMAKE_CURRENT_SOURCE_DIR}/caio/signal.h
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/caio/signal.c
   )
   install(FILES caio/signal.h DESTINATION "include/caio")
 endif ()
@@ -108,30 +125,28 @@ endif ()
 
 if (CAIO_FDMON)
   target_sources(caio
-	INTERFACE
-      ${CMAKE_CURRENT_SOURCE_DIR}/caio/fdmon.h
-      ${CMAKE_CURRENT_SOURCE_DIR}/caio/sleep.h
-	PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}/caio/sleep.c
+  INTERFACE
+    ${CMAKE_CURRENT_SOURCE_DIR}/caio/fdmon.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/caio/sleep.h
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/caio/sleep.c
   )
   install(FILES caio/fdmon.h DESTINATION "include/caio")
   install(FILES caio/sleep.h DESTINATION "include/caio")
 
   if (CAIO_EPOLL)
     target_sources(caio
-  	INTERFACE
-        ${CMAKE_CURRENT_SOURCE_DIR}/caio/epoll.h
-  	PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/caio/epoll.c
+    INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/caio/epoll.h
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/caio/epoll.c
     )
     install(FILES caio/epoll.h DESTINATION "include/caio")
   endif ()
   
   if (CAIO_SELECT)
     target_sources(caio
-  	INTERFACE 
+    INTERFACE 
         ${CMAKE_CURRENT_SOURCE_DIR}/caio/select.h
-  	PRIVATE
+    PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/caio/select.c
     )
     install(FILES caio/select.h DESTINATION "include/caio")
@@ -141,9 +156,9 @@ endif ()
 
 if (CAIO_URING)
   target_sources(caio
-	INTERFACE 
+  INTERFACE 
       ${CMAKE_CURRENT_SOURCE_DIR}/caio/uring.h
-	PRIVATE
+  PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}/caio/uring.c
   )
   target_link_libraries(caio PUBLIC uring) 

@@ -34,6 +34,7 @@ typedef void (*CAIO_NAME(coro)) (struct caio_task *self, CAIO_NAME(t) *state
         );  // NOLINT
 
 
+/* call */
 typedef struct CAIO_NAME(call) {
     struct caio_basecall;
     CAIO_NAME(coro) coro;
@@ -48,10 +49,8 @@ typedef struct CAIO_NAME(call) {
 } CAIO_NAME(call);
 
 
-
 void
 CAIO_NAME(invoker)(struct caio_task *task);
-
 
 
 int

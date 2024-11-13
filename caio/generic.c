@@ -20,6 +20,7 @@
 #include <unistd.h>
 
 #include "caio/caio.h"
+#include "caio/semaphore.h"
 
 
 void
@@ -145,3 +146,48 @@ failure:
     caio_destroy(c);
     return -1;
 }
+
+
+#ifdef CAIO_SEMAPHORE
+
+
+int
+CAIO_NAME(spawn_semaphore) (struct caio *c, struct caio_semaphore *semaphore,
+        CAIO_NAME(coro) coro, CAIO_NAME(t) *state
+#ifdef CAIO_ARG1
+        , CAIO_ARG1 arg1
+    #ifdef CAIO_ARG2
+            , CAIO_ARG2 arg2
+    #endif  // CAIO_ARG2
+#endif  // CAIO_ARG1
+        ) {
+    struct caio_task *task = NULL;
+
+    task = caio_task_new(c);
+    if (task == NULL) {
+        return -1;
+    }
+
+    task->semaphore = semaphore;
+
+    if (CAIO_NAME(call_new)(task, coro, state
+#ifdef CAIO_ARG1
+        , arg1
+    #ifdef CAIO_ARG2
+            , arg2
+    #endif  // CAIO_ARG2
+#endif  // CAIO_ARG1
+        )) {  // NOLINT
+        goto failure;
+    }
+
+    caio_semaphore_acquire(task);
+    return 0;
+
+failure:
+    caio_task_dispose(task);
+    return -1;
+}
+
+
+#endif

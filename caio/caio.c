@@ -23,6 +23,9 @@
 
 #include "caio/caio.h"
 #include "caio/taskpool.h"
+#ifdef CAIO_SEMAPHORE
+  #include "caio/semaphore.h"
+#endif
 
 
 struct caio {
@@ -212,7 +215,6 @@ loop:
 #endif
 
     while (taskpool->count) {
-
 #ifdef CAIO_MODULES
         if (!c->terminating) {
             for (i = 0; i < c->modulescount; i++) {
@@ -235,6 +237,11 @@ loop:
 
         do {
             if (_step(task)) {
+#ifdef CAIO_SEMAPHORE
+                if (task->semaphore) {
+                    caio_semaphore_release(task);
+                }
+#endif
                 caio_taskpool_release(taskpool, task);
             }
         } while ((task = caio_taskpool_next(taskpool, task,

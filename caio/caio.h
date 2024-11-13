@@ -51,6 +51,11 @@ struct caio_basecall {
 #endif
 
 
+#ifdef CAIO_SEMAPHORE
+    struct caio_semaphore;
+#endif
+
+
 struct caio_task {
     struct caio* caio;
     struct caio_basecall *current;
@@ -60,10 +65,15 @@ struct caio_task {
 #ifdef CAIO_URING
     struct caio_uring_taskstate *uring;
 #endif
+
+
+#ifdef CAIO_SEMAPHORE
+    struct caio_semaphore *semaphore;
+#endif
 };
 
 
-/* Modules */
+/* modules */
 #ifdef CAIO_MODULES
 
 
@@ -129,6 +139,29 @@ caio_loop(struct caio* c);
         return; \
         case __LINE__:; \
     } while (0)
+
+
+
+#define CAIO_PASS(task, newstatus) \
+    do { \
+        (task)->current->line = __LINE__; \
+        (task)->status = (newstatus); \
+        return; \
+        case __LINE__:; \
+    } while (0)
+
+
+/*
+#define CAIO_AWAIT2(task, callfactory, coro, ...) \
+    do { \
+        (task)->current->line = __LINE__; \
+        if (callfactory(task, coro, __VA_ARGS__)) { \
+            (task)->status = CAIO_TERMINATING; \
+        } \
+        return; \
+        case __LINE__:; \
+    } while (0)
+*/
 
 
 #define CAIO_BEGIN(task) \

@@ -4,6 +4,13 @@ list(APPEND examples
 )
 
 
+if (CAIO_SEMAPHORE) 
+  list(APPEND examples
+    semaphore
+  )
+endif ()
+
+
 if (CAIO_EPOLL OR CAIO_SELECT)
   list(APPEND examples
     fdmon_sleep
