@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.7)
 project(caio 
-    VERSION 5.1.1
+    VERSION 5.2.0
     LANGUAGES C
 )
 include(CMakeDependentOption)
