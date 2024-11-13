@@ -230,7 +230,8 @@ loop:
                     CAIO_RUNNING | CAIO_TERMINATING);
         if (task == NULL) {
 #ifdef CONFIG_CAIO_MODULES
-            modtimeout = CONFIG_CAIO_MODULES_TICKTIMEOUT_LONG_US / c->modulescount;
+            modtimeout =
+                CONFIG_CAIO_MODULES_TICKTIMEOUT_LONG_US / c->modulescount;
 #endif
             continue;
         }
