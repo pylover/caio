@@ -23,7 +23,7 @@
 
 #include "caio/caio.h"
 #include "caio/taskpool.h"
-#ifdef CAIO_SEMAPHORE
+#ifdef CONFIG_CAIO_SEMAPHORE
   #include "caio/semaphore.h"
 #endif
 
@@ -31,10 +31,10 @@
 struct caio {
     struct caio_taskpool taskpool;
     volatile bool terminating;
-#ifdef CAIO_MODULES
-    struct caio_module *modules[CAIO_MODULES_MAX];
+#ifdef CONFIG_CAIO_MODULES
+    struct caio_module *modules[CONFIG_CAIO_MODULES_MAX];
     size_t modulescount;
-#endif  // CAIO_MODULES
+#endif  // CONFIG_CAIO_MODULES
 };
 
 
@@ -47,9 +47,9 @@ caio_create(size_t maxtasks) {
 
     c->terminating = false;
 
-#ifdef CAIO_MODULES
+#ifdef CONFIG_CAIO_MODULES
     c->modulescount = 0;
-#endif  // CAIO_MODULES
+#endif  // CONFIG_CAIO_MODULES
 
     /* Initialize task pool */
     if (caio_taskpool_init(&c->taskpool, maxtasks)) {
@@ -112,11 +112,11 @@ caio_task_killall(struct caio *c) {
 }
 
 
-#ifdef CAIO_MODULES
+#ifdef CONFIG_CAIO_MODULES
 
 int
 caio_module_install(struct caio *c, struct caio_module *m) {
-    if (c->modulescount == CAIO_MODULES_MAX) {
+    if (c->modulescount == CONFIG_CAIO_MODULES_MAX) {
         return -1;
     }
 
@@ -161,7 +161,7 @@ caio_module_uninstall(struct caio *c, struct caio_module *m) {
 }
 
 
-#endif  // CAIO_MODULES
+#endif  // CONFIG_CAIO_MODULES
 
 
 static inline bool
@@ -199,7 +199,7 @@ caio_loop(struct caio *c) {
     struct caio_task *task = NULL;
     struct caio_taskpool *taskpool = &c->taskpool;
 
-#ifdef CAIO_MODULES
+#ifdef CONFIG_CAIO_MODULES
     int i;
     unsigned int modtimeout = 1000;
     struct caio_module *module;
@@ -215,7 +215,7 @@ loop:
 #endif
 
     while (taskpool->count) {
-#ifdef CAIO_MODULES
+#ifdef CONFIG_CAIO_MODULES
         if (!c->terminating) {
             for (i = 0; i < c->modulescount; i++) {
                 module = c->modules[i];
@@ -229,15 +229,15 @@ loop:
         task = caio_taskpool_next(taskpool, task,
                     CAIO_RUNNING | CAIO_TERMINATING);
         if (task == NULL) {
-#ifdef CAIO_MODULES
-            modtimeout = CAIO_MODULES_TICKTIMEOUT_LONG_US / c->modulescount;
+#ifdef CONFIG_CAIO_MODULES
+            modtimeout = CONFIG_CAIO_MODULES_TICKTIMEOUT_LONG_US / c->modulescount;
 #endif
             continue;
         }
 
         do {
             if (_step(task)) {
-#ifdef CAIO_SEMAPHORE
+#ifdef CONFIG_CAIO_SEMAPHORE
                 if (task->semaphore) {
                     caio_semaphore_release(task);
                 }
@@ -246,12 +246,12 @@ loop:
             }
         } while ((task = caio_taskpool_next(taskpool, task,
                     CAIO_RUNNING | CAIO_TERMINATING)));
-#ifdef CAIO_MODULES
-        modtimeout = CAIO_MODULES_TICKTIMEOUT_SHORT_US;
+#ifdef CONFIG_CAIO_MODULES
+        modtimeout = CONFIG_CAIO_MODULES_TICKTIMEOUT_SHORT_US;
 #endif
     }
 
-#ifdef CAIO_MODULES
+#ifdef CONFIG_CAIO_MODULES
     for (i = 0; i < c->modulescount; i++) {
         module = c->modules[i];
         if (module->loopend && module->loopend(c, module)) {
@@ -262,7 +262,7 @@ loop:
 
     return 0;
 
-#ifdef CAIO_MODULES
+#ifdef CONFIG_CAIO_MODULES
 interrupt:
     c->terminating = true;
     caio_task_killall(c);

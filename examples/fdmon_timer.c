@@ -27,11 +27,11 @@
 #include "caio/caio.h"
 
 
-#ifdef CAIO_EPOLL
+#ifdef CONFIG_CAIO_EPOLL
 #include "caio/epoll.h"
 #endif
 
-#ifdef CAIO_SELECT
+#ifdef CONFIG_CAIO_SELECT
 #include "caio/select.h"
 #endif
 
@@ -119,7 +119,7 @@ main() {
         goto terminate;
     }
 
-#ifdef CAIO_EPOLL
+#ifdef CONFIG_CAIO_EPOLL
     struct caio_epoll *epoll;
     struct tmr epolltimer = {
         .fd = -1,
@@ -137,7 +137,7 @@ main() {
     tmr_spawn(_caio, tmrA, &epolltimer);
 #endif
 
-#ifdef CAIO_SELECT
+#ifdef CONFIG_CAIO_SELECT
     struct caio_select *select;
     struct tmr selecttimer = {
         .fd = -1,
@@ -159,13 +159,13 @@ main() {
         exitstatus = EXIT_FAILURE;
     }
 
-#ifdef CAIO_EPOLL
+#ifdef CONFIG_CAIO_EPOLL
     if (caio_epoll_destroy(_caio, epoll)) {
         exitstatus = EXIT_FAILURE;
     }
 #endif
 
-#ifdef CAIO_SELECT
+#ifdef CONFIG_CAIO_SELECT
     if (caio_select_destroy(_caio, select)) {
         exitstatus = EXIT_FAILURE;
     }

@@ -37,7 +37,7 @@ struct caio_uring {
 struct caio_uring_taskstate {
     volatile unsigned int waiting;
     volatile unsigned int completed;
-    struct io_uring_cqe *cqes[CAIO_URING_TASK_MAXWAITING];
+    struct io_uring_cqe *cqes[CONFIG_CAIO_URING_TASK_MAXWAITING];
 };
 
 
@@ -65,7 +65,7 @@ caio_uring_sqe_get(struct caio_uring *u, struct caio_task *task) {
         task->uring = ustate;
     }
 
-    if (ustate->waiting >= CAIO_URING_TASK_MAXWAITING) {
+    if (ustate->waiting >= CONFIG_CAIO_URING_TASK_MAXWAITING) {
         return NULL;
     }
 

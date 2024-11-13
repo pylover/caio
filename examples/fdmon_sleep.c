@@ -40,12 +40,12 @@ typedef struct foo {
 
 static struct caio *_caio;
 
-#ifdef CAIO_EPOLL
+#ifdef CONFIG_CAIO_EPOLL
 #include "caio/epoll.h"
 static struct caio_epoll *_epoll;
 #endif
 
-#ifdef CAIO_SELECT
+#ifdef CONFIG_CAIO_SELECT
 #include "caio/select.h"
 static struct caio_select *_select;
 #endif
@@ -55,12 +55,12 @@ static ASYNC
 fooA(struct caio_task *self, foo_t *state) {
     CAIO_BEGIN(self);
 
-#ifdef CAIO_EPOLL
+#ifdef CONFIG_CAIO_EPOLL
     INFO("EPOLL: Waiting %ld miliseconds", state->delay);
     CAIO_SLEEP(self, &state->sleep, _epoll, state->delay);
 #endif
 
-#ifdef CAIO_SELECT
+#ifdef CONFIG_CAIO_SELECT
     INFO("SELECT: Waiting %ld miliseconds", state->delay);
     CAIO_SLEEP(self, &state->sleep, _select, state->delay);
 #endif
@@ -83,7 +83,7 @@ main() {
         goto terminate;
     }
 
-#ifdef CAIO_EPOLL
+#ifdef CONFIG_CAIO_EPOLL
     _epoll = caio_epoll_create(_caio, 1);
     if (_epoll == NULL) {
         exitstatus = EXIT_FAILURE;
@@ -91,7 +91,7 @@ main() {
     }
 #endif
 
-#ifdef CAIO_SELECT
+#ifdef CONFIG_CAIO_SELECT
     _select = caio_select_create(_caio, 1);
     if (_select == NULL) {
         exitstatus = EXIT_FAILURE;
@@ -115,13 +115,13 @@ terminate:
         exitstatus = EXIT_FAILURE;
     }
 
-#ifdef CAIO_EPOLL
+#ifdef CONFIG_CAIO_EPOLL
     if (caio_epoll_destroy(_caio, _epoll)) {
         exitstatus = EXIT_FAILURE;
     }
 #endif
 
-#ifdef CAIO_SELECT
+#ifdef CONFIG_CAIO_SELECT
     if (caio_select_destroy(_caio, _select)) {
         exitstatus = EXIT_FAILURE;
     }

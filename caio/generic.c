@@ -148,7 +148,7 @@ failure:
 }
 
 
-#ifdef CAIO_SEMAPHORE
+#ifdef CONFIG_CAIO_SEMAPHORE
 
 
 int

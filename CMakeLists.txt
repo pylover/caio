@@ -25,50 +25,51 @@ endif ()
 
 
 # Semaphore
-option(CAIO_SEMAPHORE "Enable caio semaphore." ON)
+option(CONFIG_CAIO_SEMAPHORE "Enable caio semaphore." ON)
 
 
 # Builtin modules 
-option(CAIO_MODULES "Enable caio modules system." ON)
+option(CONFIG_CAIO_MODULES "Enable caio modules system." ON)
 
-if (CAIO_MODULES)
-  set(CAIO_MODULES_MAX 8 CACHE STRING "Maximum allowed modules.")
-  set_property(CACHE CAIO_MODULES_MAX PROPERTY STRINGS 4 8 32 64 128 256)
+if (CONFIG_CAIO_MODULES)
+  set(CONFIG_CAIO_MODULES_MAX 8 CACHE STRING "Maximum allowed modules.")
+  set_property(CACHE CONFIG_CAIO_MODULES_MAX PROPERTY 
+    STRINGS 4 8 32 64 128 256)
 
-  set(CAIO_MODULES_TICKTIMEOUT_SHORT_US 1000 CACHE 
+  set(CONFIG_CAIO_MODULES_TICKTIMEOUT_SHORT_US 1000 CACHE 
     STRING "Modules short timeout in microseconds.")
   
-  set(CAIO_MODULES_TICKTIMEOUT_LONG_US 10000 CACHE 
+  set(CONFIG_CAIO_MODULES_TICKTIMEOUT_LONG_US 10000 CACHE 
     STRING "Modules short timeout in microseconds.")
 
 else ()
-  unset(CAIO_MODULES_MAX CACHE)
+  unset(CONFIG_CAIO_MODULES_MAX CACHE)
 endif ()
 
 
 # Builtin IO modules 
-cmake_dependent_option(CAIO_SIGNAL 
+cmake_dependent_option(CONFIG_CAIO_SIGNAL 
   "Enable caio signal modules." 
-  ON "CAIO_MODULES" OFF)
-cmake_dependent_option(CAIO_FDMON 
+  ON "CONFIG_CAIO_MODULES" OFF)
+cmake_dependent_option(CONFIG_CAIO_FDMON 
   "Enable caio IO modules." 
-  ON "CAIO_MODULES" OFF)
-cmake_dependent_option(CAIO_EPOLL 
+  ON "CONFIG_CAIO_MODULES" OFF)
+cmake_dependent_option(CONFIG_CAIO_EPOLL 
   "Build and link epoll(7) caio IO module." 
-  ON "CAIO_FDMON" OFF)
-cmake_dependent_option(CAIO_SELECT 
+  ON "CONFIG_CAIO_FDMON" OFF)
+cmake_dependent_option(CONFIG_CAIO_SELECT 
   "Build and link select(2) caio IO module."
-  ON "CAIO_FDMON" OFF)
-cmake_dependent_option(CAIO_URING 
+  ON "CONFIG_CAIO_FDMON" OFF)
+cmake_dependent_option(CONFIG_CAIO_URING 
   "Build and link io_uring(7) caio IO module."
-  ON "CAIO_FDMON" OFF)
+  ON "CONFIG_CAIO_FDMON" OFF)
 
 
 # Maximum allowed uring jobs per caio task 
-if (CAIO_URING)
-  set(CAIO_URING_TASK_MAXWAITING 8 CACHE 
+if (CONFIG_CAIO_URING)
+  set(CONFIG_CAIO_URING_TASK_MAXWAITING 8 CACHE 
     STRING "Maximum allowed io_uring jobs per caio task.")
-  set_property(CACHE CAIO_URING_TASK_MAXWAITING PROPERTY 
+  set_property(CACHE CONFIG_CAIO_URING_TASK_MAXWAITING PROPERTY 
     STRINGS 4 8 32 64 128 256)
 endif()
 
@@ -101,7 +102,7 @@ add_library(caio_generic INTERFACE
 )
 
 
-if (CAIO_SEMAPHORE)
+if (CONFIG_CAIO_SEMAPHORE)
   target_sources(caio 
     INTERFACE
       ${CMAKE_CURRENT_SOURCE_DIR}/caio/semaphore.h
@@ -112,7 +113,7 @@ if (CAIO_SEMAPHORE)
 endif ()
 
 
-if (CAIO_SIGNAL)
+if (CONFIG_CAIO_SIGNAL)
   target_sources(caio
   INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}/caio/signal.h
@@ -123,7 +124,7 @@ if (CAIO_SIGNAL)
 endif ()
 
 
-if (CAIO_FDMON)
+if (CONFIG_CAIO_FDMON)
   target_sources(caio
   INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}/caio/fdmon.h
@@ -134,7 +135,7 @@ if (CAIO_FDMON)
   install(FILES caio/fdmon.h DESTINATION "include/caio")
   install(FILES caio/sleep.h DESTINATION "include/caio")
 
-  if (CAIO_EPOLL)
+  if (CONFIG_CAIO_EPOLL)
     target_sources(caio
     INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/caio/epoll.h
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/caio/epoll.c
@@ -142,7 +143,7 @@ if (CAIO_FDMON)
     install(FILES caio/epoll.h DESTINATION "include/caio")
   endif ()
   
-  if (CAIO_SELECT)
+  if (CONFIG_CAIO_SELECT)
     target_sources(caio
     INTERFACE 
         ${CMAKE_CURRENT_SOURCE_DIR}/caio/select.h
@@ -154,7 +155,7 @@ if (CAIO_FDMON)
 endif ()
 
 
-if (CAIO_URING)
+if (CONFIG_CAIO_URING)
   target_sources(caio
   INTERFACE 
       ${CMAKE_CURRENT_SOURCE_DIR}/caio/uring.h

@@ -18,7 +18,7 @@
  */
 #include <stdlib.h>
 #include <string.h>
-#ifndef CAIO_FDMON_MAXFILES
+#ifndef CONFIG_CAIO_FDMON_MAXFILES
 #include <sys/resource.h>
 #endif
 
@@ -184,7 +184,7 @@ caio_select_create(struct caio* c, size_t maxevents) {
         goto failed;
     }
 
-#ifndef CAIO_FDMON_MAXFILES
+#ifndef CONFIG_CAIO_FDMON_MAXFILES
     /* Find maximum allowed file descriptors for this process and allocate
      * as much as needed for task repository
      */
@@ -197,7 +197,7 @@ caio_select_create(struct caio* c, size_t maxevents) {
         goto failed;
     }
 #else
-    if (maxevents > CAIO_FDMON_MAXFILES) {
+    if (maxevents > CONFIG_CAIO_FDMON_MAXFILES) {
         goto failed;
     }
 #endif

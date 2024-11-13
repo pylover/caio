@@ -4,14 +4,14 @@ list(APPEND examples
 )
 
 
-if (CAIO_SEMAPHORE) 
+if (CONFIG_CAIO_SEMAPHORE) 
   list(APPEND examples
     semaphore
   )
 endif ()
 
 
-if (CAIO_EPOLL OR CAIO_SELECT)
+if (CONFIG_CAIO_EPOLL OR CONFIG_CAIO_SELECT)
   list(APPEND examples
     fdmon_sleep
     fdmon_timer
@@ -20,7 +20,7 @@ if (CAIO_EPOLL OR CAIO_SELECT)
 endif ()
 
 
-if (CAIO_URING)
+if (CONFIG_CAIO_URING)
   list(APPEND examples
     uring_cat
     uring_tcpserver
@@ -35,7 +35,7 @@ foreach (t IN LISTS examples)
     $<TARGET_OBJECTS:caio>
   )
   target_link_libraries(${t} PUBLIC clog)
-  if (CAIO_URING)
+  if (CONFIG_CAIO_URING)
     target_link_libraries(${t} PUBLIC uring)
   endif ()
   target_include_directories(${t} PUBLIC "${PROJECT_BINARY_DIR}")

@@ -32,11 +32,11 @@
 #include "caio/caio.h"
 
 
-#ifdef CAIO_EPOLL
+#ifdef CONFIG_CAIO_EPOLL
 #include "caio/epoll.h"
 #endif
 
-#ifdef CAIO_SELECT
+#ifdef CONFIG_CAIO_SELECT
 #include "caio/select.h"
 #endif
 
@@ -263,7 +263,7 @@ main() {
         goto terminate;
     }
 
-#if defined(CAIO_EPOLL)
+#if defined(CONFIG_CAIO_EPOLL)
     struct caio_epoll *epoll;
     epoll = caio_epoll_create(_caio, MAXCONN + 1);
     if (epoll == NULL) {
@@ -273,7 +273,7 @@ main() {
     state.fdmon = (struct caio_fdmon*)epoll;
     INFO("Using epoll(7) for IO monitoring.");
 
-#elif defined(CAIO_SELECT)
+#elif defined(CONFIG_CAIO_SELECT)
     struct caio_select *select;
     select = caio_select_create(_caio, MAXCONN + 1);
     if (select == NULL) {
@@ -292,13 +292,13 @@ main() {
     }
 
 terminate:
-#if defined(CAIO_EPOLL)
+#if defined(CONFIG_CAIO_EPOLL)
 
     if (caio_epoll_destroy(_caio, epoll)) {
         exitstatus = EXIT_FAILURE;
     }
 
-#elif defined(CAIO_SELECT)
+#elif defined(CONFIG_CAIO_SELECT)
 
     if (caio_select_destroy(_caio, select)) {
         exitstatus = EXIT_FAILURE;

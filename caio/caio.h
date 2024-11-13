@@ -46,12 +46,12 @@ struct caio_basecall {
 };
 
 
-#ifdef CAIO_URING
+#ifdef CONFIG_CAIO_URING
     struct caio_uring_taskstate;
 #endif
 
 
-#ifdef CAIO_SEMAPHORE
+#ifdef CONFIG_CAIO_SEMAPHORE
     struct caio_semaphore;
 #endif
 
@@ -62,19 +62,19 @@ struct caio_task {
     enum caio_taskstatus status;
     int eno;
 
-#ifdef CAIO_URING
+#ifdef CONFIG_CAIO_URING
     struct caio_uring_taskstate *uring;
 #endif
 
 
-#ifdef CAIO_SEMAPHORE
+#ifdef CONFIG_CAIO_SEMAPHORE
     struct caio_semaphore *semaphore;
 #endif
 };
 
 
 /* modules */
-#ifdef CAIO_MODULES
+#ifdef CONFIG_CAIO_MODULES
 
 
 struct caio_module;
@@ -96,7 +96,7 @@ int
 caio_module_uninstall(struct caio *c, struct caio_module *m);
 
 
-#endif  // CAIO_MODULES
+#endif  // CONFIG_CAIO_MODULES
 
 
 struct caio*
@@ -149,19 +149,6 @@ caio_loop(struct caio* c);
         return; \
         case __LINE__:; \
     } while (0)
-
-
-/*
-#define CAIO_AWAIT2(task, callfactory, coro, ...) \
-    do { \
-        (task)->current->line = __LINE__; \
-        if (callfactory(task, coro, __VA_ARGS__)) { \
-            (task)->status = CAIO_TERMINATING; \
-        } \
-        return; \
-        case __LINE__:; \
-    } while (0)
-*/
 
 
 #define CAIO_BEGIN(task) \
