@@ -68,5 +68,6 @@ caio_semaphore_release(struct caio_task *task) {
         }
     }
 
+    task->semaphore = NULL;
     return 0;
 }
