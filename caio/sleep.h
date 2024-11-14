@@ -20,9 +20,20 @@
 #define CAIO_SLEEP_H_
 
 
+#include "caio/caio.h"
+
+
+#ifdef CONFIG_CAIO_ESP32
+
+
+int
+caio_sleep(struct caio_task *task, unsigned long us);
+
+
+#else
+
 #include <sys/timerfd.h>
 
-#include "caio/caio.h"
 #include "caio/fdmon.h"
 
 
@@ -56,4 +67,5 @@ caio_sleepA(struct caio_task *self, caio_sleep_t *state,
             (struct caio_fdmon*)iom, miliseconds)
 
 
+#endif  // CONFIG_CAIO_ESP32
 #endif  // CAIO_SLEEP_H_

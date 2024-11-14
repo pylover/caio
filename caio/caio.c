@@ -26,6 +26,10 @@
 #ifdef CONFIG_CAIO_SEMAPHORE
   #include "caio/semaphore.h"
 #endif
+#ifdef CONFIG_CAIO_FREERTOS
+  #include "freertos/FreeRTOS.h"
+  #include "freertos/task.h"
+#endif
 
 
 struct caio {
@@ -198,6 +202,9 @@ int
 caio_loop(struct caio *c) {
     struct caio_task *task = NULL;
     struct caio_taskpool *taskpool = &c->taskpool;
+#ifdef CONFIG_CAIO_FREERTOS
+    TickType_t xdelay;
+#endif
 
 #ifdef CONFIG_CAIO_MODULES
     int i;
@@ -232,6 +239,10 @@ loop:
 #ifdef CONFIG_CAIO_MODULES
             modtimeout =
                 CONFIG_CAIO_MODULES_TICKTIMEOUT_LONG_US / c->modulescount;
+#endif
+#ifdef CONFIG_CAIO_FREERTOS
+            xdelay = modtimeout / 1000 / portTICK_PERIOD_MS;
+            vTaskDelay(xdelay);
 #endif
             continue;
         }

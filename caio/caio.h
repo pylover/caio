@@ -24,6 +24,11 @@
 
 #include "caio/config.h"
 
+#ifdef CONFIG_CAIO_ESP32
+#include "esp_timer.h"
+#endif
+
+
 
 enum caio_taskstatus {
     CAIO_IDLE = 1,
@@ -69,6 +74,10 @@ struct caio_task {
 
 #ifdef CONFIG_CAIO_SEMAPHORE
     struct caio_semaphore *semaphore;
+#endif
+
+#ifdef CONFIG_CAIO_ESP32
+    esp_timer_handle_t sleep;
 #endif
 };
 
