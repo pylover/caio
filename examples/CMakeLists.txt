@@ -15,6 +15,7 @@ if (CONFIG_CAIO_EPOLL OR CONFIG_CAIO_SELECT)
   list(APPEND examples
     fdmon_sleep
     fdmon_timer
+    fdmon_timeout
     fdmon_tcpserver
   )
 endif ()

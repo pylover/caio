@@ -91,8 +91,6 @@ target_sources(caio
     ${CMAKE_CURRENT_SOURCE_DIR}/caio/caio.c 
     ${CMAKE_CURRENT_SOURCE_DIR}/caio/taskpool.h
     ${CMAKE_CURRENT_SOURCE_DIR}/caio/taskpool.c 
-    ${CMAKE_CURRENT_SOURCE_DIR}/caio/sleep.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/caio/sleep.c 
     ${CMAKE_CURRENT_SOURCE_DIR}/caio/semaphore.h
     ${CMAKE_CURRENT_SOURCE_DIR}/caio/semaphore.c 
 )
@@ -130,6 +128,7 @@ if (CONFIG_CAIO_FDMON)
     ${CMAKE_CURRENT_SOURCE_DIR}/caio/fdmon.h
     ${CMAKE_CURRENT_SOURCE_DIR}/caio/sleep.h
   PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/caio/fdmon.c
     ${CMAKE_CURRENT_SOURCE_DIR}/caio/sleep.c
   )
   install(FILES caio/fdmon.h DESTINATION "include/caio")

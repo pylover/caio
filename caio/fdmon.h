@@ -20,12 +20,14 @@
 #define CAIO_FDMON_H_
 
 
+#include <time.h>
+
 #include "caio/caio.h"
 
 
 struct caio_fdmon;
 typedef int (*caio_filemonitor) (struct caio_fdmon *iom,
-        struct caio_task *task, int fd, int events);
+        struct caio_task *task, int fd, int events, unsigned int timeout_us);
 typedef int (*caio_fileforget) (struct caio_fdmon *iom, int fd);
 struct caio_fdmon {
     struct caio_module;
@@ -38,7 +40,22 @@ struct caio_fdmon {
 #define CAIO_FILE_AWAIT(fdmon, task, fd, events) \
     do { \
         (task)->current->line = __LINE__; \
-        if ((fdmon)->monitor(fdmon, task, fd, events)) { \
+        if ((fdmon)->monitor(fdmon, task, fd, events, 0)) { \
+            (task)->status = CAIO_TERMINATING; \
+        } \
+        else { \
+            (task)->status = CAIO_WAITING; \
+        } \
+        return; \
+        case __LINE__:; \
+    } while (0)
+
+
+#define CAIO_FILE_TIMEDOUT(task) ((task)->fdmon_timeout_us < 0)
+#define CAIO_FILE_TWAIT(fdmon, task, fd, events, us) \
+    do { \
+        (task)->current->line = __LINE__; \
+        if ((fdmon)->monitor(fdmon, task, fd, events, us)) { \
             (task)->status = CAIO_TERMINATING; \
         } \
         else { \
@@ -55,6 +72,18 @@ struct caio_fdmon {
 #define CAIO_OUT 0x4
 #define IO_MUSTWAIT(e) \
     (((e) == EAGAIN) || ((e) == EWOULDBLOCK) || ((e) == EINPROGRESS))
+
+
+long
+timediff(struct timespec start, struct timespec end);
+
+
+void
+fdmon_tasks_timeout_check(struct caio *c);
+
+
+long
+fdmon_task_timeout_us(struct caio_task *task);
 
 
 #endif  // CAIO_FDMON_H_

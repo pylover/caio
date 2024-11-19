@@ -22,6 +22,7 @@
 #include <sys/resource.h>
 #endif
 
+#include "caio/fdmon.h"
 #include "caio/select.h"
 
 
@@ -48,11 +49,31 @@ struct caio_select {
 
 
 static int
+_monitor(struct caio_select *s, struct caio_task *task, int fd, int events,
+        unsigned int timeout_us) {
+    struct caio_fileevent *fe;
+    if ((fd < 0) || (fd > s->maxfileno) || (s->eventscount == s->maxfileno)) {
+        return -1;
+    }
+
+    task->fdmon_timeout_us = timeout_us;
+    clock_gettime(CLOCK_MONOTONIC, &task->fdmon_timestamp);
+    fe = &s->events[s->eventscount++];
+    s->waitingfiles++;
+    fe->events = events;
+    fe->task = task;
+    fe->fd = fd;
+    return 0;
+}
+
+
+static int
 _tick(struct caio *c, struct caio_select *s, unsigned int timeout_us) {
     int i;
     int fd;
     int nfds;
     int shift;
+    int timeout;
     struct caio_fileevent *fe;
     struct timeval tv;
     fd_set rfds;
@@ -96,9 +117,9 @@ _tick(struct caio *c, struct caio_select *s, unsigned int timeout_us) {
         return -1;
     }
 
-    if (nfds == 0) {
-        return 0;
-    }
+    // if (nfds == 0) {
+    //     return 0;
+    // }
 
     shift = 0;
     for (i = 0; i < s->eventscount; i++) {
@@ -118,6 +139,14 @@ _tick(struct caio *c, struct caio_select *s, unsigned int timeout_us) {
             continue;
         }
 
+        if ((fe->task->status == CAIO_WAITING) &&
+            ((timeout = fdmon_task_timeout_us(fe->task)) < 0)) {
+            fe->task->status = CAIO_RUNNING;
+            fe->task->fdmon_timeout_us = timeout;
+            shift++;
+            continue;
+        }
+
         if (!shift) {
             continue;
         }
@@ -126,22 +155,7 @@ _tick(struct caio *c, struct caio_select *s, unsigned int timeout_us) {
         FILEEVENT_RESET(fe);
     }
     s->eventscount = s->waitingfiles;
-    return 0;
-}
 
-
-static int
-_monitor(struct caio_select *s, struct caio_task *task, int fd, int events) {
-    struct caio_fileevent *fe;
-    if ((fd < 0) || (fd > s->maxfileno) || (s->eventscount == s->maxfileno)) {
-        return -1;
-    }
-
-    fe = &s->events[s->eventscount++];
-    s->waitingfiles++;
-    fe->events = events;
-    fe->task = task;
-    fe->fd = fd;
     return 0;
 }
 

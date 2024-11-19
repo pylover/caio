@@ -17,11 +17,13 @@
  *  Author: Vahid Mardani <vahid.mardani@gmail.com>
  */
 #include <unistd.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
 #include <sys/epoll.h>
 
+#include "caio/caio.h"
 #include "caio/fdmon.h"
 #include "caio/epoll.h"
 
@@ -51,25 +53,24 @@ _tick(struct caio *c, struct caio_epoll *e, unsigned int timeout_us) {
         return -1;
     }
 
-    if (nfds == 0) {
-        return 0;
-    }
-
-    for (i = 0; i < nfds; i++) {
-        task = (struct caio_task*)e->events[i].data.ptr;
-        if (task->status == CAIO_WAITING) {
-            task->status = CAIO_RUNNING;
-            e->waitingfiles--;
+    if (nfds) {
+        for (i = 0; i < nfds; i++) {
+            task = (struct caio_task*)e->events[i].data.ptr;
+            if (task->status == CAIO_WAITING) {
+                task->status = CAIO_RUNNING;
+                e->waitingfiles--;
+            }
         }
     }
 
+    fdmon_tasks_timeout_check(c);
     return 0;
 }
 
 
 static int
 _monitor(struct caio_epoll *e, struct caio_task *task, int fd,
-        int events) {
+        int events, unsigned int timeout_us) {
     struct epoll_event ee;
 
     ee.events = events | EPOLLONESHOT;
@@ -82,6 +83,8 @@ _monitor(struct caio_epoll *e, struct caio_task *task, int fd,
     }
 
     e->waitingfiles++;
+    task->fdmon_timeout_us = timeout_us;
+    clock_gettime(CLOCK_MONOTONIC, &task->fdmon_timestamp);
     return 0;
 }
 

@@ -105,6 +105,14 @@ caio_task_dispose(struct caio_task *task) {
 }
 
 
+
+struct caio_task *
+caio_task_next(struct caio *c, struct caio_task *task,
+        enum caio_taskstatus statuses) {
+    return caio_taskpool_next(&c->taskpool, task, statuses);
+}
+
+
 void
 caio_task_killall(struct caio *c) {
     struct caio_task *task = NULL;
@@ -208,7 +216,7 @@ caio_loop(struct caio *c) {
 
 #ifdef CONFIG_CAIO_MODULES
     int i;
-    unsigned int modtimeout = 1000;
+    unsigned int modtimeout = CONFIG_CAIO_MODULES_TICKTIMEOUT_SHORT_US;
     struct caio_module *module;
 
     for (i = 0; i < c->modulescount; i++) {

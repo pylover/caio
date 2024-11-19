@@ -29,6 +29,10 @@
 #endif
 
 
+#ifdef CONFIG_CAIO_FDMON
+#include <time.h>
+#endif
+
 
 enum caio_taskstatus {
     CAIO_IDLE = 1,
@@ -67,10 +71,14 @@ struct caio_task {
     enum caio_taskstatus status;
     int eno;
 
+#ifdef CONFIG_CAIO_FDMON
+    struct timespec fdmon_timestamp;
+    long fdmon_timeout_us;
+#endif
+
 #ifdef CONFIG_CAIO_URING
     struct caio_uring_taskstate *uring;
 #endif
-
 
 #ifdef CONFIG_CAIO_SEMAPHORE
     struct caio_semaphore *semaphore;
@@ -122,6 +130,11 @@ caio_task_new(struct caio* c);
 
 int
 caio_task_dispose(struct caio_task *task);
+
+
+struct caio_task *
+caio_task_next(struct caio *c, struct caio_task *task,
+        enum caio_taskstatus statuses);
 
 
 void
