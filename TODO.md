@@ -1,7 +1,6 @@
 ## now
 - set task->semaphore = NULL on both parent and children sides.
 - atomic semaphore
-
 - clear errno somewhere
 
 ## later
