@@ -70,7 +70,7 @@ struct caio_fdmon {
 #define CAIO_IN 0x1
 #define CAIO_ERR 0x2
 #define CAIO_OUT 0x4
-#define IO_MUSTWAIT(e) \
+#define CAIO_MUSTWAIT(e) \
     (((e) == EAGAIN) || ((e) == EWOULDBLOCK) || ((e) == EINPROGRESS))
 
 

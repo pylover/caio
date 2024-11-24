@@ -124,7 +124,7 @@ echoA(struct caio_task *self, struct tcpconn *conn) {
 reading:
         /* tcp read */
         bytes = read(conn->fd, conn->buff, BUFFSIZE);
-        if ((bytes == -1) && IO_MUSTWAIT(errno)) {
+        if ((bytes == -1) && CAIO_MUSTWAIT(errno)) {
             CAIO_FILE_AWAIT(server->fdmon, self, conn->fd, CAIO_IN);
             goto reading;
         }
@@ -141,7 +141,7 @@ reading:
 writing:
         /* tcp write */
         bytes = write(conn->fd, conn->buff, conn->bufflen);
-        if ((bytes == -1) && IO_MUSTWAIT(errno)) {
+        if ((bytes == -1) && CAIO_MUSTWAIT(errno)) {
             CAIO_FILE_AWAIT(server->fdmon, self, conn->fd, CAIO_OUT);
             goto writing;
         }
@@ -202,7 +202,7 @@ listenA(struct caio_task *self, struct tcpserver *state,
     while (true) {
         connfd = accept4(fd, (struct sockaddr * restrict)&connaddr, &addrlen,
                 SOCK_NONBLOCK);
-        if ((connfd == -1) && IO_MUSTWAIT(errno)) {
+        if ((connfd == -1) && CAIO_MUSTWAIT(errno)) {
             CAIO_FILE_AWAIT(state->fdmon, self, fd, CAIO_IN);
             continue;
         }
