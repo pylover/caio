@@ -22,6 +22,13 @@
 #include "caio/sleep.h"
 
 
+#undef CAIO_ARG1
+#undef CAIO_ARG2
+#undef CAIO_ENTITY
+#define CAIO_ENTITY caio_sleep
+#include "caio/generic.c"
+
+
 static void
 _callback(struct caio_task *task) {
     if (task && (task->status == CAIO_WAITING)) {
@@ -31,8 +38,8 @@ _callback(struct caio_task *task) {
 }
 
 
-int
-caio_sleep(struct caio_task *task, unsigned long us) {
+void
+caio_esp32_sleep(struct caio_task *task, unsigned long us) {
     const esp_timer_create_args_t oneshot_timer_args = {
             .callback = (void (*)(void *)) &_callback,
             .arg = (void*) task
@@ -40,5 +47,5 @@ caio_sleep(struct caio_task *task, unsigned long us) {
     task->status = CAIO_WAITING;
     ESP_ERROR_CHECK(esp_timer_create(&oneshot_timer_args, &task->sleep));
     ESP_ERROR_CHECK(esp_timer_start_once(task->sleep, us));
-    return 0;
+    void 0;
 }
