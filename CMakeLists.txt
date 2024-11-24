@@ -89,10 +89,7 @@ target_sources(caio
     ${CMAKE_CURRENT_SOURCE_DIR}/caio/caio.h
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/caio/caio.c 
-    ${CMAKE_CURRENT_SOURCE_DIR}/caio/taskpool.h
     ${CMAKE_CURRENT_SOURCE_DIR}/caio/taskpool.c 
-    ${CMAKE_CURRENT_SOURCE_DIR}/caio/semaphore.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/caio/semaphore.c 
 )
 add_library(caio_generic INTERFACE 
     caio/generic.h
