@@ -50,7 +50,7 @@ typedef int caio_sleep_t;
 void
 caio_esp32_sleep(struct caio_task *task, unsigned long us);
 
-#define CAIO_SLEEP(self, us) \
+#define CAIO_SLEEP(task, us) \
     do { \
         (task)->current->line = __LINE__; \
         caio_esp32_sleep(task, us); \

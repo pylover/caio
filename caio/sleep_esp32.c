@@ -47,5 +47,4 @@ caio_esp32_sleep(struct caio_task *task, unsigned long us) {
     task->status = CAIO_WAITING;
     ESP_ERROR_CHECK(esp_timer_create(&oneshot_timer_args, &task->sleep));
     ESP_ERROR_CHECK(esp_timer_start_once(task->sleep, us));
-    void 0;
 }
