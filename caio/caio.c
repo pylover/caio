@@ -256,6 +256,10 @@ loop:
         }
 
         do {
+#ifdef CONFIG_CAIO_FREERTOS
+            /* feed the watchdog */
+            vTaskDelay(2 / portTICK_PERIOD_MS);
+#endif
             if (_step(task)) {
 #ifdef CONFIG_CAIO_SEMAPHORE
                 if (task->semaphore) {
