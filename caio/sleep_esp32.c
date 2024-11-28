@@ -18,6 +18,8 @@
  */
 #include "esp_sleep.h"
 
+#include <clog.h>
+
 #include "caio/caio.h"
 #include "caio/sleep.h"
 
@@ -31,10 +33,13 @@
 
 static void
 _callback(struct caio_task *task) {
+    // esp_timer_delete(task->sleep);
+    ESP_ERROR_CHECK(esp_timer_delete(task->sleep));
+    task->sleep = NULL;
+
     if (task && (task->status == CAIO_WAITING)) {
         task->status = CAIO_RUNNING;
     }
-    ESP_ERROR_CHECK(esp_timer_delete(task->sleep));
 }
 
 
