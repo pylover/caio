@@ -86,4 +86,12 @@ long
 fdmon_task_timeout_us(struct caio_task *task);
 
 
+int
+fdmon_task_timestamp_setnow(struct caio_task *task);
+
+
+void
+fdmon_task_timestamp_clear(struct caio_task *task);
+
+
 #endif  // CAIO_FDMON_H_

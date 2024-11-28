@@ -56,8 +56,15 @@ _monitor(struct caio_select *s, struct caio_task *task, int fd, int events,
         return -1;
     }
 
-    task->fdmon_timeout_us = timeout_us;
-    clock_gettime(CLOCK_MONOTONIC, &task->fdmon_timestamp);
+    if (timeout_us > 0) {
+        fdmon_task_timestamp_setnow(task);
+        task->fdmon_timeout_us = timeout_us;
+    }
+    else {
+        fdmon_task_timestamp_clear(task);
+        task->fdmon_timeout_us = 0;
+    }
+
     fe = &s->events[s->eventscount++];
     s->waitingfiles++;
     fe->events = events;
@@ -73,7 +80,6 @@ _tick(struct caio *c, struct caio_select *s, unsigned int timeout_us) {
     int fd;
     int nfds;
     int shift;
-    int timeout;
     struct caio_fileevent *fe;
     struct timeval tv;
     fd_set rfds;
@@ -122,6 +128,7 @@ _tick(struct caio *c, struct caio_select *s, unsigned int timeout_us) {
     // }
 
     shift = 0;
+    int ttout;
     for (i = 0; i < s->eventscount; i++) {
         fe = &s->events[i];
         fd = fe->fd;
@@ -140,9 +147,11 @@ _tick(struct caio *c, struct caio_select *s, unsigned int timeout_us) {
         }
 
         if ((fe->task->status == CAIO_WAITING) &&
-            ((timeout = fdmon_task_timeout_us(fe->task)) < 0)) {
+            ((ttout = fdmon_task_timeout_us(fe->task)) < 0)) {
             fe->task->status = CAIO_RUNNING;
-            fe->task->fdmon_timeout_us = timeout;
+            fe->task->fdmon_timeout_us = ttout;
+            s->waitingfiles--;
+            FILEEVENT_RESET(fe);
             shift++;
             continue;
         }

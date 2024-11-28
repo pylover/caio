@@ -19,6 +19,25 @@
 #include "caio/fdmon.h"
 
 
+
+#define TSEMPTY(ts) (!((ts).tv_sec || (ts).tv_nsec))
+
+
+// TODO: use macro instead
+int
+fdmon_task_timestamp_setnow(struct caio_task *task) {
+    return clock_gettime(CLOCK_MONOTONIC, &task->fdmon_timestamp);
+}
+
+
+// TODO: use macro instead
+void
+fdmon_task_timestamp_clear(struct caio_task *task) {
+    task->fdmon_timestamp.tv_sec = 0;
+    task->fdmon_timestamp.tv_nsec = 0;
+}
+
+
 long
 timediff(struct timespec start, struct timespec end) {
     long sec;
@@ -41,6 +60,10 @@ fdmon_task_timeout_us(struct caio_task *task) {
     struct timespec now;
     long diff_us;
 
+    if (TSEMPTY(task->fdmon_timestamp)) {
+        return 0;
+    }
+
     clock_gettime(CLOCK_MONOTONIC, &now);
     diff_us = timediff(task->fdmon_timestamp, now);
     return task->fdmon_timeout_us - diff_us;
@@ -52,12 +75,18 @@ fdmon_tasks_timeout_check(struct caio *c) {
     struct timespec now;
     long diff_us;
     struct caio_task *task = NULL;
+    long ttout;
 
     clock_gettime(CLOCK_MONOTONIC, &now);
     while ((task = caio_task_next(c, task, CAIO_WAITING))) {
+        if (TSEMPTY(task->fdmon_timestamp)) {
+            continue;
+        }
+
         diff_us = timediff(task->fdmon_timestamp, now);
-        task->fdmon_timeout_us -= diff_us;
-        if (task->fdmon_timeout_us < 0) {
+        ttout = task->fdmon_timeout_us - diff_us;
+        if (ttout < 0) {
+            task->fdmon_timeout_us = ttout;
             task->status = CAIO_RUNNING;
         }
     }
